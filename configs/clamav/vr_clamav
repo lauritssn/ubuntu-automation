@@ -1,0 +1,63 @@
+#!/bin/bash
+ 
+# Email alert cron job script for ClamAV
+# Original, unmodified script by: Deven Hillard 
+# (http://www.digitalsanctuary.com/tech-blog/debian/automated-clamav-virus-scanning.html)
+# Modified to show infected and/or removed files
+ 
+# Directories to scan
+SCAN_DIR="/home /tmp /var"
+ 
+# Location of log file
+LOG_FILE="/var/log/clamav/manual_clamscan.log"
+ 
+# Uncomment to have scan remove files
+#AGGRESSIVE=1
+
+# Uncomment to have scan not remove files
+AGGRESSIVE=0
+ 
+# Email Subject
+SUBJECT="Infections detected on `hostname`"
+# Email To
+EMAIL="INFO_EMAIL"
+# Email From
+EMAIL_FROM="clamav@EMAIL_DOMAIN"
+ 
+check_scan () {
+    # If there were infected files detected, send email alert
+ 
+    if [ `tail -n 12 ${LOG_FILE}  | grep Infected | grep -v 0 | wc -l` != 0 ]
+    then
+    # Count number of infections
+        SCAN_RESULTS=$(tail -n 10 $LOG_FILE | grep 'Infected files')
+        INFECTIONS=${SCAN_RESULTS##* }
+ 
+        EMAILMESSAGE=`mktemp /tmp/virus-alert.XXXXX`
+        echo "To: ${EMAIL}" >>  ${EMAILMESSAGE}
+        echo "From: ${EMAIL_FROM}" >>  ${EMAILMESSAGE}
+        echo "Subject: ${SUBJECT}" >>  ${EMAILMESSAGE}
+        echo "Importance: High" >> ${EMAILMESSAGE}
+        echo "X-Priority: 1" >> ${EMAILMESSAGE}
+     
+        if [ $AGGRESSIVE = 1 ]
+        then
+                echo -e "\n`tail -n $((10 + ($INFECTIONS*2))) $LOG_FILE`" >> ${EMAILMESSAGE}
+        else
+                echo -e "\n`tail -n $((10 + $INFECTIONS)) $LOG_FILE`" >> ${EMAILMESSAGE}
+        fi
+ 
+        sendmail -t < ${EMAILMESSAGE}
+    fi
+}
+ 
+if [ $AGGRESSIVE = 1 ]
+then
+        /usr/bin/clamscan -ri --remove $SCAN_DIR >> $LOG_FILE
+else
+        /usr/bin/clamscan -ri $SCAN_DIR >> $LOG_FILE
+fi
+ 
+check_scan
+
+## EOF
