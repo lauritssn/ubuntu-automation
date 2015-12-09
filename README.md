@@ -22,13 +22,13 @@ Now clone the script to the server.
 
 ```
 cd /tmp
-git clone https://github.com/lauritssn/ubuntu-installation.git
+git clone https://github.com/lauritssn/ubuntu-automation.git
 ```
 
 Then run the installation script.  
 
 ```
-cd ubuntu-installation
+cd ubuntu-automation
 bash install.sh
 ```
 
