@@ -138,6 +138,9 @@ fi
 ## Get input
 ##########################################################################################
 
+# Change company name (folder under /srv/mycompany/
+read -p "Enter company name (i.e. 'mycompany'): " COMPANY
+
 # Change timezone?
 read -p "Do You want to change timezone (default: $TIMEZONE) (Y/N)?" -n 1 DO_CHANGE_TIMEZONE; echo
 

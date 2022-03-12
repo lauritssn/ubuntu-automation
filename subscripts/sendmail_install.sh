@@ -54,6 +54,6 @@ show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFIL
 ## Done
 ##########################################################################################
 
-show_info "$SUBSCRIPT done. Please check $CONF_ORG manually for swap settings."
+show_info "$SUBSCRIPT done."
 
 

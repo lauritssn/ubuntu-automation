@@ -46,8 +46,8 @@ show_yellow "Monitorix password created."
 ## Copy override configuration
 ##########################################################################################
 
-cp -p $CONF_ORG $CONF_BACK && show_grey "Config file $CONF_ORG backed up to $CONF_BACK."
-cp $CONF_GIT $CONF_ORG && show_grey "Debian Monitorix config file deployed."
+cp -p $CONF_ORG $CONF_BACK && show_yellow "Config file $CONF_ORG backed up to $CONF_BACK."
+cp $CONF_GIT $CONF_ORG && show_yellow "Debian Monitorix config file deployed."
 
 # Replace HOST_NAME
 show_yellow "Replace Monitorix config."

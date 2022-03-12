@@ -39,7 +39,7 @@ fi
 
 # Grey
 show_yellow () {
-    echo $(tput bold)$(tput setaf 0) $@ $(tput sgr 0)
+    echo $(tput bold)$(tput setaf 4) $@ $(tput sgr 0)
 }
 # White
 show_norm () {
