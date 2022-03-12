@@ -22,7 +22,7 @@ Now clone the script to the server.
 
 ```
 cd /tmp
-git clone https://github.com/publicworksdk/ubuntu-automation.git
+git clone https://github.com/lauritssn/ubuntu-automation.git
 ```
 
 Then run the installation script.  
