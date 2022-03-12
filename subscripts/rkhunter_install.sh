@@ -37,7 +37,7 @@ show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFIL
 ## Install RKHunter
 ##########################################################################################
 
-apt-get --yes --force-yes install rkhunter mailutils >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "rkhunter installation failed. Please check logfile and fix error manually.")
+apt-get --yes install rkhunter mailutils >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "rkhunter installation failed. Please check logfile and fix error manually.")
 show_yellow "rkhunter installation done."
 
 ##########################################################################################

@@ -41,14 +41,14 @@ show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFIL
 ## Install Monitorix
 ##########################################################################################
 
-apt-get --yes --force-yes install rrdtool perl libwww-perl libmailtools-perl libmime-lite-perl librrds-perl libhttp-server-simple-perl libxml-simple-perl libconfig-general-perl > $LOGDIR/$LOGFILE 2>&1 || ( show_err "Monitorix pre-dependencies installation failed. Please check logfile and fix error manually.")
+apt-get --yes install rrdtool perl libwww-perl libmailtools-perl libmime-lite-perl librrds-perl libhttp-server-simple-perl libxml-simple-perl libconfig-general-perl > $LOGDIR/$LOGFILE 2>&1 || ( show_err "Monitorix pre-dependencies installation failed. Please check logfile and fix error manually.")
 show_yellow "apt-get install of dependencies done."
 
 cd /tmp
 wget http://www.monitorix.org/$MONITORIX_PKG >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Monitorix download failed. Please check logfile and fix error manually.")
 show_yellow "Monitorix package ($MONITORIX_PKG) downloaded"
 dpkg -i --force-depends /tmp/$MONITORIX_PKG >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Monitorix installation failed. Please check logfile and fix error manually.")
-apt-get --yes --force-yes -f install >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Monitorix post-dependencies installation failed. Please check logfile and fix error manually.")
+apt-get --yes -f install >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Monitorix post-dependencies installation failed. Please check logfile and fix error manually.")
 show_yellow "Monitorix installed."
 rm /tmp/$MONITORIX_PKG
 

@@ -29,7 +29,7 @@ show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFIL
 ## Install UFW
 ##########################################################################################
 
-apt-get --yes --force-yes install ufw > $LOGDIR/$LOGFILE 2>&1 || ( show_err "Installation of UFW failed. Please check logfile and fix error manually.")
+apt-get --yes install ufw > $LOGDIR/$LOGFILE 2>&1 || ( show_err "Installation of UFW failed. Please check logfile and fix error manually.")
 show_yellow "UFW installation done."
 
 ##########################################################################################

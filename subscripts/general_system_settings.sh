@@ -25,7 +25,7 @@ show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFIL
 ## Install NTPD
 ##########################################################################################
 
-apt-get --yes --force-yes install ntp > $LOGDIR/$LOGFILE 2>&1 || ( show_err "Installation of NTP failed. Please check logfile and fix error manually.")
+apt-get --yes install ntp > $LOGDIR/$LOGFILE 2>&1 || ( show_err "Installation of NTP failed. Please check logfile and fix error manually.")
 show_yellow "NTP successfully installed."
 
 ##########################################################################################
@@ -45,7 +45,7 @@ show_yellow "/etc/environment updated."
 ## Install extra packages
 ##########################################################################################
 
-apt-get --yes --force-yes install curl dos2unix perl libnet-ssleay-perl openssl libauthen-pam-perl libpam-runtime libio-pty-perl apt-show-versions git subversion gcc build-essential libc6-dev autoconf automake dkms linux-headers-$(uname -r) sqlite3 libsqlite3-dev >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Installation of extra packages failed. Please check logfile and fix error manually.")
+apt-get --yes install curl dos2unix perl libnet-ssleay-perl openssl libauthen-pam-perl libpam-runtime libio-pty-perl apt-show-versions git subversion gcc build-essential libc6-dev autoconf automake dkms linux-headers-$(uname -r) sqlite3 libsqlite3-dev >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Installation of extra packages failed. Please check logfile and fix error manually.")
 show_yellow "Extra packages successfully installed."
 
 ##########################################################################################
