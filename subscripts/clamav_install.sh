@@ -33,7 +33,7 @@ show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFIL
 ## Install ClamAV
 ##########################################################################################
 
-apt-get --yes --force-yes install clamav clamav-daemon clamav-freshclam > $LOGDIR/$LOGFILE 2>&1 || ( show_err "ClamAV installation failed. Please check logfile and fix error manually.")
+apt-get --yes install clamav clamav-daemon clamav-freshclam > $LOGDIR/$LOGFILE 2>&1 || ( show_err "ClamAV installation failed. Please check logfile and fix error manually.")
 show_yellow "ClamAV installation successfull."
 
 ##########################################################################################
