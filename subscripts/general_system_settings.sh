@@ -28,18 +28,20 @@ show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFIL
 apt-get --yes install ntp > $LOGDIR/$LOGFILE 2>&1 || ( show_err "Installation of NTP failed. Please check logfile and fix error manually.")
 show_yellow "NTP successfully installed."
 
-##########################################################################################
-# Fix language errors
-##########################################################################################
-
-insertstring='LC_ALL=en_GB.utf8'
-searchstring=`echo $insertstring | sed 's/ //g'`
-if (sed -r 's/[ ]+//gi' /etc/environment | grep -q "${searchstring}") ; then
-	show_yellow "$insertstring - already present"
-else
-	echo "${insertstring}" | tee -a /etc/environment >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Updating /etc/environment failed. Please check logfile and fix error manually.")
-fi
-show_yellow "/etc/environment updated."
+## @TODO
+## https://snippets.aktagon.com/snippets/614-how-to-fix-bash-warning-setlocale-lc-all-cannot-change-locale-en-us-
+###########################################################################################
+## Fix language errors
+###########################################################################################
+#
+#insertstring='LC_ALL=en_GB.utf8'
+#searchstring=`echo $insertstring | sed 's/ //g'`
+#if (sed -r 's/[ ]+//gi' /etc/environment | grep -q "${searchstring}") ; then
+#	show_yellow "$insertstring - already present"
+#else
+#	echo "${insertstring}" | tee -a /etc/environment >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Updating /etc/environment failed. Please check logfile and fix error manually.")
+#fi
+#show_yellow "/etc/environment updated."
 
 ##########################################################################################
 ## Install extra packages

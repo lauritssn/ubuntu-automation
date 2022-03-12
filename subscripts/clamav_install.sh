@@ -41,7 +41,9 @@ show_yellow "ClamAV installation successfull."
 ##########################################################################################
 
 show_yellow "Updating ClamAV (this may take a while!)."
+systemctl stop clamav-freshclam.service >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Stopping freshclam service failed. Please check logfile and fix error manually.")
 freshclam >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "ClamAV update failed. Please check logfile and fix error manually.")
+systemctl start clamav-freshclam.service >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Starting freshclam service failed. Please check logfile and fix error manually.")
 show_yellow "ClamAV update done."
 
 ##########################################################################################
