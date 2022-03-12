@@ -23,7 +23,7 @@ BACKUPDIR="/var/deploy/automation-backup"
 
 DO_CONFIG_CLEANUP=N
 
-CONFIG_FILES=( /etc/apache2/apache2.conf /etc/apache2/conf-available/security.conf /etc/apache2/conf-available/rewrite.conf /etc/apache2/mods-available/evasive.conf /etc/cron.daily/vr_clamav /etc/sysctl.conf /etc/fail2ban/jail.conf /etc/fail2ban/action.d/sendmail-common.local /usr/local/maldetect/conf.maldet /etc/monitorix/monitorix.conf /etc/monitorix/conf.d/00-debian.conf /etc/mysql/my.cnf /etc/php5/apache2/php.ini /etc/php5/cli/php.ini /etc/default/rkhunter /etc/rkhunter.conf /etc/fstab /var/cronscripts/ufw.sh )
+CONFIG_FILES=( /etc/cron.daily/$COMPANY_clamav /etc/sysctl.conf /etc/fail2ban/jail.conf /etc/fail2ban/action.d/sendmail-common.local /usr/local/maldetect/conf.maldet /etc/monitorix/monitorix.conf /etc/monitorix/conf.d/00-debian.conf /etc/default/rkhunter /etc/rkhunter.conf /etc/fstab /var/cronscripts/ufw.sh )
 
 
 # Create /var/deploy/automation-backup if it doesn't exist - also creates /var/deploy ($DEPLOYDIR)

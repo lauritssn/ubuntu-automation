@@ -6,7 +6,7 @@
 # Modified to show infected and/or removed files
  
 # Directories to scan
-SCAN_DIR="/home /tmp /var"
+SCAN_DIR="/home /tmp /var /srv"
  
 # Location of log file
 LOG_FILE="/var/log/clamav/manual_clamscan.log"

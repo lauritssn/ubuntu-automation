@@ -1,7 +1,7 @@
 #!/bin/bash
 
 printf "############################################\n"
-printf "# Ubuntu 14.04 Install Automation #\n"
+printf "# Ubuntu 20.04 Install Automation #\n"
 printf "############################################\n\n"
 
 ##########################################################################################
@@ -24,26 +24,25 @@ genpasswd() {
 ## Define variables with default variables
 ##########################################################################################
 
+export COMPANY=some_name
 export BASEDIR=`pwd`
 export LOGDIR='/tmp'
 export DATE=`date +%Y-%m-%d_%H%M`
-export MYSQL_PASS=`genpasswd`
-export MYSQL_BACKUP_PASS=`genpasswd`
 export MONITORIX_PASS=`genpasswd`
 export ADMINISTRATOR_PASS=`genpasswd`
 export CRONJOBS_PASS=`genpasswd`
-export CRONDIR="/var/cronscripts"
-export DEPLOYDIR="/var/deploy"
-export BACKUPDIR="/var/deploy/automation-backup"
+export CRONDIR="/srv/$COMPANY/cronscripts"
+export DEPLOYDIR="/srv/$COMPANY/deploy"
+export BACKUPDIR="/srv/$COMPANY/deploy/automation-backup"
 export DEBIAN_FRONTEND=noninteractive # Make apt-get install non-interactive
 
-# Create /var/cronscripts if it doesn't exist
+# Create crondir if it doesn't exist
 if [ ! -d $CRONDIR ]
    then
       mkdir $CRONDIR
 fi
 
-# Create /var/deploy/automation-backup if it doesn't exist - also creates /var/deploy ($DEPLOYDIR)
+# Create automation-backup dir if it doesn't exist - also creates ($DEPLOYDIR)
 if [ ! -d $BACKUPDIR ]
    then
       mkdir -p $BACKUPDIR
@@ -55,25 +54,22 @@ echo $DATE >> $CRONDIR/pswd
 
 export DO_CHANGE_TIMEZONE=N 
 export DO_SYSTEM_UPDATE=N
-export DO_PYTHON_INSTALL=N
 export DO_SWAPFILE_INSTALL=N
-export DO_MYSQL_INSTALL=N
-export DO_POSTGRESQL_INSTALL=N
-export DO_REDIS_INSTALL=N
-export DO_APACHE_PHP_MC_INSTALL=N
 export DO_EXTRAS_INSTALL=N
 export DO_GENERAL_SERVER_SETTINGS=N
-export DO_WEBMIN_INSTALL=N
 export DO_MONITORIX_INSTALL=N
+export DO_NETDATA_INSTALL=N
+export DO_DOCKER_INSTALL=N
 export DO_UFW_INSTALL=N
 export DO_DIGITAL_OCEAN_INSTALL=N
 
 export UFW_ALLOW_PUBLIC_HTTP=N
 export UFW_ALLOW_PUBLIC_HTTPS=N
+export UFW_ALLOW_POSTHOG=N
+export UFW_ALLOW_NETDATA=N
+export UFW_ALLOW_MONITORIX=N
 
 export TIMEZONE="Europe/Copenhagen"
-export PHP_MEMORY_LIMIT=256M
-export PHP_UPLOAD_MAX_FILESIZE=32M
 
 export IP=`ifconfig eth0 | grep "inet addr"| cut -d ":" -f2 | cut -d " " -f1` ## NB Several IP Addresses!!!
 
@@ -126,7 +122,7 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 ##########################################################################################
-## Check if /var/cronscripts exists and create it if it doesn't
+## Check if cronscripts folder exists and create it if it doesn't
 ##########################################################################################
 
 if [ ! -d $CRONDIR ]
@@ -162,55 +158,20 @@ fi
 # System update
 read -p "Do You want to update system (Y/N)?" -n 1 DO_SYSTEM_UPDATE; echo
 
-# MySQL install
-read -p "Do You want to install MySQL (Y/N)?" -n 1 DO_MYSQL_INSTALL; echo
-
-# Set MySQL root password - DISABLED
-#if [[ $DO_MYSQL_INSTALL =~ [Yy]$ ]]
-#   then
-#      read -p "Do You want to set MySQL password (Y/N)?" -n 1 SET_MYSQL_PASS; echo
-#         if [[ $SET_MYSQL_PASS =~ [Yy]$ ]]
-#            then
-#               read -p "Type MySQL password: " MYSQL_PASS; echo
-#            else
-#               printf "Using default MySQL password: `show_info "$MYSQL_PASS"` \n"
-#        fi 
-#fi
-
-# Apache + PHP + Memcached install
-read -p "Do You want to install Apache + PHP + Memcached (Y/N)?" -n 1 DO_APACHE_PHP_MC_INSTALL; echo
-
-if [[ $DO_APACHE_PHP_MC_INSTALL  =~ [Yy]$ ]]
-   then
-      read -p "Do You want to change PHP memory limit? (default is $PHP_MEMORY_LIMIT) (Y/N)?" -n 1 SET_PHP_MEMORY_LIMIT; echo
-         if [[ $SET_PHP_MEMORY_LIMIT =~ [Yy]$ ]]
-            then
-               read -p "Enter PHP memory limit: " PHP_MEMORY_LIMIT
-         fi
-      read -p "Do You want to change PHP upload max filesize (default is $PHP_UPLOAD_MAX_FILESIZE) (Y/N)?" -n 1 SET_PHP_UPLOAD_MAX_FILESIZE; echo
-         if [[ $SET_PHP_UPLOAD_MAX_FILESIZE =~ [Yy]$ ]]
-            then
-               read -p "Enter PHP upload max filesize: " PHP_UPLOAD_MAX_FILESIZE
-         fi
-fi
-
 # General server settings install
 read -p "Do You want to install general server settings (Y/N)?" -n 1 DO_GENERAL_SERVER_SETTINGS; echo
-
-# Webmin install
-read -p "Do You want to install Webmin (Y/N)?" -n 1 DO_WEBMIN_INSTALL; echo
-
-# Redis install
-read -p "Do You want to install Redis (Y/N)?" -n 1 DO_REDIS_INSTALL; echo
 
 # Is this a Digital Ocean server install
 read -p "Is this server on Digital Ocean (Y/N)?" -n 1 DO_DIGITAL_OCEAN_INSTALL; echo
 
-# Python install
-read -p "Do You want to install Python (Y/N)?" -n 1 DO_PYTHON_INSTALL; echo
-
 # Monitorix install
 read -p "Do You want to install Monitorix (Y/N)?" -n 1 DO_MONITORIX_INSTALL; echo
+
+# Netdata install
+read -p "Do You want to install Netdata (Y/N)?" -n 1 DO_NETDATA_INSTALL; echo
+
+# Docker install
+read -p "Do You want to install Docker (Y/N)?" -n 1 DO_DOCKER_INSTALL; echo
 
 # UFW install
 read -p "Do You want to install UFW (Y/N)?" -n 1 DO_UFW_INSTALL; echo
@@ -220,6 +181,9 @@ if [[ $DO_APACHE_PHP_MC_INSTALL =~ [Yy]$ && $DO_UFW_INSTALL =~ [Yy]$ ]]
    then
       read -p "Do You want to allow port 80 (http) to World (Y/N)?" -n 1 UFW_ALLOW_PUBLIC_HTTP; echo
       read -p "Do You want to allow port 443 (https) to World (Y/N)?" -n 1 UFW_ALLOW_PUBLIC_HTTPS; echo
+      read -p "Do You want to allow port 8443 (Posthog) to World (Y/N)?" -n 1 UFW_ALLOW_POSTHOG; echo
+      read -p "Do You want to allow port 8081 (Monitorix) to World (Y/N)?" -n 1 UFW_ALLOW_MONITORIX; echo
+      read -p "Do You want to allow port 19999 (Netdata) to World (Y/N)?" -n 1 UFW_ALLOW_NETDATA; echo
 fi
 
 ##########################################################################################
@@ -274,34 +238,6 @@ fi
 
 printf "\n--------------------\n"
 
-# MySQL install
-if [[ $DO_MYSQL_INSTALL =~ [Yy]$ ]]
-   then
-       source $BASEDIR/subscripts/mysql_install.sh
-   else
-       show_warn "MySQL will not be installed" 
-fi
-
-printf "\n--------------------\n"
-
-# Apache + PHP + Memcached install
-if [[ $DO_APACHE_PHP_MC_INSTALL =~ [Yy]$ ]]
-   then
-       source $BASEDIR/subscripts/apache_install.sh
-       printf "\n--------------------\n"
-       source $BASEDIR/subscripts/memcached_install.sh
-       printf "\n--------------------\n"
-       source $BASEDIR/subscripts/php_install.sh
-       printf "\n--------------------\n"
-       source $BASEDIR/subscripts/cronjobs_install.sh
-       printf "\n--------------------\n"
-       source $BASEDIR/subscripts/composer_install.sh
-   else
-       show_warn "Apache + PHP + Memcached will not be installed"
-fi
-
-printf "\n--------------------\n"
-
 # General server settings install
 if [[ $DO_GENERAL_SERVER_SETTINGS =~ [Yy]$ ]]
    then
@@ -328,16 +264,6 @@ fi
 
 printf "\n--------------------\n"
 
-# Webmin install
-if [[ $DO_WEBMIN_INSTALL =~ [Yy]$ ]]
-   then
-       source $BASEDIR/subscripts/webmin_install.sh
-   else
-       show_warn "Webmin will not be installed" 
-fi
-
-printf "\n--------------------\n"
-
 # Redis install
 if [[ $DO_REDIS_INSTALL =~ [Yy]$ ]]
    then
@@ -356,14 +282,23 @@ fi
 
 printf "\n--------------------\n"
 
-# Python install
-if [[ $DO_PYTHON_INSTALL =~ [Yy]$ ]]
+# Docker install
+if [[ $DO_DOCKER_INSTALL =~ [Yy]$ ]]
    then
-       source $BASEDIR/subscripts/python_install.sh
+       source $BASEDIR/subscripts/docker_install.sh
    else
-       show_warn "Python will not be installed" 
+       show_warn "Docker will not be installed"
 fi
 
+printf "\n--------------------\n"
+
+# Netdata install
+if [[ $DO_NETDATA_INSTALL =~ [Yy]$ ]]
+   then
+       source $BASEDIR/subscripts/netdata_install.sh
+   else
+       show_warn "Netdata will not be installed"
+fi
 
 printf "\n--------------------\n"
 
@@ -372,7 +307,7 @@ if [[ $DO_MONITORIX_INSTALL =~ [Yy]$ ]]
    then
        source $BASEDIR/subscripts/monitorix_install.sh
    else
-       show_warn "Monitorix will not be installed" 
+       show_warn "Monitorix will not be installed"
 fi
 
 printf "\n--------------------\n"

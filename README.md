@@ -5,7 +5,7 @@ This project contains a series of scripts that allow you to automate the install
 
 ## Usage
 
-Install a fresh Ubuntu 14.04 server with no other options than OpenSSH server. Then connect to the machine using ssh as root user. When connected as a non root user - you can su to root like this:   
+Install a fresh Ubuntu 20.04 server with no other options than OpenSSH server. Then connect to the machine using ssh as root user. When connected as a non root user - you can su to root like this:   
 
 ```
 sudo su root
@@ -22,7 +22,7 @@ Now clone the script to the server.
 
 ```
 cd /tmp
-git clone https://github.com/lauritssn/ubuntu-automation.git
+git clone https://github.com/publicworksdk/ubuntu-automation.git
 ```
 
 Then run the installation script.  

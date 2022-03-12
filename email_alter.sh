@@ -186,7 +186,7 @@ fi
 # General ClamAV configuration
 ##########################################################################################
 
-CONF6_ORG=/etc/cron.daily/vr_clamav
+CONF6_ORG=/etc/cron.daily/$COMPANY_clamav
 CONF6_BACK=$BACKUPDIR/$(basename $CONF6_ORG)_$DATE
 
 # Backup and replace email addresses in config files

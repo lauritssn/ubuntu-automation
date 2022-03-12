@@ -49,6 +49,13 @@ apt-get --yes --force-yes install curl dos2unix perl libnet-ssleay-perl openssl 
 show_grey "Extra packages successfully installed."
 
 ##########################################################################################
+## Disable message of the day
+##########################################################################################
+
+systemctl disable motd-news.service
+sed -i 's/^ENABLED=.*/ENABLED=0/' /etc/default/motd-news
+
+##########################################################################################
 ## Done
 ##########################################################################################
 

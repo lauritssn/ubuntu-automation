@@ -19,9 +19,9 @@ LOGFILE=$SUBSCRIPT-$DATE.log
 # General ClamAV configuration
 ##########################################################################################
 
-CONF_ORG=/etc/cron.daily/vr_clamav
+CONF_ORG=/etc/cron.daily/$COMPANY_clamav
 CONF_BACK=$BACKUPDIR/$(basename $CONF_ORG)_$DATE
-CONF_GIT=$BASEDIR/configs/clamav/vr_clamav
+CONF_GIT=$BASEDIR/configs/clamav/$COMPANY_clamav
 
 ##########################################################################################
 ## Info
