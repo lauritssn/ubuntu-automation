@@ -38,10 +38,10 @@ GROUP="www-data"
 id $USER > /dev/null 2>&1 || (adduser --disabled-password --gecos "" $USER > $LOGDIR/$LOGFILE 2>&1 || ( show_err "Create cronjobs user failed." ))
 
 usermod -g $GROUP $USER >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Changing $USER group to $GROUP failed." )
-show_grey "Group for $USER changed to $GROUP."
+show_yellow "Group for $USER changed to $GROUP."
 
 echo "$USER:$CRONJOBS_PASS" | chpasswd >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Changing cronjobs user password failed." )
-show_grey "$USER user password set to: `show_info "$CRONJOBS_PASS"`"
+show_yellow "$USER user password set to: `show_info "$CRONJOBS_PASS"`"
 
 ##########################################################################################
 ## Done

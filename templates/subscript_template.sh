@@ -23,17 +23,17 @@ show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFIL
 ##########################################################################################
 
 COMMAND_TO_BE_RUN > $LOGDIR/$LOGFILE 2>&1 || ( show_error "Installation of <something> failed. Please check logfile and fix error manually.")
-show_grey "Installation of <something> done."
+show_yellow "Installation of <something> done."
 
 OTHER_COMMAND_TO_BE_RUN >> $LOGDIR/$LOGFILE 2>&1 || ( show_error "Installation of <something-else> failed. Please check logfile and fix error manually."; exit 1 )
-show_grey "Installation of <something-else> done."
+show_yellow "Installation of <something-else> done."
 
 ##########################################################################################
 ## Backup and deploy default config
 ##########################################################################################
 
-cp -p $CONF_ORG $CONF_BACK && show_grey "Config file $CONF_ORG backed up to $CONF_BACK."
-cp $CONF_GIT $CONF_ORG && show_grey "Default <some-service> config file deployed."
+cp -p $CONF_ORG $CONF_BACK && show_yellow "Config file $CONF_ORG backed up to $CONF_BACK."
+cp $CONF_GIT $CONF_ORG && show_yellow "Default <some-service> config file deployed."
 
 ##########################################################################################
 ## DONE

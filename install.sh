@@ -91,9 +91,9 @@ ufw allow proto tcp from $SECURE_SUBNET to any port 22 # $SECURE_SUBNET_DESC to 
 ## Message/logging functions
 ##########################################################################################
 
-# Grey
-show_grey () {
-    echo $(tput bold)$(tput setaf 0) $@ $(tput sgr 0)
+# Yellow
+show_yellow () {
+    echo $(tput bold)$(tput setaf 4) $@ $(tput sgr 0)
 }
 # White
 show_norm () {
@@ -223,7 +223,7 @@ if [[ $DO_SET_TIMEZONE =~ [Yy]$ ]]
    then
       cp -p /usr/share/zoneinfo/$TIMEZONE /etc/localtime
       echo "${TIMEZONE}" > /etc/timezone 
-      show_grey "Timezone set to $TIMEZONE"
+      show_yellow "Timezone set to $TIMEZONE"
 fi
 
 printf "\n--------------------\n"

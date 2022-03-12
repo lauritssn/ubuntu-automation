@@ -38,7 +38,7 @@ fi
 ##########################################################################################
 
 # Grey
-show_grey () {
+show_yellow () {
     echo $(tput bold)$(tput setaf 0) $@ $(tput sgr 0)
 }
 # White
@@ -118,18 +118,18 @@ CONF2_BACK=$BACKUPDIR/$(basename $CONF2_ORG)_$DATE
 
 if [ -a $CONF1_ORG ]
    then
-      cp -p $CONF1_ORG $CONF1_BACK && show_grey "Config file $CONF1_ORG backed up to $CONF1_BACK."
+      cp -p $CONF1_ORG $CONF1_BACK && show_yellow "Config file $CONF1_ORG backed up to $CONF1_BACK."
       sed -i 's/REPORT_EMAIL=.*/REPORT_EMAIL="'$INFO_EMAIL_NEW'"/ig' $CONF1_ORG >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Replacing mail address in $CONF1_ORG failed. Please check logfile and fix error manually.")
-      show_grey "Mail address $INFO_EMAIL_NEW changed in $CONF1_ORG."
+      show_yellow "Mail address $INFO_EMAIL_NEW changed in $CONF1_ORG."
    else
       show_info "$CONF1_ORG doesn't exist. Nothing done."
 fi
 
 if [ -a $CONF2_ORG ]
    then
-      cp -p $CONF2_ORG $CONF2_BACK && show_grey "Config file $CONF2_ORG backed up to $CONF2_BACK."
+      cp -p $CONF2_ORG $CONF2_BACK && show_yellow "Config file $CONF2_ORG backed up to $CONF2_BACK."
       sed -i 's/MAIL-ON-WARNING=.*/MAIL-ON-WARNING="'$INFO_EMAIL_NEW'/ig' $CONF2_ORG >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Replacing mail address in $CONF2_ORG failed. Please check logfile and fix error manually.")
-      show_grey "Mail address $INFO_EMAIL_NEW changed in $CONF2_ORG."
+      show_yellow "Mail address $INFO_EMAIL_NEW changed in $CONF2_ORG."
    else
       show_info "$CONF2_ORG doesn't exist. Nothing done."
 fi
@@ -145,9 +145,9 @@ CONF3_BACK=$BACKUPDIR/$(basename $CONF3_ORG)_$DATE
 
 if [ -a $CONF3_ORG ]
    then
-      cp -p $CONF3_ORG $CONF3_BACK && show_grey "Config file $CONF3_ORG backed up to $CONF3_BACK."
+      cp -p $CONF3_ORG $CONF3_BACK && show_yellow "Config file $CONF3_ORG backed up to $CONF3_BACK."
       sed -i 's/email_addr=.*/email_addr="'$EMAIL_DOMAIN_NEW'"/ig' $CONF3_ORG >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Replacing mail address in $CONF3_ORG failed. Please check logfile and fix error manually.")
-      show_grey "Mail address $INFO_EMAIL_NEW changed in $CONF3_ORG."
+      show_yellow "Mail address $INFO_EMAIL_NEW changed in $CONF3_ORG."
    else
       show_info "$CONF3_ORG doesn't exist. Nothing done."
 fi
@@ -166,18 +166,18 @@ CONF5_BACK=$BACKUPDIR/$(basename $CONF5_ORG)_$DATE
 
 if [ -a $CONF4_ORG ]
    then
-      cp -p $CONF4_ORG $CONF4_BACK && show_grey "Config file $CONF4_ORG backed up to $CONF4_BACK."
+      cp -p $CONF4_ORG $CONF4_BACK && show_yellow "Config file $CONF4_ORG backed up to $CONF4_BACK."
       sed -i 's/destemail = .*/destemail = '$INFO_EMAIL_NEW'/ig' $CONF4_ORG >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Replacing mail address in $CONF4_ORG failed. Please check logfile and fix error manually.")
-      show_grey "Mail address $INFO_EMAIL_NEW changed in $CONF4_ORG."
+      show_yellow "Mail address $INFO_EMAIL_NEW changed in $CONF4_ORG."
    else
       show_info "$CONF4_ORG doesn't exist. Nothing done."
 fi
 
 if [ -a $CONF5_ORG ]
    then
-      cp -p $CONF5_ORG $CONF5_BACK && show_grey "Config file $CONF5_ORG backed up to $CONF5_BACK."
+      cp -p $CONF5_ORG $CONF5_BACK && show_yellow "Config file $CONF5_ORG backed up to $CONF5_BACK."
       sed -i 's/sender =.*/sender = '$EMAIL_DOMAIN_NEW'/ig' $CONF5_ORG >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Replacing domain in $CONF5_ORG failed. Please check logfile and fix error manually.")
-      show_grey "Sender domain $EMAIL_DOMAIN_NEW changed in $CONF5_ORG."
+      show_yellow "Sender domain $EMAIL_DOMAIN_NEW changed in $CONF5_ORG."
    else
       show_info "$CONF5_ORG doesn't exist. Nothing done."
 fi
@@ -193,11 +193,11 @@ CONF6_BACK=$BACKUPDIR/$(basename $CONF6_ORG)_$DATE
 
 if [ -a $CONF6_ORG ]
    then
-      cp -p $CONF6_ORG $CONF6_BACK && show_grey "Config file $CONF6_ORG backed up to $CONF6_BACK."
+      cp -p $CONF6_ORG $CONF6_BACK && show_yellow "Config file $CONF6_ORG backed up to $CONF6_BACK."
       sed -i 's/EMAIL=.*/EMAIL="'$INFO_EMAIL_NEW'"/ig' $CONF6_ORG >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Replacing mail address in $CONF6_ORG failed. Please check logfile and fix error manually.")
-      show_grey "Mail address $INFO_EMAIL_NEW changed in $CONF6_ORG."
+      show_yellow "Mail address $INFO_EMAIL_NEW changed in $CONF6_ORG."
       sed -i 's/EMAIL_FROM=.*/EMAIL_FROM="clamav@'$EMAIL_DOMAIN_NEW'"/ig' $CONF6_ORG >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Replacing domain in $CONF6_ORG failed. Please check logfile and fix error manually.")
-      show_grey "Domain $EMAIL_DOMAIN_NEW changed in $CONF6_ORG."
+      show_yellow "Domain $EMAIL_DOMAIN_NEW changed in $CONF6_ORG."
    else
       show_info "$CONF6_ORG doesn't exist. Nothing done."
 fi
@@ -213,9 +213,9 @@ CONF7_BACK=$BACKUPDIR/$(basename $CONF7_ORG)_$DATE
 
 if [ -a $CONF7_ORG ]
    then
-      cp -p $CONF7_ORG $CONF7_BACK && show_grey "Config file $CONF7_ORG backed up to $CONF7_BACK."
+      cp -p $CONF7_ORG $CONF7_BACK && show_yellow "Config file $CONF7_ORG backed up to $CONF7_BACK."
       sed -i 's/DOSEmailNotify.*/	DOSEmailNotify	'$INFO_EMAIL_NEW'/ig' $CONF7_ORG >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Replacing mail address in $CONF7_ORG failed. Please check logfile and fix error manually.")
-      show_grey "Mail address $INFO_EMAIL_NEW changed in $CONF7_ORG."
+      show_yellow "Mail address $INFO_EMAIL_NEW changed in $CONF7_ORG."
    else
       show_info "$CONF7_ORG doesn't exist. Nothing done."
 fi

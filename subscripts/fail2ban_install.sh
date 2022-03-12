@@ -37,7 +37,7 @@ show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFIL
 ## Install Fail2Ban
 ##########################################################################################
 apt-get --yes --force-yes install fail2ban >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Installation of fail2ban failed. Please check logfile and fix error manually.")
-show_grey "Installation of fail2ban done."
+show_yellow "Installation of fail2ban done."
 
 ##########################################################################################
 ## Copy Fail2Ban configs
@@ -45,18 +45,18 @@ show_grey "Installation of fail2ban done."
 
 if [ -a $CONF1_ORG ]
    then
-      cp -p $CONF1_ORG $CONF1_BACK && show_grey "Fail2Ban file $CONF1_ORG backed up to $CONF1_BACK."
-      cp $CONF1_GIT $CONF1_ORG && show_grey "Default Fail2Ban configuration deployed."
+      cp -p $CONF1_ORG $CONF1_BACK && show_yellow "Fail2Ban file $CONF1_ORG backed up to $CONF1_BACK."
+      cp $CONF1_GIT $CONF1_ORG && show_yellow "Default Fail2Ban configuration deployed."
    else
-      cp $CONF1_GIT $CONF1_ORG && show_grey "Default Fail2Ban configuration deployed."
+      cp $CONF1_GIT $CONF1_ORG && show_yellow "Default Fail2Ban configuration deployed."
 fi
 
 if [ -a $CONF2_ORG ]
    then
-      cp -p $CONF2_ORG $CONF2_BACK && show_grey "Fail2Ban file $CONF2_ORG backed up to $CONF2_BACK."
-      cp $CONF2_GIT $CONF2_ORG && show_grey "Default Fail2Ban sendmail configuration deployed."
+      cp -p $CONF2_ORG $CONF2_BACK && show_yellow "Fail2Ban file $CONF2_ORG backed up to $CONF2_BACK."
+      cp $CONF2_GIT $CONF2_ORG && show_yellow "Default Fail2Ban sendmail configuration deployed."
    else
-      cp $CONF2_GIT $CONF2_ORG && show_grey "Default Fail2Ban sendmail configuration deployed."
+      cp $CONF2_GIT $CONF2_ORG && show_yellow "Default Fail2Ban sendmail configuration deployed."
 fi
 
 ##########################################################################################
@@ -69,14 +69,14 @@ sed -i 's/EMAIL_DOMAIN/'${EMAIL_DOMAIN}'/ig' $CONF1_ORG
 sed -i 's/INFO_EMAIL/'${INFO_EMAIL}'/ig' $CONF2_ORG
 sed -i 's/EMAIL_DOMAIN/'${EMAIL_DOMAIN}'/ig' $CONF2_ORG
 
-show_grey "Email adresses reconfigured."
+show_yellow "Email adresses reconfigured."
 
 ##########################################################################################
 ## Restart Fail2Ban
 ##########################################################################################
 
 service fail2ban restart >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Restarting Fail2Ban failed. Please check logfile and fix error manually.")
-show_grey "Fail2Ban restarted."
+show_yellow "Fail2Ban restarted."
 
 ##########################################################################################
 ## Done

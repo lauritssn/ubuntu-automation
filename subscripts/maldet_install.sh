@@ -13,7 +13,7 @@ else
 fi
 
 LOGFILE=$SUBSCRIPT-$DATE.log
-MALDET_PKG="maldetect-1.4.2.tar.gz" # maldetect-current.tar.gz
+MALDET_PKG="maldetect-current.tar.gz" # maldetect-current.tar.gz
 
 
 ##########################################################################################
@@ -34,18 +34,18 @@ show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFIL
 
 cd /tmp  
 wget http://www.rfxn.com/downloads/$MALDET_PKG >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Download of maldet failed. Please check logfile and fix error manually.")
-show_grey "Maldet downloaded successfully."
+show_yellow "Maldet downloaded successfully."
 tar xfz $MALDET_PKG >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Extraction of maldet package failed. Please check logfile and fix error manually.")
-show_grey "Maldet package successfully extracted."
+show_yellow "Maldet package successfully extracted."
 cd maldetect-*
 ./install.sh >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Installation of maldet failed. Please check logfile and fix error manually.")
-show_grey "Maldet installed successfully."
+show_yellow "Maldet installed successfully."
 
 ##########################################################################################
 # Backup and deploy default config
 ##########################################################################################
 
-cp -p $CONF_ORG $CONF_BACK && show_grey "Config file $CONF_ORG backed up to $CONF_BACK."
+cp -p $CONF_ORG $CONF_BACK && show_yellow "Config file $CONF_ORG backed up to $CONF_BACK."
 
 ##########################################################################################
 # Change Maldet configuration
@@ -58,7 +58,7 @@ sed -i 's/quar_hits=.*/quar_hits=1/ig' $CONF_ORG
 sed -i 's/quar_clean=.*/quar_clean=1/ig' $CONF_ORG
 sed -i 's/quar_susp=.*/quar_susp=0/ig' $CONF_ORG
 sed -i 's/quar_susp_minuid=.*/quar_susp_minuid=500/ig' $CONF_ORG
-show_grey "Maldet configuration successfully customized."
+show_yellow "Maldet configuration successfully customized."
 
 ##########################################################################################
 ## Done

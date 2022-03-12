@@ -35,10 +35,10 @@ show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFIL
 
 if [ -a $CONF_ORG ]
    then
-      cp -p $CONF_ORG $CONF_BACK && show_grey "Sysctl file $CONF_ORG backed up to $CONF_BACK."
-      cp $CONF_GIT $CONF_ORG && show_grey "Default sysctl configuration deployed."
+      cp -p $CONF_ORG $CONF_BACK && show_yellow "Sysctl file $CONF_ORG backed up to $CONF_BACK."
+      cp $CONF_GIT $CONF_ORG && show_yellow "Default sysctl configuration deployed."
    else
-      cp $CONF_GIT $CONF_ORG && show_grey "Default sysctl configuration deployed."
+      cp $CONF_GIT $CONF_ORG && show_yellow "Default sysctl configuration deployed."
 fi
 
 ##########################################################################################
@@ -46,7 +46,7 @@ fi
 ##########################################################################################
 
 sysctl -p >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Sysctl restart failed. Please check logfile and fix error manually.")
-show_grey "Sysctl restarted."
+show_yellow "Sysctl restarted."
 
 ##########################################################################################
 ## Done

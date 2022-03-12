@@ -38,7 +38,7 @@ show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFIL
 ##########################################################################################
 
 apt-get --yes --force-yes install rkhunter mailutils >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "rkhunter installation failed. Please check logfile and fix error manually.")
-show_grey "rkhunter installation done."
+show_yellow "rkhunter installation done."
 
 ##########################################################################################
 ## Copy RKHunter configs
@@ -46,18 +46,18 @@ show_grey "rkhunter installation done."
 
 if [ -a $CONF1_ORG ]
    then
-      cp -p $CONF1_ORG $CONF1_BACK && show_grey "RKHunter file $CONF1_ORG backed up to $CONF1_BACK."
-      cp $CONF1_GIT $CONF1_ORG && show_grey "Default RKHunter configuration deployed."
+      cp -p $CONF1_ORG $CONF1_BACK && show_yellow "RKHunter file $CONF1_ORG backed up to $CONF1_BACK."
+      cp $CONF1_GIT $CONF1_ORG && show_yellow "Default RKHunter configuration deployed."
    else
-      cp $CONF1_GIT $CONF1_ORG && show_grey "Default RKHunter configuration deployed."
+      cp $CONF1_GIT $CONF1_ORG && show_yellow "Default RKHunter configuration deployed."
 fi
 
 if [ -a $CONF2_ORG ]
    then
-      cp -p $CONF2_ORG $CONF2_BACK && show_grey "RKHunter file $CONF2_ORG backed up to $CONF2_BACK."
-      cp $CONF2_GIT $CONF2_ORG && show_grey "Default RKHunter scan configuration deployed."
+      cp -p $CONF2_ORG $CONF2_BACK && show_yellow "RKHunter file $CONF2_ORG backed up to $CONF2_BACK."
+      cp $CONF2_GIT $CONF2_ORG && show_yellow "Default RKHunter scan configuration deployed."
    else
-      cp $CONF2_GIT $CONF2_ORG && show_grey "Default RKHunter scan configuration deployed."
+      cp $CONF2_GIT $CONF2_ORG && show_yellow "Default RKHunter scan configuration deployed."
 fi
 
 ##########################################################################################
@@ -74,9 +74,9 @@ sed -i 's/EMAIL_DOMAIN/'${EMAIL_DOMAIN}'/ig' $CONF2_ORG
 ## Update rkhunter - exit'ing disabled due to weird but OK exit codes from RKHunter
 ##########################################################################################
 
-rkhunter --update --skip-keypress >> $LOGDIR/$LOGFILE 2>&1 && show_grey "RKHunter updated."
-rkhunter --propupd --skip-keypress >> $LOGDIR/$LOGFILE 2>&1 && show_grey "RKHunter properties updated." 
-rkhunter --check --skip-keypress >> $LOGDIR/$LOGFILE 2>&1 || show_grey "RKHunter check done - check log file $LOGDIR/$LOGFILE."
+rkhunter --update --skip-keypress >> $LOGDIR/$LOGFILE 2>&1 && show_yellow "RKHunter updated."
+rkhunter --propupd --skip-keypress >> $LOGDIR/$LOGFILE 2>&1 && show_yellow "RKHunter properties updated."
+rkhunter --check --skip-keypress >> $LOGDIR/$LOGFILE 2>&1 || show_yellow "RKHunter check done - check log file $LOGDIR/$LOGFILE."
 
 ##########################################################################################
 ## Done

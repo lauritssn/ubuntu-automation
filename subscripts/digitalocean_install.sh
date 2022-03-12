@@ -34,7 +34,7 @@ show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFIL
 
 if [ -a $CONF_ORG ]
    then
-      cp -p $CONF_ORG $CONF_BACK && show_grey "Sysctl file $CONF_ORG backed up to $CONF_BACK."
+      cp -p $CONF_ORG $CONF_BACK && show_yellow "Sysctl file $CONF_ORG backed up to $CONF_BACK."
 fi
 
 
@@ -48,7 +48,7 @@ dd if=/dev/zero of=/var/tmp/swapfile2 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 
 mkswap -c -v1 /var/tmp/swapfile1 >> $LOGDIR/$LOGFILE 2>&1
 mkswap -c -v1 /var/tmp/swapfile2 >> $LOGDIR/$LOGFILE 2>&1
 
-show_grey "Swap files created"
+show_yellow "Swap files created"
 
 chmod 600 /var/tmp/swapfile1 >> $LOGDIR/$LOGFILE 2>&1
 chmod 600 /var/tmp/swapfile2 >> $LOGDIR/$LOGFILE 2>&1
@@ -56,34 +56,34 @@ chmod 600 /var/tmp/swapfile2 >> $LOGDIR/$LOGFILE 2>&1
 swapon /var/tmp/swapfile1 >> $LOGDIR/$LOGFILE 2>&1
 swapon /var/tmp/swapfile2 >> $LOGDIR/$LOGFILE 2>&1
 
-show_grey "Swap files enabled"
+show_yellow "Swap files enabled"
 
 ##########################################################################################
 ## Replace sysctl configuration for swap
 ##########################################################################################
 
 sed -i 's/#SWAP-REPLACE#//ig' $CONF_ORG >> $LOGDIR/$LOGFILE 2>&1 # Not done - Why not just replace the sysctl config from Git?
-show_grey "sysctl.conf swap customizations added."
+show_yellow "sysctl.conf swap customizations added."
 
-show_grey "Listing swap configuration:"
-show_grey "`swapon -s`"
+show_yellow "Listing swap configuration:"
+show_yellow "`swapon -s`"
 
-show_grey "Listing swap/memory usage:"
-show_grey "`free -m`"
+show_yellow "Listing swap/memory usage:"
+show_yellow "`free -m`"
 
 ##########################################################################################
 ## Replace sysctl configuration for Digital Ocean
 ##########################################################################################
 
 sed -i 's/#DO-REPLACE#//ig' $CONF_ORG >> $LOGDIR/$LOGFILE 2>&1 # Not done - Why not just replace the sysctl config from Git?
-show_grey "sysctl.conf Digital Ocean customizations added."
+show_yellow "sysctl.conf Digital Ocean customizations added."
 
 ##########################################################################################
 ## Restart sysctl
 ##########################################################################################
 
 sysctl -p >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Sysctl restart failed. Please check logfile and fix error manually.")
-show_grey "Sysctl restarted."
+show_yellow "Sysctl restarted."
 
 ##########################################################################################
 ## Done

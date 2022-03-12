@@ -32,7 +32,7 @@ show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFIL
 ## Copy fstab configuration
 ##########################################################################################
 
-cp -p $CONF_ORG $CONF_BACK && show_grey "Config file $CONF_ORG backed up to $CONF_BACK."
+cp -p $CONF_ORG $CONF_BACK && show_yellow "Config file $CONF_ORG backed up to $CONF_BACK."
 
 ##########################################################################################
 ## Check for secure shared memory and insert if not there
@@ -42,10 +42,10 @@ insertstring='tmpfs /run/shm tmpfs defaults,noexec,nosuid 0 0'
 searchstring=`echo $insertstring | sed 's/ //g'`
 
 if (sed -r 's/[ ]+//gi' $CONF_ORG | grep -q "${searchstring}") ; then
-	show_grey "$insertstring - already present"
+	show_yellow "$insertstring - already present"
 else
 	echo "${insertstring}" >> $CONF_ORG
-	show_grey "'${insertstring}' appended to $CONF_ORG"
+	show_yellow "'${insertstring}' appended to $CONF_ORG"
 fi	
 
 ##########################################################################################

@@ -37,7 +37,7 @@ fi
 ##########################################################################################
 
 # Grey
-show_grey () {
+show_yellow () {
     echo $(tput bold)$(tput setaf 0) $@ $(tput sgr 0)
 }
 # White
@@ -76,7 +76,7 @@ for CONFIG_FILE in "${CONFIG_FILES[@]}"
    do
       if [ -f "$CONFIG_FILE"_* ]
          then
-            show_grey "mv $CONFIG_FILE"_*" $BACKUPDIR"
+            show_yellow "mv $CONFIG_FILE"_*" $BACKUPDIR"
       fi
    done     
 
@@ -87,7 +87,7 @@ if [[ $DO_CONFIG_CLEANUP =~ ^[Yy]$ ]]
       do
          if [ -f "$CONFIG_FILE"_* ]
             then
-               show_grey `mv -v "$CONFIG_FILE"_* $BACKUPDIR`
+               show_yellow `mv -v "$CONFIG_FILE"_* $BACKUPDIR`
          fi
       done  
    else
