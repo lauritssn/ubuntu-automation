@@ -62,6 +62,11 @@ sed -i 's/quar_susp=.*/quar_susp=0/ig' $CONF_ORG
 sed -i 's/quar_susp_minuid=.*/quar_susp_minuid=500/ig' $CONF_ORG
 show_yellow "Maldet configuration successfully customized."
 
+## @TODO
+## Include the scanning of known temporary world-writable paths for
+ ## -a|--al and -r|--recent scan types.
+ #scan_tmpdir_paths="/tmp /var/tmp /dev/shm /var/fcgi_ipc"
+
 ##########################################################################################
 ## Done
 ##########################################################################################
