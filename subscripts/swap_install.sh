@@ -5,7 +5,7 @@
 ##########################################################################################
 
 DATE=`date +%Y-%m-%d_%H%M`
-SUBSCRIPT="digitalocean_install.sh"
+SUBSCRIPT="swap_install.sh"
 
 if [ -n "$LOGDIR" ]; then
     LOGDIR=$LOGDIR
@@ -76,7 +76,7 @@ show_yellow "`free -m`"
 ##########################################################################################
 
 sed -i 's/#DO-REPLACE#//ig' $CONF_ORG >> $LOGDIR/$LOGFILE 2>&1 # Not done - Why not just replace the sysctl config from Git?
-show_yellow "sysctl.conf Digital Ocean customizations added."
+show_yellow "sysctl.conf swap customizations added."
 
 ##########################################################################################
 ## Restart sysctl
@@ -89,4 +89,4 @@ show_yellow "Sysctl restarted."
 ## Done
 ##########################################################################################
 
-show_info "$SUBSCRIPT done. Please check $CONF_ORG manually for Digital Ocean Settings."
+show_info "$SUBSCRIPT done. Please check $CONF_ORG manually for swap settings."

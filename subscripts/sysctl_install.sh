@@ -52,6 +52,6 @@ show_yellow "Sysctl restarted."
 ## Done
 ##########################################################################################
 
-show_info "$SUBSCRIPT done. Please check $CONF_ORG manually for Digital Ocean Settings."
+show_info "$SUBSCRIPT done. Please check $CONF_ORG manually for swap settings."
 
 

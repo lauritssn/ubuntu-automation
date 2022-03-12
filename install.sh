@@ -61,7 +61,7 @@ export DO_MONITORIX_INSTALL=N
 export DO_NETDATA_INSTALL=N
 export DO_DOCKER_INSTALL=N
 export DO_UFW_INSTALL=N
-export DO_DIGITAL_OCEAN_INSTALL=N
+export DO_SWAP_INSTALL=N
 
 export UFW_ALLOW_PUBLIC_HTTP=N
 export UFW_ALLOW_PUBLIC_HTTPS=N
@@ -161,8 +161,8 @@ read -p "Do You want to update system (Y/N)?" -n 1 DO_SYSTEM_UPDATE; echo
 # General server settings install
 read -p "Do You want to install general server settings (Y/N)?" -n 1 DO_GENERAL_SERVER_SETTINGS; echo
 
-# Is this a Digital Ocean server install
-read -p "Is this server on Digital Ocean (Y/N)?" -n 1 DO_DIGITAL_OCEAN_INSTALL; echo
+# Swap install
+read -p "Do you want to install secure swap file (Y/N)?" -n 1 DO_SWAP_INSTALL; echo
 
 # Monitorix install
 read -p "Do You want to install Monitorix (Y/N)?" -n 1 DO_MONITORIX_INSTALL; echo
@@ -272,12 +272,12 @@ if [[ $DO_REDIS_INSTALL =~ [Yy]$ ]]
        show_warn "Redis will not be installed" 
 fi
 
-# Digital Ocean install
-if [[ $DO_DIGITAL_OCEAN_INSTALL =~ [Yy]$ ]]
+# Swap install
+if [[ $DO_SWAP_INSTALL =~ [Yy]$ ]]
    then
-       source $BASEDIR/subscripts/digitalocean_install.sh
+       source $BASEDIR/subscripts/swap_install.sh
    else
-       show_warn "Digital Ocean not selected."
+       show_warn "Swap not selected."
 fi
 
 printf "\n--------------------\n"
