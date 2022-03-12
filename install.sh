@@ -39,7 +39,7 @@ export DEBIAN_FRONTEND=noninteractive # Make apt-get install non-interactive
 # Create crondir if it doesn't exist
 if [ ! -d $CRONDIR ]
    then
-      mkdir $CRONDIR
+      mkdir -p $CRONDIR
 fi
 
 # Create automation-backup dir if it doesn't exist - also creates ($DEPLOYDIR)
