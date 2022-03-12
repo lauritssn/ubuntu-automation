@@ -38,7 +38,7 @@ show_yellow "Monitorix installed."
 
 # Create password for monitorix
 show_yellow "Create Monitorix password."
-apt-get  -yes install apache2-utils >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Monitorix apache2-utils installation failed. Please check logfile and fix error manually.")
+apt-get --yes install apache2-utils >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Monitorix apache2-utils installation failed. Please check logfile and fix error manually.")
 htpasswd -d -c -b /var/lib/monitorix/htpasswd monitorix "$MONITORIX_PASS"  >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Monitorix admin password installation failed. Please check logfile and fix error manually.")
 show_yellow "Monitorix password created."
 
