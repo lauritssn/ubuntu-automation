@@ -2,6 +2,6 @@
 
 SHELL=/bin/sh
 PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-30 02 * * * root /usr/local/bin/composer selfupdate > /tmp/composer.log
+30 02 * * * root /usr/local/bin/somecommand some_parameter > /tmp/some_log.log
 
 ## EOF

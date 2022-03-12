@@ -29,7 +29,7 @@ CONF_BACK=$BACKUPDIR/$(basename $CONF_ORG)_$DATE
 show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFILE."
 
 ##########################################################################################
-#Install Maldet from the newest source.
+## Install Maldet from the newest source.
 ##########################################################################################
 
 cd /tmp  

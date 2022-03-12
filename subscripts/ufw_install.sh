@@ -57,8 +57,6 @@ show_yellow "Contents of UFW script is shown below:"
 
 cat $CONF_ORG_1 $CONF_BACK_2
 
-#@todo need ufw enable in script
-
 ##########################################################################################
 ## Enable UFW
 ##########################################################################################

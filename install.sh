@@ -29,7 +29,6 @@ export BASEDIR=`pwd`
 export LOGDIR='/tmp'
 export DATE=`date +%Y-%m-%d_%H%M`
 export MONITORIX_PASS=`genpasswd`
-export ADMINISTRATOR_PASS=`genpasswd`
 export CRONJOBS_PASS=`genpasswd`
 export CRONDIR="/srv/$COMPANY/cronscripts"
 export DEPLOYDIR="/srv/$COMPANY/deploy"
@@ -63,15 +62,18 @@ export DO_DOCKER_INSTALL=N
 export DO_UFW_INSTALL=N
 export DO_SWAP_INSTALL=N
 
-export UFW_ALLOW_PUBLIC_HTTP=N
-export UFW_ALLOW_PUBLIC_HTTPS=N
-export UFW_ALLOW_POSTHOG=N
-export UFW_ALLOW_NETDATA=N
-export UFW_ALLOW_MONITORIX=N
+# @TODO - INSTALL PROCESS ACCOUNTING
+# @TODO - INSTALL RSYSLOG + POSTGRES DUMPER
+
+export UFW_ALLOW_PUBLIC_HTTP=Y
+export UFW_ALLOW_PUBLIC_HTTPS=Y
+export UFW_ALLOW_POSTHOG=Y
+export UFW_ALLOW_NETDATA=Y
+export UFW_ALLOW_MONITORIX=Y
 
 export TIMEZONE="Europe/Copenhagen"
-
-# export IP=`ifconfig eth0 | grep "inet addr"| cut -d ":" -f2 | cut -d " " -f1` ## NB Several IP Addresses!!!
+export NTP="dk.pool.ntp.org"
+export NTP_FALLBACK="pool.ntp.org"
 
 export EMAIL_DOMAIN="mydomain.com"
 export INFO_EMAIL="my.server.email@${EMAIL_DOMAIN}"
@@ -83,7 +85,9 @@ export SECURE_SUBNET_DESC="MY subnet"
 UFW_HEADER="#!/bin/bash
 # UFW_HEADER START
 ufw --force reset
-ufw allow proto tcp from $SECURE_SUBNET to any port 22 # $SECURE_SUBNET_DESC to SSH
+# ufw allow proto tcp from $SECURE_SUBNET to any port 22 # $SECURE_SUBNET_DESC to SSH
+ufw allow 22/tcp # SSH
+ufw allow 161/udp # SNMP
 # UFW_HEADER END
 "
 
@@ -141,6 +145,24 @@ read -p "Do You want to change timezone (default: $TIMEZONE) (Y/N)?" -n 1 DO_CHA
 if [[ $DO_CHANGE_TIMEZONE =~ [Yy]$ ]]
    then
       read -p "Enter timezone (i.e. 'Europe/Copenhagen'): " TIMEZONE
+fi
+
+# Change NTP?
+read -p "Do You want to change NTP server (default: $NTP) (Y/N)?" -n 1 DO_CHANGE_NTP; echo
+
+# Change NTP
+if [[ $DO_CHANGE_NTP =~ [Yy]$ ]]
+   then
+      read -p "Enter NTP server (i.e. 'dk.pool.ntp.org'): " NTP
+fi
+
+# Change NTP FALLBACK?
+read -p "Do You want to change NTP server fallback (default: $NTP_FALLBACK) (Y/N)?" -n 1 DO_CHANGE_NTP_FALLBACK; echo
+
+# Change NTP FALLBACK
+if [[ $DO_CHANGE_NTP_FALLBACK =~ [Yy]$ ]]
+   then
+      read -p "Enter NTP server fallback (i.e. 'dk.pool.ntp.org'): " NTP_FALLBACK
 fi
 
 read -p "Do You want to change e-mail domain? (default is $EMAIL_DOMAIN) (Y/N)?" -n 1 SET_EMAIL_DOMAIN; echo
@@ -241,8 +263,6 @@ printf "\n--------------------\n"
 # General server settings install
 if [[ $DO_GENERAL_SERVER_SETTINGS =~ [Yy]$ ]]
    then
-       source $BASEDIR/subscripts/administrator_install.sh
-       printf "\n--------------------\n"
        source $BASEDIR/subscripts/general_system_settings.sh
        printf "\n--------------------\n"
        source $BASEDIR/subscripts/secure_shared_memory_install.sh
@@ -257,20 +277,12 @@ if [[ $DO_GENERAL_SERVER_SETTINGS =~ [Yy]$ ]]
        printf "\n--------------------\n"
        source $BASEDIR/subscripts/fail2ban_install.sh
        printf "\n--------------------\n"
-       ## source $BASEDIR/subscripts/sendmail_install.sh # @TODO - Aliases could perhaps be used for e-mail forwarding as I asked about
+       source $BASEDIR/subscripts/sendmail_install.sh # @TODO - Aliases could perhaps be used for e-mail forwarding as I asked about
    else
       show_warn "General server settings will not be installed" 
 fi
 
 printf "\n--------------------\n"
-
-# Redis install
-if [[ $DO_REDIS_INSTALL =~ [Yy]$ ]]
-   then
-       source $BASEDIR/subscripts/redis_install.sh
-   else
-       show_warn "Redis will not be installed" 
-fi
 
 # Swap install
 if [[ $DO_SWAP_INSTALL =~ [Yy]$ ]]

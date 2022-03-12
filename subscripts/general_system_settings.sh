@@ -22,10 +22,26 @@ LOGFILE=$SUBSCRIPT-$DATE.log
 show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFILE."
 
 ##########################################################################################
-## Install NTPD
+## Install NTP
 ##########################################################################################
 
-apt-get --yes install ntp > $LOGDIR/$LOGFILE 2>&1 || ( show_err "Installation of NTP failed. Please check logfile and fix error manually.")
+show_yellow "Install NTP."
+
+CONF_NTP_ORG=/etc/systemd/timesyncd.conf
+CONF_NTP_BACK=$BACKUPDIR/$(basename $CONF_NTP_ORG)_$DATE
+
+apt --yes purge chrony > $LOGDIR/$LOGFILE 2>&1 || ( show_err "Removal of Chrony failed. Please check logfile and fix error manually.")
+
+show_yellow "Replace NTP config."
+sed -i 's/#NTP=/'NTP=${NTP}'/ig' $CONF_NTP_ORG
+sed -i 's/#FallbackNTP=ntp\.ubuntu\.com/'FallbackNTP=${NTP_FALLBACK}'/ig' $CONF_NTP_ORG
+
+show_yellow "Restart NTP services."
+systemctl restart systemd-timesyncd
+systemctl status systemd-timesyncd
+timedatectl
+timedatectl show-timesync
+
 show_yellow "NTP successfully installed."
 
 ## @TODO
