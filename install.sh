@@ -71,7 +71,7 @@ export UFW_ALLOW_MONITORIX=N
 
 export TIMEZONE="Europe/Copenhagen"
 
-export IP=`ifconfig eth0 | grep "inet addr"| cut -d ":" -f2 | cut -d " " -f1` ## NB Several IP Addresses!!!
+# export IP=`ifconfig eth0 | grep "inet addr"| cut -d ":" -f2 | cut -d " " -f1` ## NB Several IP Addresses!!!
 
 export EMAIL_DOMAIN="mydomain.com"
 export INFO_EMAIL="my.server.email@${EMAIL_DOMAIN}"
