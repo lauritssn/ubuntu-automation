@@ -177,7 +177,7 @@ fi
 read -p "Do You want to change e-mail address? (default is $INFO_EMAIL) (Y/N)?" -n 1 SET_EMAIL_ADDRESS; echo
 if [[ $SET_EMAIL_ADDRESS =~ [Yy]$ ]]
    then
-   read -p "Enter full e-mail address (xxx@domain.com): " EMAIL_ADDRESS
+   read -p "Enter the xxx part before @ in the e-mail address (xxx@domain.com): " INFO_EMAIL
 fi
 
 # System update

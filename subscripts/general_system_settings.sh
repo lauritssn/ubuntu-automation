@@ -66,6 +66,62 @@ show_yellow "NTP successfully installed."
 apt-get --yes install curl dos2unix perl libnet-ssleay-perl openssl libauthen-pam-perl libpam-runtime libio-pty-perl apt-show-versions git subversion gcc build-essential libc6-dev autoconf automake dkms linux-headers-$(uname -r) sqlite3 libsqlite3-dev >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Installation of extra packages failed. Please check logfile and fix error manually.")
 show_yellow "Extra packages successfully installed."
 
+# @TODO https://www.informaticar.net/security-hardening-ubuntu-20-04/
+##########################################################################################
+## Secure SSHD
+##########################################################################################
+# PermitRootLogin no
+# MaxAuthTries 5
+# Protocol 2
+# ClientAliveInterval 300
+# AllowUsers zeljko informaticar
+
+# service ssh restart
+
+# Logging
+#SyslogFacility AUTH
+#LogLevel INFO
+
+# Authentication:
+
+#LoginGraceTime 2m
+#PermitRootLogin prohibit-password
+
+
+##########################################################################################
+## Disable root account completely
+##########################################################################################
+
+passwd -l root
+
+# @TODO
+##########################################################################################
+## Enable Google Authenticator
+##########################################################################################
+
+#apt install libpam-google-authenticator
+#nano /etc/pam.d/sshd
+#Add following line: auth required pam_google_authenticator.so
+#
+#sudo nano /etc/ssh/sshd_config
+#Change to yes following line: ChallengeResponseAuthentication yes
+#for user type in terminal: google-authenticator
+#
+#Time-based tokens - answer: y
+#update .google_authenticator file - answer: y
+#Dissalow multiple uses – y
+#Permit shew of up to 4 minutes – n
+#Enable rate limiting – y
+#
+#service ssh restart
+
+# @TODO
+##########################################################################################
+## Enable Certificate Authentication
+##########################################################################################
+# https://www.informaticar.net/configure-passwordless-ssh-login-in-linux/
+
+
 ##########################################################################################
 ## Disable message of the day
 ##########################################################################################

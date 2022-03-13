@@ -52,7 +52,7 @@ show_yellow "Backup of active ufw rules can be found in $CONF_BACK_2."
 ## Inform about UFW script - can be changed later if we want to apply rules by default
 ##########################################################################################
 
-show_yellow "UFW script can now be run using: `show_info "sudo $CONF_ORG_1"`"
+show_yellow "UFW script can now be run using: `show_info "sudo bash $CONF_ORG_1"`"
 show_yellow "Contents of UFW script is shown below:"
 
 cat $CONF_ORG_1 $CONF_BACK_2
@@ -60,6 +60,9 @@ cat $CONF_ORG_1 $CONF_BACK_2
 ##########################################################################################
 ## Enable UFW
 ##########################################################################################
+
+ufw default allow outgoing
+ufw default deny incoming
 
 ufw --force enable >> $LOGDIR/$LOGFILE 2>&1 || ( show_yellow "ufw enable failed. Please check logfile and fix error manually.")
 show_yellow "ufw enabled."
