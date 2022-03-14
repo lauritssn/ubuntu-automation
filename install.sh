@@ -30,26 +30,7 @@ export LOGDIR='/tmp'
 export DATE=`date +%Y-%m-%d_%H%M`
 export MONITORIX_PASS=`genpasswd`
 export CRONJOBS_PASS=`genpasswd`
-export CRONDIR="/srv/$COMPANY/cronscripts"
-export DEPLOYDIR="/srv/$COMPANY/deploy"
-export BACKUPDIR="/srv/$COMPANY/deploy/automation-backup"
 export DEBIAN_FRONTEND=noninteractive # Make apt-get install non-interactive
-
-# Create crondir if it doesn't exist
-if [ ! -d $CRONDIR ]
-   then
-      mkdir -p $CRONDIR
-fi
-
-# Create automation-backup dir if it doesn't exist - also creates ($DEPLOYDIR)
-if [ ! -d $BACKUPDIR ]
-   then
-      mkdir -p $BACKUPDIR
-fi
-
-
-# Write to secret file
-echo $DATE >> $CRONDIR/pswd
 
 export DO_CHANGE_TIMEZONE=N 
 export DO_SYSTEM_UPDATE=N
@@ -141,23 +122,55 @@ fi
 # Change company name (folder under /srv/mycompany/
 read -p "Enter company name (i.e. 'mycompany'): " COMPANY
 
-# Change timezone?
-read -p "Do You want to change timezone (default: $TIMEZONE) (Y/N)?" -n 1 DO_CHANGE_TIMEZONE; echo
+##########################################################################################
+## Set variables from input
+##########################################################################################
 
-# Change timezone
-if [[ $DO_CHANGE_TIMEZONE =~ [Yy]$ ]]
+export CRONDIR="/srv/$COMPANY/cronscripts"
+export DEPLOYDIR="/srv/$COMPANY/deploy"
+export BACKUPDIR="/srv/$COMPANY/deploy/automation-backup"
+
+# Create crondir if it doesn't exist
+if [ ! -d $CRONDIR ]
    then
-      read -p "Enter timezone (i.e. 'Europe/Copenhagen'): " TIMEZONE
+      mkdir -p $CRONDIR
 fi
+
+# Create automation-backup dir if it doesn't exist - also creates ($DEPLOYDIR)
+if [ ! -d $BACKUPDIR ]
+   then
+      mkdir -p $BACKUPDIR
+fi
+
+
+# Write to secret file
+echo $DATE >> $CRONDIR/pswd
+
+##########################################################################################
+## Get input
+##########################################################################################
+
+# Change timezone?
+while true; do
+    read -p "Do You want to change timezone (default: $TIMEZONE) (Y/N)? " yn
+    case $yn in
+        [Yy]* ) DO_CHANGE_TIMEZONE=Y; read -p "Enter timezone (i.e. 'Europe/Copenhagen'): " TIMEZONE; break;;
+        [Nn]* ) DO_CHANGE_TIMEZONE=N;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+
 
 # Change NTP?
-read -p "Do You want to change NTP server (default: $NTP) (Y/N)?" -n 1 DO_CHANGE_NTP; echo
+while true; do
+    read -p "Do You want to change NTP server (default: $NTP) (Y/N)? " yn
+    case $yn in
+        [Yy]* ) DO_CHANGE_NTP=Y; read -p "Enter NTP server (i.e. 'dk.pool.ntp.org'): " NTP; break;;
+        [Nn]* ) DO_CHANGE_NTP=N;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
 
-# Change NTP
-if [[ $DO_CHANGE_NTP =~ [Yy]$ ]]
-   then
-      read -p "Enter NTP server (i.e. 'dk.pool.ntp.org'): " NTP
-fi
 
 # Change NTP FALLBACK?
 read -p "Do You want to change NTP server fallback (default: $NTP_FALLBACK) (Y/N)?" -n 1 DO_CHANGE_NTP_FALLBACK; echo
