@@ -161,6 +161,7 @@ while true; do
 done
 
 echo "DO_CHANGE_TIMEZONE: "$DO_CHANGE_TIMEZONE
+echo "TIMEZONE: "$TIMEZONE
 
 # Change NTP?
 while true; do
