@@ -44,17 +44,49 @@ fi
 
 dd if=/dev/zero of=/var/tmp/swapfile1 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
 dd if=/dev/zero of=/var/tmp/swapfile2 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
+dd if=/dev/zero of=/var/tmp/swapfile3 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
+dd if=/dev/zero of=/var/tmp/swapfile4 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
+dd if=/dev/zero of=/var/tmp/swapfile5 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
+dd if=/dev/zero of=/var/tmp/swapfile6 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
+dd if=/dev/zero of=/var/tmp/swapfile7 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
+dd if=/dev/zero of=/var/tmp/swapfile8 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
+dd if=/dev/zero of=/var/tmp/swapfile9 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
+dd if=/dev/zero of=/var/tmp/swapfile10 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
 
 mkswap -c -v1 /var/tmp/swapfile1 >> $LOGDIR/$LOGFILE 2>&1
 mkswap -c -v1 /var/tmp/swapfile2 >> $LOGDIR/$LOGFILE 2>&1
+mkswap -c -v1 /var/tmp/swapfile3 >> $LOGDIR/$LOGFILE 2>&1
+mkswap -c -v1 /var/tmp/swapfile4 >> $LOGDIR/$LOGFILE 2>&1
+mkswap -c -v1 /var/tmp/swapfile5 >> $LOGDIR/$LOGFILE 2>&1
+mkswap -c -v1 /var/tmp/swapfile6 >> $LOGDIR/$LOGFILE 2>&1
+mkswap -c -v1 /var/tmp/swapfile7 >> $LOGDIR/$LOGFILE 2>&1
+mkswap -c -v1 /var/tmp/swapfile8 >> $LOGDIR/$LOGFILE 2>&1
+mkswap -c -v1 /var/tmp/swapfile9 >> $LOGDIR/$LOGFILE 2>&1
+mkswap -c -v1 /var/tmp/swapfile10 >> $LOGDIR/$LOGFILE 2>&1
 
 show_yellow "Swap files created"
 
 chmod 600 /var/tmp/swapfile1 >> $LOGDIR/$LOGFILE 2>&1
 chmod 600 /var/tmp/swapfile2 >> $LOGDIR/$LOGFILE 2>&1
+chmod 600 /var/tmp/swapfile3 >> $LOGDIR/$LOGFILE 2>&1
+chmod 600 /var/tmp/swapfile4 >> $LOGDIR/$LOGFILE 2>&1
+chmod 600 /var/tmp/swapfile5 >> $LOGDIR/$LOGFILE 2>&1
+chmod 600 /var/tmp/swapfile6 >> $LOGDIR/$LOGFILE 2>&1
+chmod 600 /var/tmp/swapfile7 >> $LOGDIR/$LOGFILE 2>&1
+chmod 600 /var/tmp/swapfile8 >> $LOGDIR/$LOGFILE 2>&1
+chmod 600 /var/tmp/swapfile9 >> $LOGDIR/$LOGFILE 2>&1
+chmod 600 /var/tmp/swapfile10 >> $LOGDIR/$LOGFILE 2>&1
 
 swapon /var/tmp/swapfile1 >> $LOGDIR/$LOGFILE 2>&1
 swapon /var/tmp/swapfile2 >> $LOGDIR/$LOGFILE 2>&1
+swapon /var/tmp/swapfile3 >> $LOGDIR/$LOGFILE 2>&1
+swapon /var/tmp/swapfile4 >> $LOGDIR/$LOGFILE 2>&1
+swapon /var/tmp/swapfile5 >> $LOGDIR/$LOGFILE 2>&1
+swapon /var/tmp/swapfile6 >> $LOGDIR/$LOGFILE 2>&1
+swapon /var/tmp/swapfile7 >> $LOGDIR/$LOGFILE 2>&1
+swapon /var/tmp/swapfile8 >> $LOGDIR/$LOGFILE 2>&1
+swapon /var/tmp/swapfile9 >> $LOGDIR/$LOGFILE 2>&1
+swapon /var/tmp/swapfile10 >> $LOGDIR/$LOGFILE 2>&1
 
 show_yellow "Swap files enabled"
 
