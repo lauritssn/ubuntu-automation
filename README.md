@@ -1,5 +1,5 @@
 # Ubuntu Automation
-This project contains a series of scripts that allow you to automate the installation of an Ubuntu 14.04 server. It is simpler to maintain than say Puppet or Chef - and is ideal when you are working with small numers of server installations. It automatically hardens Apache and installs antivirus and other protective measures.
+This project contains a series of scripts that allow you to automate the installation of an Ubuntu 20.04 server. It is simpler to maintain than say Puppet or Chef - and is ideal when you are working with small numers of server installations. It automatically hardens Apache and installs antivirus and other protective measures.
 
 ## 
 
