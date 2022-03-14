@@ -167,57 +167,145 @@ echo "TIMEZONE: "$TIMEZONE
 while true; do
     read -p "Do You want to change NTP server (default: $NTP) (Y/N)? " yn
     case $yn in
-        [Yy]* ) DO_CHANGE_NTP=Y; read -p "Enter NTP server (i.e. 'dk.pool.ntp.org'): " NTP; break;;
-        [Nn]* ) DO_CHANGE_NTP=N;;
+        [Yy]* ) DO_CHANGE_NTP=Y && read -p "Enter NTP server fallback (i.e. 'dk.pool.ntp.org'): " NTP; break;;
+        [Nn]* ) DO_CHANGE_NTP=N; break;;
         * ) echo "Please answer yes or no.";;
     esac
 done
 
+echo "DO_CHANGE_NTP: "$DO_CHANGE_NTP
+echo "NTP: "$NTP
 
 # Change NTP FALLBACK?
-read -p "Do You want to change NTP server fallback (default: $NTP_FALLBACK) (Y/N)?" -n 1 DO_CHANGE_NTP_FALLBACK; echo
+while true; do
+    read -p "Do You want to change NTP server fallback (default: $NTP_FALLBACK) (Y/N)? " yn
+    case $yn in
+        [Yy]* ) DO_CHANGE_NTP=Y && read -p "Enter NTP server fallback (i.e. 'pool.ntp.org'): " NTP_FALLBACK; break;;
+        [Nn]* ) DO_CHANGE_NTP=N; break;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
 
-# Change NTP FALLBACK
-if [[ $DO_CHANGE_NTP_FALLBACK =~ [Yy]$ ]]
-   then
-      read -p "Enter NTP server fallback (i.e. 'dk.pool.ntp.org'): " NTP_FALLBACK
-fi
+echo "DO_CHANGE_NTP_FALLBACK: "$DO_CHANGE_NTP_NTP_FALLBACK
+echo "NTP_FALLBACK: "$NTP_FALLBACK
 
-read -p "Do You want to change e-mail domain? (default is $EMAIL_DOMAIN) (Y/N)?" -n 1 SET_EMAIL_DOMAIN; echo
-if [[ $SET_EMAIL_DOMAIN =~ [Yy]$ ]]
-   then
-   read -p "Enter e-mail domain (only domain part of e-mail address): " EMAIL_DOMAIN
-fi
 
-read -p "Do You want to change e-mail address? (default is $INFO_EMAIL) (Y/N)?" -n 1 SET_EMAIL_ADDRESS; echo
-if [[ $SET_EMAIL_ADDRESS =~ [Yy]$ ]]
-   then
-   read -p "Enter the xxx part before @ in the e-mail address (xxx@domain.com): " INFO_EMAIL
-fi
+# Change e-mail domain
+while true; do
+    read -p "Do You want to change e-mail domain? (default is $EMAIL_DOMAIN) (Y/N)? " yn
+    case $yn in
+        [Yy]* ) SET_EMAIL_DOMAIN=Y && read -p "Enter e-mail domain (only domain part of e-mail address): " EMAIL_DOMAIN; break;;
+        [Nn]* ) SET_EMAIL_DOMAIN=N; break;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+
+echo "SET_EMAIL_DOMAIN: "$SET_EMAIL_DOMAIN
+echo "EMAIL_DOMAIN: "$EMAIL_DOMAIN
+
+
+# Change e-mail alias
+while true; do
+    read -p "Do You want to change e-mail address? (default is $INFO_EMAIL) (Y/N)? " yn
+    case $yn in
+        [Yy]* ) SET_EMAIL_DOMAIN=Y && read -p "Enter the xxx part before @ in the e-mail address (xxx@domain.com): " INFO_EMAIL; break;;
+        [Nn]* ) SET_EMAIL_DOMAIN=N; break;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+
+echo "SET_EMAIL_ADDRESS: "$SET_EMAIL_ADDRESS
+echo "INFO_EMAIL: "$INFO_EMAIL
+
 
 # System update
-read -p "Do You want to update system (Y/N)?" -n 1 DO_SYSTEM_UPDATE; echo
+while true; do
+    read -p "Do You want to update system (Y/N)? " yn
+    case $yn in
+        [Yy]* ) DO_SYSTEM_UPDATE=Y; break;;
+        [Nn]* ) DO_SYSTEM_UPDATE=N; break;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+
+echo "DO_SYSTEM_UPDATE: "$DO_SYSTEM_UPDATE
 
 # General server settings install
-read -p "Do You want to install general server settings (Y/N)?" -n 1 DO_GENERAL_SERVER_SETTINGS; echo
+while true; do
+    read -p "Do You want to install general server settings (Y/N)? " yn
+    case $yn in
+        [Yy]* ) DO_GENERAL_SERVER_SETTINGS=Y; break;;
+        [Nn]* ) DO_GENERAL_SERVER_SETTINGS=N; break;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+
+echo "DO_GENERAL_SERVER_SETTINGS: "$DO_GENERAL_SERVER_SETTINGS
 
 # Swap install
-read -p "Do you want to install secure swap file (Y/N)?" -n 1 DO_SWAP_INSTALL; echo
+while true; do
+    read -p "Do you want to install secure swap file (Y/N)? " yn
+    case $yn in
+        [Yy]* ) DO_SWAP_INSTALL=Y; break;;
+        [Nn]* ) DO_SWAP_INSTALL=N; break;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+
+echo "DO_SWAP_INSTALL: "$DO_SWAP_INSTALL
 
 # Monitorix install
-read -p "Do You want to install Monitorix (Y/N)?" -n 1 DO_MONITORIX_INSTALL; echo
+while true; do
+    read -p "Do You want to install Monitorix (Y/N)? " yn
+    case $yn in
+        [Yy]* ) DO_MONITORIX_INSTALL=Y; break;;
+        [Nn]* ) DO_MONITORIX_INSTALL=N; break;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+
+echo "DO_MONITORIX_INSTALL: "$DO_MONITORIX_INSTALL
 
 # Netdata install
-read -p "Do You want to install Netdata (Y/N)?" -n 1 DO_NETDATA_INSTALL; echo
+while true; do
+    read -p "Do You want to install Netdata (Y/N)? " yn
+    case $yn in
+        [Yy]* ) DO_NETDATA_INSTALL=Y; break;;
+        [Nn]* ) DO_NETDATA_INSTALL=N; break;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+
+echo "DO_NETDATA_INSTALL: "$DO_NETDATA_INSTALL
 
 # Docker install
-read -p "Do You want to install Docker (Y/N)?" -n 1 DO_DOCKER_INSTALL; echo
+while true; do
+    read -p "Do You want to install Docker (Y/N)? " yn
+    case $yn in
+        [Yy]* ) DO_DOCKER_INSTALL=Y; break;;
+        [Nn]* ) DO_DOCKER_INSTALL=N; break;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+
+echo "DO_DOCKER_INSTALL: "$DO_DOCKER_INSTALL
+
 
 # UFW install
-read -p "Do You want to install UFW (Y/N)?" -n 1 DO_UFW_INSTALL; echo
+while true; do
+    read -p "Do You want to install UFW (Y/N)? " yn
+    case $yn in
+        [Yy]* ) DO_UFW_INSTALL=Y; break;;
+        [Nn]* ) DO_UFW_INSTALL=N; break;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+
+echo "DO_UFW_INSTALL: "$DO_UFW_INSTALL
+
 
 # Ask for UFW port openings
-if [[ $DO_APACHE_PHP_MC_INSTALL =~ [Yy]$ && $DO_UFW_INSTALL =~ [Yy]$ ]]
+if [[ $DO_UFW_INSTALL =~ [Yy]$ ]]
    then
       read -p "Do You want to allow port 80 (http) to World (Y/N)?" -n 1 UFW_ALLOW_PUBLIC_HTTP; echo
       read -p "Do You want to allow port 443 (https) to World (Y/N)?" -n 1 UFW_ALLOW_PUBLIC_HTTPS; echo
