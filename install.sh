@@ -59,18 +59,8 @@ export NTP_FALLBACK="pool.ntp.org"
 export EMAIL_DOMAIN="mydomain.com"
 export INFO_EMAIL="my.server.email@${EMAIL_DOMAIN}"
 
-export SECURE_SUBNET="MYIPRANGE/28"
+export SECURE_SUBNET="MYIPRANGE/32"
 export SECURE_SUBNET_DESC="MY subnet"
-
-# Build UFW_HEADER
-UFW_HEADER="#!/bin/bash
-# UFW_HEADER START
-ufw --force reset
-# ufw allow proto tcp from $SECURE_SUBNET to any port 22 # $SECURE_SUBNET_DESC to SSH
-ufw allow 22/tcp # SSH
-ufw allow 161/udp # SNMP
-# UFW_HEADER END
-"
 
 ##########################################################################################
 ## Message/logging functions
@@ -307,6 +297,9 @@ echo "DO_UFW_INSTALL: "$DO_UFW_INSTALL
 # Ask for UFW port openings
 if [[ $DO_UFW_INSTALL =~ [Yy]$ ]]
    then
+      read -p "Enter CIDR IP range for SECURE_SUBNET: " SECURE_SUBNET; echo
+      read -p "Enter CIDR IP range description for SECURE_SUBNET_DESC: " SECURE_SUBNET_DESC; echo
+      read -p "Enter e-mail domain (only domain part of e-mail address): " EMAIL_DOMAIN; echo
       read -p "Do You want to allow port 80 (http) to World (Y/N)?" -n 1 UFW_ALLOW_PUBLIC_HTTP; echo
       read -p "Do You want to allow port 443 (https) to World (Y/N)?" -n 1 UFW_ALLOW_PUBLIC_HTTPS; echo
       read -p "Do You want to allow port 8443 (Posthog) to World (Y/N)?" -n 1 UFW_ALLOW_POSTHOG; echo
@@ -317,6 +310,16 @@ fi
 ##########################################################################################
 ## Prepare ufw.sh
 ##########################################################################################
+
+# Build UFW_HEADER
+UFW_HEADER="#!/bin/bash
+# UFW_HEADER START
+ufw --force reset
+# ufw allow proto tcp from $SECURE_SUBNET to any port 22 # $SECURE_SUBNET_DESC to SSH
+ufw allow 22/tcp # SSH
+ufw allow 161/udp # SNMP
+# UFW_HEADER END
+"
 
 if [[ $DO_UFW_INSTALL =~ [Yy]$ ]]
    then
