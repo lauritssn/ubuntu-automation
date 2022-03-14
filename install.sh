@@ -154,13 +154,13 @@ echo $DATE >> $CRONDIR/pswd
 while true; do
     read -p "Do You want to change timezone (default: $TIMEZONE) (Y/N)? " yn
     case $yn in
-        [Yy]* ) DO_CHANGE_TIMEZONE=Y & read -p "Enter timezone (i.e. 'Europe/Copenhagen'): " TIMEZONE; break;;
+        [Yy]* ) DO_CHANGE_TIMEZONE=Y && read -p "Enter timezone (i.e. 'Europe/Copenhagen'): " TIMEZONE; break;;
         [Nn]* ) DO_CHANGE_TIMEZONE=N;;
         * ) echo "Please answer yes or no.";;
     esac
 done
 
-echo "DO_CHANGE_TIMEZONE: " $DO_CHANGE_TIMEZONE
+echo "DO_CHANGE_TIMEZONE: "$DO_CHANGE_TIMEZONE
 
 # Change NTP?
 while true; do
