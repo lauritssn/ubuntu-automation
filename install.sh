@@ -24,7 +24,7 @@ genpasswd() {
 ## Define variables with default variables
 ##########################################################################################
 
-export COMPANY=some_name
+export COMPANY=mycompany
 export BASEDIR=`pwd`
 export LOGDIR='/tmp'
 export DATE=`date +%Y-%m-%d_%H%M`
@@ -111,6 +111,7 @@ fi
 
 # Change company name (folder under /srv/mycompany/
 read -p "Enter company name (i.e. 'mycompany'): " COMPANY
+echo "COMPANY: "$COMPANY
 
 ##########################################################################################
 ## Set variables from input
