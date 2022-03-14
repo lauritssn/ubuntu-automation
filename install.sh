@@ -155,7 +155,7 @@ while true; do
     read -p "Do You want to change timezone (default: $TIMEZONE) (Y/N)? " yn
     case $yn in
         [Yy]* ) DO_CHANGE_TIMEZONE=Y && read -p "Enter timezone (i.e. 'Europe/Copenhagen'): " TIMEZONE; break;;
-        [Nn]* ) DO_CHANGE_TIMEZONE=N;;
+        [Nn]* ) DO_CHANGE_TIMEZONE=N; break;;
         * ) echo "Please answer yes or no.";;
     esac
 done
