@@ -93,17 +93,19 @@ if [ -a $CONF_SSH_ORG ]
       cp -p $CONF_SSH_ORG $CONF_SSH_BACK && show_yellow "SSH conf file $CONF_SSH_ORG backed up to $CONF_SSH_BACK."
 fi
 
-sed -i 's/^PermitRootLogin.*/PermitRootLogin no/' $CONF_SSH_ORG
-sed -i 's/^MaxAuthTries.*/MaxAuthTries 5/' $CONF_SSH_ORG
-sed -i 's/^Protocol.*/Protocol 2/' $CONF_SSH_ORG
-sed -i 's/^ClientAliveInterval.*/ClientAliveInterval 300/' $CONF_SSH_ORG
+sed -i 's/^#MaxAuthTries.*/MaxAuthTries 5/' $CONF_SSH_ORG
+sed -i 's/^#ClientAliveInterval.*/ClientAliveInterval 300/' $CONF_SSH_ORG
 
-sed -i 's/^LoginGraceTime.*/LoginGraceTime 2m/' $CONF_SSH_ORG
-sed -i 's/^PermitRootLogin.*/PermitRootLogin prohibit-password/' $CONF_SSH_ORG
+sed -i 's/^#LoginGraceTime.*/LoginGraceTime 2m/' $CONF_SSH_ORG
 
-sed -i 's/^SyslogFacility.*/SyslogFacility AUTH/' $CONF_SSH_ORG
-sed -i 's/^LogLevel.*/LogLevel INFO/' $CONF_SSH_ORG
-sed -i 's/^PermitRootLogin.*/PermitRootLogin prohibit-password/' $CONF_SSH_ORG
+sed -i 's/^#SyslogFacility.*/SyslogFacility AUTH/' $CONF_SSH_ORG
+sed -i 's/^#LogLevel.*/LogLevel INFO/' $CONF_SSH_ORG
+
+sed -i 's/^#PermitRootLogin.*/PermitRootLogin no/' $CONF_SSH_ORG
+# sed -i 's/^#PermitRootLogin.*/PermitRootLogin prohibit-password/' $CONF_SSH_ORG
+
+## @todo
+## sed -i 's/^Protocol.*/Protocol 2/' $CONF_SSH_ORG
 
 # AllowUsers some_user1 some_user2
 
