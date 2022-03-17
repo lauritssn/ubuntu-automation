@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# https://linuxize.com/post/how-to-add-swap-space-on-ubuntu-20-04/
+
 ##########################################################################################
 ## Set variables
 ##########################################################################################
@@ -41,51 +43,65 @@ fi
 ##########################################################################################
 ## Install Swap
 ##########################################################################################
+show_yellow "Creating 10 swap filed of 1 Gb."
 
-dd if=/dev/zero of=/var/tmp/swapfile1 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
-dd if=/dev/zero of=/var/tmp/swapfile2 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
-dd if=/dev/zero of=/var/tmp/swapfile3 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
-dd if=/dev/zero of=/var/tmp/swapfile4 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
-dd if=/dev/zero of=/var/tmp/swapfile5 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
-dd if=/dev/zero of=/var/tmp/swapfile6 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
-dd if=/dev/zero of=/var/tmp/swapfile7 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
-dd if=/dev/zero of=/var/tmp/swapfile8 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
-dd if=/dev/zero of=/var/tmp/swapfile9 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
+#SWAP_FILE_SIZE_GB=1
+#SWAP_FILE_SIZE=((SWAP_FILE_SIZE_GB*1048576))
+
+##!/bin/bash
+#COUNTER=0
+#while [  $COUNTER -lt 10 ]; do
+#   echo The counter is $COUNTER
+#   let COUNTER=COUNTER+1
+#done
+
+
+dd if=/dev/zero of=/var/tmp/swapfile01 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
+dd if=/dev/zero of=/var/tmp/swapfile02 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
+dd if=/dev/zero of=/var/tmp/swapfile03 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
+dd if=/dev/zero of=/var/tmp/swapfile04 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
+dd if=/dev/zero of=/var/tmp/swapfile05 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
+dd if=/dev/zero of=/var/tmp/swapfile06 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
+dd if=/dev/zero of=/var/tmp/swapfile07 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
+dd if=/dev/zero of=/var/tmp/swapfile08 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
+dd if=/dev/zero of=/var/tmp/swapfile09 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
 dd if=/dev/zero of=/var/tmp/swapfile10 bs=1024 count=1048576 >> $LOGDIR/$LOGFILE 2>&1
 
-mkswap -c -v1 /var/tmp/swapfile1 >> $LOGDIR/$LOGFILE 2>&1
-mkswap -c -v1 /var/tmp/swapfile2 >> $LOGDIR/$LOGFILE 2>&1
-mkswap -c -v1 /var/tmp/swapfile3 >> $LOGDIR/$LOGFILE 2>&1
-mkswap -c -v1 /var/tmp/swapfile4 >> $LOGDIR/$LOGFILE 2>&1
-mkswap -c -v1 /var/tmp/swapfile5 >> $LOGDIR/$LOGFILE 2>&1
-mkswap -c -v1 /var/tmp/swapfile6 >> $LOGDIR/$LOGFILE 2>&1
-mkswap -c -v1 /var/tmp/swapfile7 >> $LOGDIR/$LOGFILE 2>&1
-mkswap -c -v1 /var/tmp/swapfile8 >> $LOGDIR/$LOGFILE 2>&1
-mkswap -c -v1 /var/tmp/swapfile9 >> $LOGDIR/$LOGFILE 2>&1
+mkswap -c -v1 /var/tmp/swapfile01 >> $LOGDIR/$LOGFILE 2>&1
+mkswap -c -v1 /var/tmp/swapfile02 >> $LOGDIR/$LOGFILE 2>&1
+mkswap -c -v1 /var/tmp/swapfile03 >> $LOGDIR/$LOGFILE 2>&1
+mkswap -c -v1 /var/tmp/swapfile04 >> $LOGDIR/$LOGFILE 2>&1
+mkswap -c -v1 /var/tmp/swapfile05 >> $LOGDIR/$LOGFILE 2>&1
+mkswap -c -v1 /var/tmp/swapfile06 >> $LOGDIR/$LOGFILE 2>&1
+mkswap -c -v1 /var/tmp/swapfile07 >> $LOGDIR/$LOGFILE 2>&1
+mkswap -c -v1 /var/tmp/swapfile08 >> $LOGDIR/$LOGFILE 2>&1
+mkswap -c -v1 /var/tmp/swapfile09 >> $LOGDIR/$LOGFILE 2>&1
 mkswap -c -v1 /var/tmp/swapfile10 >> $LOGDIR/$LOGFILE 2>&1
 
 show_yellow "Swap files created"
 
-chmod 600 /var/tmp/swapfile1 >> $LOGDIR/$LOGFILE 2>&1
-chmod 600 /var/tmp/swapfile2 >> $LOGDIR/$LOGFILE 2>&1
-chmod 600 /var/tmp/swapfile3 >> $LOGDIR/$LOGFILE 2>&1
-chmod 600 /var/tmp/swapfile4 >> $LOGDIR/$LOGFILE 2>&1
-chmod 600 /var/tmp/swapfile5 >> $LOGDIR/$LOGFILE 2>&1
-chmod 600 /var/tmp/swapfile6 >> $LOGDIR/$LOGFILE 2>&1
-chmod 600 /var/tmp/swapfile7 >> $LOGDIR/$LOGFILE 2>&1
-chmod 600 /var/tmp/swapfile8 >> $LOGDIR/$LOGFILE 2>&1
-chmod 600 /var/tmp/swapfile9 >> $LOGDIR/$LOGFILE 2>&1
+show_yellow "Enable swap on files."
+
+chmod 600 /var/tmp/swapfile01 >> $LOGDIR/$LOGFILE 2>&1
+chmod 600 /var/tmp/swapfile02 >> $LOGDIR/$LOGFILE 2>&1
+chmod 600 /var/tmp/swapfile03 >> $LOGDIR/$LOGFILE 2>&1
+chmod 600 /var/tmp/swapfile04 >> $LOGDIR/$LOGFILE 2>&1
+chmod 600 /var/tmp/swapfile05 >> $LOGDIR/$LOGFILE 2>&1
+chmod 600 /var/tmp/swapfile06 >> $LOGDIR/$LOGFILE 2>&1
+chmod 600 /var/tmp/swapfile07 >> $LOGDIR/$LOGFILE 2>&1
+chmod 600 /var/tmp/swapfile08 >> $LOGDIR/$LOGFILE 2>&1
+chmod 600 /var/tmp/swapfile09 >> $LOGDIR/$LOGFILE 2>&1
 chmod 600 /var/tmp/swapfile10 >> $LOGDIR/$LOGFILE 2>&1
 
-swapon /var/tmp/swapfile1 >> $LOGDIR/$LOGFILE 2>&1
-swapon /var/tmp/swapfile2 >> $LOGDIR/$LOGFILE 2>&1
-swapon /var/tmp/swapfile3 >> $LOGDIR/$LOGFILE 2>&1
-swapon /var/tmp/swapfile4 >> $LOGDIR/$LOGFILE 2>&1
-swapon /var/tmp/swapfile5 >> $LOGDIR/$LOGFILE 2>&1
-swapon /var/tmp/swapfile6 >> $LOGDIR/$LOGFILE 2>&1
-swapon /var/tmp/swapfile7 >> $LOGDIR/$LOGFILE 2>&1
-swapon /var/tmp/swapfile8 >> $LOGDIR/$LOGFILE 2>&1
-swapon /var/tmp/swapfile9 >> $LOGDIR/$LOGFILE 2>&1
+swapon /var/tmp/swapfile01 >> $LOGDIR/$LOGFILE 2>&1
+swapon /var/tmp/swapfile02 >> $LOGDIR/$LOGFILE 2>&1
+swapon /var/tmp/swapfile03 >> $LOGDIR/$LOGFILE 2>&1
+swapon /var/tmp/swapfile04 >> $LOGDIR/$LOGFILE 2>&1
+swapon /var/tmp/swapfile05 >> $LOGDIR/$LOGFILE 2>&1
+swapon /var/tmp/swapfile06 >> $LOGDIR/$LOGFILE 2>&1
+swapon /var/tmp/swapfile07 >> $LOGDIR/$LOGFILE 2>&1
+swapon /var/tmp/swapfile08 >> $LOGDIR/$LOGFILE 2>&1
+swapon /var/tmp/swapfile09 >> $LOGDIR/$LOGFILE 2>&1
 swapon /var/tmp/swapfile10 >> $LOGDIR/$LOGFILE 2>&1
 
 show_yellow "Swap files enabled"

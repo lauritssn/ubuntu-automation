@@ -1,0 +1,9 @@
+{
+  "data-root": "/srv/COMPANY/docker",
+  "default-address-pools" : [
+    {
+      "base" : "192.168.4.0/16",
+      "size" : 24
+    }
+  ]
+}

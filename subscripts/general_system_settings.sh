@@ -30,6 +30,16 @@ show_yellow "Install NTP."
 CONF_NTP_ORG=/etc/systemd/timesyncd.conf
 CONF_NTP_BACK=$BACKUPDIR/$(basename $CONF_NTP_ORG)_$DATE
 
+##########################################################################################
+## Backup config
+##########################################################################################
+
+if [ -a $CONF_NTP_ORG ]
+   then
+      cp -p $CONF_NTP_ORG $CONF_NTP_BACK && show_yellow "NTP conf file $CONF_NTP_ORG backed up to $CONF_NTP_BACK."
+fi
+
+
 apt --yes purge chrony > $LOGDIR/$LOGFILE 2>&1 || ( show_err "Removal of Chrony failed. Please check logfile and fix error manually.")
 
 show_yellow "Replace NTP config."
@@ -62,7 +72,7 @@ show_yellow "NTP successfully installed."
 ##########################################################################################
 ## Install extra packages
 ##########################################################################################
-
+show_yellow "Install extra packages."
 apt-get --yes install acct atop curl dos2unix perl libnet-ssleay-perl openssl libauthen-pam-perl libpam-runtime libio-pty-perl apt-show-versions git subversion gcc build-essential libc6-dev autoconf automake dkms linux-headers-$(uname -r) sqlite3 libsqlite3-dev >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Installation of extra packages failed. Please check logfile and fix error manually.")
 show_yellow "Extra packages successfully installed."
 
@@ -70,29 +80,43 @@ show_yellow "Extra packages successfully installed."
 ##########################################################################################
 ## Secure SSHD
 ##########################################################################################
-# PermitRootLogin no
-# MaxAuthTries 5
-# Protocol 2
-# ClientAliveInterval 300
-# AllowUsers zeljko informaticar
 
-# service ssh restart
+CONF_SSH_ORG=/etc/ssh/sshd_config
+CONF_SSH_BACK=$BACKUPDIR/$(basename $CONF_NTP_ORG)_$DATE
 
-# Logging
-#SyslogFacility AUTH
-#LogLevel INFO
+##########################################################################################
+## Backup config
+##########################################################################################
 
-# Authentication:
+if [ -a $CONF_SSH_ORG ]
+   then
+      cp -p $CONF_SSH_ORG $CONF_SSH_BACK && show_yellow "SSH conf file $CONF_SSH_ORG backed up to $CONF_SSH_BACK."
+fi
 
-#LoginGraceTime 2m
-#PermitRootLogin prohibit-password
+sed -i 's/^PermitRootLogin.*/PermitRootLogin no/' $CONF_SSH_ORG
+sed -i 's/^MaxAuthTries.*/MaxAuthTries 5/' $CONF_SSH_ORG
+sed -i 's/^Protocol.*/Protocol 2/' $CONF_SSH_ORG
+sed -i 's/^ClientAliveInterval.*/ClientAliveInterval 300/' $CONF_SSH_ORG
+
+sed -i 's/^LoginGraceTime.*/LoginGraceTime 2m/' $CONF_SSH_ORG
+sed -i 's/^PermitRootLogin.*/PermitRootLogin prohibit-password/' $CONF_SSH_ORG
+
+sed -i 's/^SyslogFacility.*/SyslogFacility AUTH/' $CONF_SSH_ORG
+sed -i 's/^LogLevel.*/LogLevel INFO/' $CONF_SSH_ORG
+sed -i 's/^PermitRootLogin.*/PermitRootLogin prohibit-password/' $CONF_SSH_ORG
+
+# AllowUsers some_user1 some_user2
+
+service ssh restart
+
 
 
 ##########################################################################################
 ## Disable root account completely
 ##########################################################################################
-
-passwd -l root
+show_yellow "Disable root account."
+passwd -l root > $LOGDIR/$LOGFILE 2>&1 || ( show_err "root disable failed. Please check logfile and fix error manually.")
+show_yellow "root account disabled."
 
 # @TODO
 ##########################################################################################
@@ -125,9 +149,10 @@ passwd -l root
 ##########################################################################################
 ## Disable message of the day
 ##########################################################################################
-
-systemctl disable motd-news.service
-sed -i 's/^ENABLED=.*/ENABLED=0/' /etc/default/motd-news
+show_yellow "Disable message of the day."
+systemctl disable motd-news.service > $LOGDIR/$LOGFILE 2>&1 || ( show_err "Stop message of the day service failed. Please check logfile and fix error manually.")
+sed -i 's/^ENABLED=.*/ENABLED=0/' /etc/default/motd-news > $LOGDIR/$LOGFILE 2>&1 || ( show_err "Disable message of the day service failed. Please check logfile and fix error manually.")
+show_yellow "Message of the day disabled."
 
 ##########################################################################################
 ## Done
