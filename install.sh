@@ -300,7 +300,6 @@ if [[ $DO_UFW_INSTALL =~ [Yy]$ ]]
    then
       read -p "Enter CIDR IP range for SECURE_SUBNET: " SECURE_SUBNET; echo
       read -p "Enter CIDR IP range description for SECURE_SUBNET_DESC: " SECURE_SUBNET_DESC; echo
-      read -p "Enter e-mail domain (only domain part of e-mail address): " EMAIL_DOMAIN; echo
       read -p "Do You want to allow port 80 (http) to World (Y/N)?" -n 1 UFW_ALLOW_PUBLIC_HTTP; echo
       read -p "Do You want to allow port 443 (https) to World (Y/N)?" -n 1 UFW_ALLOW_PUBLIC_HTTPS; echo
       read -p "Do You want to allow port 8443 (Posthog) to World (Y/N)?" -n 1 UFW_ALLOW_POSTHOG; echo
