@@ -43,7 +43,7 @@ fi
 ##########################################################################################
 ## Install Swap
 ##########################################################################################
-show_yellow "Creating 10 swap filed of 1 Gb."
+show_yellow "Creating 10 swap files of 1 Gb."
 
 #SWAP_FILE_SIZE_GB=1
 #SWAP_FILE_SIZE=((SWAP_FILE_SIZE_GB*1048576))
