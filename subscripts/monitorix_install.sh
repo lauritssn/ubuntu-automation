@@ -43,6 +43,12 @@ htpasswd -d -c -b /var/lib/monitorix/htpasswd monitorix "$MONITORIX_PASS"  >> $L
 show_yellow "Monitorix password created."
 
 ##########################################################################################
+## Write password to secret file
+##########################################################################################
+echo "monitorix_user: monitorix" >> $CRONDIR/pswd
+echo "monitorix_pwd: ${MONITORIX_PASS}" >> $CRONDIR/pswd
+
+##########################################################################################
 ## Copy override configuration
 ##########################################################################################
 

@@ -29,7 +29,7 @@ export BASEDIR=`pwd`
 export LOGDIR='/tmp'
 export DATE=`date +%Y-%m-%d_%H%M`
 export MONITORIX_PASS=`genpasswd`
-export CRONJOBS_PASS=`genpasswd`
+# export CRONJOBS_PASS=`genpasswd`
 export DEBIAN_FRONTEND=noninteractive # Make apt-get install non-interactive
 
 export DO_CHANGE_TIMEZONE=N 
@@ -43,7 +43,6 @@ export DO_DOCKER_INSTALL=N
 export DO_UFW_INSTALL=N
 export DO_SWAP_INSTALL=N
 
-# @TODO - INSTALL PROCESS ACCOUNTING
 # @TODO - INSTALL RSYSLOG + POSTGRES DUMPER
 
 export UFW_ALLOW_PUBLIC_HTTP=Y
