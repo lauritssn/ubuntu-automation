@@ -79,8 +79,6 @@ show_yellow "ClamAV cron job $CONF_ORG made executable."
 service clamav-daemon restart >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Restarting ClamAV failed. Please check logfile and fix error manually.")
 show_yellow "ClamAV restarted."
 
-#@todo - error in clamav email replacement
-
 ##########################################################################################
 ## DONE
 ##########################################################################################

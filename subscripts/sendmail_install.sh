@@ -30,30 +30,7 @@ LOGFILE=$SUBSCRIPT-$DATE.log
 ##########################################################################################
 
 show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFILE."
-
-##########################################################################################
-## Copy sysctl config
-##########################################################################################
-
-#if [ -a $CONF_ORG ]
-#   then
-#      cp -p $CONF_ORG $CONF_BACK && show_yellow "Sysctl file $CONF_ORG backed up to $CONF_BACK."
-#      cp $CONF_GIT $CONF_ORG && show_yellow "Default sysctl configuration deployed."
-#   else
-#      cp $CONF_GIT $CONF_ORG && show_yellow "Default sysctl configuration deployed."
-#fi
-
-##########################################################################################
-## Restart sysctl
-##########################################################################################
-
-#sysctl -p >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Sysctl restart failed. Please check logfile and fix error manually.")
-#show_yellow "Sysctl restarted."
-
-##########################################################################################
-## Done
-##########################################################################################
-
+show_info "Nothing done."
 show_info "$SUBSCRIPT done."
 
 

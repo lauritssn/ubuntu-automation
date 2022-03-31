@@ -18,7 +18,7 @@ DB_UPDATE_EMAIL="true"
 
 # Set this to the email address where reports and run output should be sent
 # (default: root)
-REPORT_EMAIL="INFO_EMAIL"
+REPORT_EMAIL="INFO_EMAIL@EMAIL_DOMAIN"
 
 # Set this to yes to enable automatic database updates
 # (default: false)

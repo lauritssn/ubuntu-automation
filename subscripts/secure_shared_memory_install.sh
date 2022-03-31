@@ -46,7 +46,7 @@ if (sed -r 's/[ ]+//gi' $CONF_ORG | grep -q "${searchstring}") ; then
 else
 	echo "${insertstring}" >> $CONF_ORG
 	show_yellow "'${insertstring}' appended to $CONF_ORG"
-fi	
+fi
 
 ##########################################################################################
 ## Done

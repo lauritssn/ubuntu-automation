@@ -20,7 +20,7 @@ AGGRESSIVE=0
 # Email Subject
 SUBJECT="Infections detected on `hostname`"
 # Email To
-EMAIL="INFO_EMAIL"
+EMAIL="INFO_EMAIL@EMAIL_DOMAIN"
 # Email From
 EMAIL_FROM="clamav@EMAIL_DOMAIN"
  
