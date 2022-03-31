@@ -104,7 +104,7 @@ fi
 ## Replace sysctl configuration for swappiness
 ##########################################################################################
 
-sed -i 's/#DO-REPLACE#//ig' $CONF_ORG >> $LOGDIR/$LOGFILE 2>&1
+sed -i 's/#SWAP-REPLACE#//ig' $CONF_ORG >> $LOGDIR/$LOGFILE 2>&1
 show_yellow "sysctl.conf swap customizations added."
 
 ##########################################################################################
