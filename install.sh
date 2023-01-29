@@ -294,17 +294,14 @@ done
 echo "DO_UFW_INSTALL: "$DO_UFW_INSTALL
 
 
-# Ask for UFW port openings
-if [[ $DO_UFW_INSTALL =~ [Yy]$ ]]
-   then
-      read -p "Enter CIDR IP range for SECURE_SUBNET: " SECURE_SUBNET; echo
-      read -p "Enter CIDR IP range description for SECURE_SUBNET_DESC: " SECURE_SUBNET_DESC; echo
-      read -p "Do You want to allow port 80 (http) to World (Y/N)?" -n 1 UFW_ALLOW_PUBLIC_HTTP; echo
-      read -p "Do You want to allow port 443 (https) to World (Y/N)?" -n 1 UFW_ALLOW_PUBLIC_HTTPS; echo
-      read -p "Do You want to allow port 8443 (Posthog) to World (Y/N)?" -n 1 UFW_ALLOW_POSTHOG; echo
-      read -p "Do You want to allow port 8081 (Monitorix) to World (Y/N)?" -n 1 UFW_ALLOW_MONITORIX; echo
-      read -p "Do You want to allow port 19999 (Netdata) to World (Y/N)?" -n 1 UFW_ALLOW_NETDATA; echo
-fi
+## Ask for UFW port openings
+#if [[ $DO_UFW_INSTALL =~ [Yy]$ ]]
+#   then
+#      read -p "Do You want to allow port 80 (http) to World (Y/N)?" -n 1 UFW_ALLOW_PUBLIC_HTTP; echo
+#      read -p "Do You want to allow port 443 (https) to World (Y/N)?" -n 1 UFW_ALLOW_PUBLIC_HTTPS; echo
+#      read -p "Do You want to allow port 8081 (Monitorix) to World (Y/N)?" -n 1 UFW_ALLOW_MONITORIX; echo
+#      read -p "Do You want to allow port 19999 (Netdata) to World (Y/N)?" -n 1 UFW_ALLOW_NETDATA; echo
+#fi
 
 ##########################################################################################
 ## Prepare ufw.sh
@@ -314,9 +311,23 @@ fi
 UFW_HEADER="#!/bin/bash
 # UFW_HEADER START
 ufw --force reset
-# ufw allow proto tcp from $SECURE_SUBNET to any port 22 # $SECURE_SUBNET_DESC to SSH
+
 ufw allow 22/tcp # SSH
-ufw allow 161/udp # SNMP
+
+ufw allow 80/tcp # HTTP
+ufw allow 443/tcp # HTTPS
+
+ufw allow 8081/tcp # MONITORIX
+ufw allow 19999/tcp # NETDATA
+
+# ufw allow proto tcp from SECURE_SUBNET to any port 22 # SECURE_SUBNET_DESC to SSH
+
+# ufw allow proto tcp from SECURE_SUBNET to any port 80 # SECURE_SUBNET_DESC to HTTP
+# ufw allow proto tcp from SECURE_SUBNET to any port 443 # SECURE_SUBNET_DESC to HTTPS
+
+# ufw allow proto tcp from SECURE_SUBNET to any port 8081 # SECURE_SUBNET_DESC to Monitorix
+# ufw allow proto tcp from SECURE_SUBNET to any port 19999 # SECURE_SUBNET_DESC to Netdata
+
 # UFW_HEADER END
 "
 
