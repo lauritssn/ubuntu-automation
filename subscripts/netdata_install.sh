@@ -28,7 +28,9 @@ show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFIL
 
 show_yellow "Installing Netdata - you may need to answer yes to certain install commands."
 
-apt-get --yes install netdata >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Installation of netdata failed. Please check logfile and fix error manually.")
+show_yellow "Please install Netdata using Netdata script from your account instead."
+
+# apt-get --yes install netdata >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Installation of netdata failed. Please check logfile and fix error manually.")
 
 show_yellow "Netdata installed successfully."
 
