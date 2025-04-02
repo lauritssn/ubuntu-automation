@@ -4,7 +4,7 @@
 ##########################################################################################
 ## Set variables
 ##########################################################################################
-DATE=`date +%Y-%m-%d_%H%M`
+DATE=$(date +%Y-%m-%d_%H%M)
 SUBSCRIPT="monitorix_install.sh"
 
 if [ -n "$LOGDIR" ]; then
@@ -33,20 +33,20 @@ CONF_GIT=$BASEDIR/configs/monitorix/00-debian.conf
 ## Install Monitorix
 ##########################################################################################
 
-apt-get --yes install monitorix >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Monitorix installation failed. Please check logfile and fix error manually.")
+apt-get --yes install monitorix >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Monitorix installation failed. Please check logfile and fix error manually.")
 show_yellow "Monitorix installed."
 
 # Create password for monitorix
 show_yellow "Create Monitorix password."
-apt-get --yes install apache2-utils >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Monitorix apache2-utils installation failed. Please check logfile and fix error manually.")
-htpasswd -d -c -b /var/lib/monitorix/htpasswd monitorix "$MONITORIX_PASS"  >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Monitorix admin password installation failed. Please check logfile and fix error manually.")
+apt-get --yes install apache2-utils >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Monitorix apache2-utils installation failed. Please check logfile and fix error manually.")
+htpasswd -d -c -b /var/lib/monitorix/htpasswd monitorix "$MONITORIX_PASS" >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Monitorix admin password installation failed. Please check logfile and fix error manually.")
 show_yellow "Monitorix password created."
 
 ##########################################################################################
 ## Write password to secret file
 ##########################################################################################
-echo "monitorix_user: monitorix" >> $CRONDIR/pswd
-echo "monitorix_pwd: ${MONITORIX_PASS}" >> $CRONDIR/pswd
+echo "monitorix_user: monitorix" >>$CRONDIR/pswd
+echo "monitorix_pwd: ${MONITORIX_PASS}" >>$CRONDIR/pswd
 
 ##########################################################################################
 ## Copy override configuration
@@ -71,7 +71,7 @@ systemctl restart monitorix
 ## Create UFW rule
 ##########################################################################################
 
-echo "ufw allow proto tcp from $SECURE_SUBNET to any port 8081 # $SECURE_SUBNET_DESC to Monitorix" >> $CRONDIR/ufw.sh || ( show_err "Monitorix UFW rule installation failed. Please check logfile and fix error manually.")
+echo "ufw allow proto tcp from $SECURE_SUBNET to any port 8081 # $SECURE_SUBNET_DESC to Monitorix" >>$CRONDIR/ufw.sh || (show_err "Monitorix UFW rule installation failed. Please check logfile and fix error manually.")
 show_yellow "ufw rule to allow access to Monitorix from $SECURE_SUBNET_DESC($SECURE_SUBNET) added."
 
 ##########################################################################################

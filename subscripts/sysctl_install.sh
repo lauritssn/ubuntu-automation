@@ -4,7 +4,7 @@
 ## Set variables
 ##########################################################################################
 
-DATE=`date +%Y-%m-%d_%H%M`
+DATE=$(date +%Y-%m-%d_%H%M)
 SUBSCRIPT="sysctl_install.sh"
 
 if [ -n "$LOGDIR" ]; then
@@ -33,19 +33,18 @@ show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFIL
 ## Copy sysctl config
 ##########################################################################################
 
-if [ -a $CONF_ORG ]
-   then
-      cp -p $CONF_ORG $CONF_BACK && show_yellow "Sysctl file $CONF_ORG backed up to $CONF_BACK."
-      cp $CONF_GIT $CONF_ORG && show_yellow "Default sysctl configuration deployed."
-   else
-      cp $CONF_GIT $CONF_ORG && show_yellow "Default sysctl configuration deployed."
+if [ -a $CONF_ORG ]; then
+    cp -p $CONF_ORG $CONF_BACK && show_yellow "Sysctl file $CONF_ORG backed up to $CONF_BACK."
+    cp $CONF_GIT $CONF_ORG && show_yellow "Default sysctl configuration deployed."
+else
+    cp $CONF_GIT $CONF_ORG && show_yellow "Default sysctl configuration deployed."
 fi
 
 ##########################################################################################
 ## Restart sysctl
 ##########################################################################################
 
-sysctl -p >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Sysctl restart failed. Please check logfile and fix error manually.")
+sysctl -p >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Sysctl restart failed. Please check logfile and fix error manually.")
 show_yellow "Sysctl restarted."
 
 ##########################################################################################
@@ -53,5 +52,3 @@ show_yellow "Sysctl restarted."
 ##########################################################################################
 
 show_info "$SUBSCRIPT done. Please check $CONF_ORG manually for swap settings."
-
-

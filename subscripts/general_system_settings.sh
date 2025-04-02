@@ -4,7 +4,7 @@
 ## Set variables
 ##########################################################################################
 
-DATE=`date +%Y-%m-%d_%H%M`
+DATE=$(date +%Y-%m-%d_%H%M)
 SUBSCRIPT="general_system_settings.sh"
 
 if [ -n "$LOGDIR" ]; then
@@ -34,13 +34,11 @@ CONF_NTP_BACK=$BACKUPDIR/$(basename $CONF_NTP_ORG)_$DATE
 ## Backup config
 ##########################################################################################
 
-if [ -a $CONF_NTP_ORG ]
-   then
-      cp -p $CONF_NTP_ORG $CONF_NTP_BACK && show_yellow "NTP conf file $CONF_NTP_ORG backed up to $CONF_NTP_BACK."
+if [ -a $CONF_NTP_ORG ]; then
+    cp -p $CONF_NTP_ORG $CONF_NTP_BACK && show_yellow "NTP conf file $CONF_NTP_ORG backed up to $CONF_NTP_BACK."
 fi
 
-
-apt --yes purge chrony > $LOGDIR/$LOGFILE 2>&1 || ( show_err "Removal of Chrony failed. Please check logfile and fix error manually.")
+apt --yes purge chrony >$LOGDIR/$LOGFILE 2>&1 || (show_err "Removal of Chrony failed. Please check logfile and fix error manually.")
 
 show_yellow "Replace NTP config."
 sed -i 's/#NTP=/'NTP=${NTP}'/ig' $CONF_NTP_ORG
@@ -73,7 +71,7 @@ show_yellow "NTP successfully installed."
 ## Install extra packages
 ##########################################################################################
 show_yellow "Install extra packages."
-apt-get --yes install acct atop curl dos2unix perl libnet-ssleay-perl openssl libauthen-pam-perl libpam-runtime libio-pty-perl apt-show-versions git subversion gcc build-essential libc6-dev autoconf automake dkms linux-headers-$(uname -r) sqlite3 libsqlite3-dev >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Installation of extra packages failed. Please check logfile and fix error manually.")
+apt-get --yes install acct atop curl dos2unix perl libnet-ssleay-perl openssl libauthen-pam-perl libpam-runtime libio-pty-perl apt-show-versions git subversion gcc build-essential libc6-dev autoconf automake dkms linux-headers-$(uname -r) sqlite3 libsqlite3-dev >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of extra packages failed. Please check logfile and fix error manually.")
 show_yellow "Extra packages successfully installed."
 
 # @TODO https://www.informaticar.net/security-hardening-ubuntu-20-04/
@@ -88,9 +86,8 @@ CONF_SSH_BACK=$BACKUPDIR/$(basename $CONF_NTP_ORG)_$DATE
 ## Backup config
 ##########################################################################################
 
-if [ -a $CONF_SSH_ORG ]
-   then
-      cp -p $CONF_SSH_ORG $CONF_SSH_BACK && show_yellow "SSH conf file $CONF_SSH_ORG backed up to $CONF_SSH_BACK."
+if [ -a $CONF_SSH_ORG ]; then
+    cp -p $CONF_SSH_ORG $CONF_SSH_BACK && show_yellow "SSH conf file $CONF_SSH_ORG backed up to $CONF_SSH_BACK."
 fi
 
 sed -i 's/^#MaxAuthTries.*/MaxAuthTries 5/' $CONF_SSH_ORG
@@ -111,13 +108,11 @@ sed -i 's/^#PermitRootLogin.*/PermitRootLogin no/' $CONF_SSH_ORG
 
 service ssh restart
 
-
-
 ##########################################################################################
 ## Disable root account completely
 ##########################################################################################
 show_yellow "Disable root account."
-passwd -l root > $LOGDIR/$LOGFILE 2>&1 || ( show_err "root disable failed. Please check logfile and fix error manually.")
+passwd -l root >$LOGDIR/$LOGFILE 2>&1 || (show_err "root disable failed. Please check logfile and fix error manually.")
 show_yellow "root account disabled."
 
 # @TODO
@@ -147,13 +142,12 @@ show_yellow "root account disabled."
 ##########################################################################################
 # https://www.informaticar.net/configure-passwordless-ssh-login-in-linux/
 
-
 ##########################################################################################
 ## Disable message of the day
 ##########################################################################################
 show_yellow "Disable message of the day."
-systemctl disable motd-news.service > $LOGDIR/$LOGFILE 2>&1 || ( show_err "Stop message of the day service failed. Please check logfile and fix error manually.")
-sed -i 's/^ENABLED=.*/ENABLED=0/' /etc/default/motd-news > $LOGDIR/$LOGFILE 2>&1 || ( show_err "Disable message of the day service failed. Please check logfile and fix error manually.")
+systemctl disable motd-news.service >$LOGDIR/$LOGFILE 2>&1 || (show_err "Stop message of the day service failed. Please check logfile and fix error manually.")
+sed -i 's/^ENABLED=.*/ENABLED=0/' /etc/default/motd-news >$LOGDIR/$LOGFILE 2>&1 || (show_err "Disable message of the day service failed. Please check logfile and fix error manually.")
 show_yellow "Message of the day disabled."
 
 ##########################################################################################

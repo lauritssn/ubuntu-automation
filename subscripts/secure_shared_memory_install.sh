@@ -4,13 +4,13 @@
 ## Set variables
 ##########################################################################################
 
-DATE=`date +%Y-%m-%d_%H%M`
+DATE=$(date +%Y-%m-%d_%H%M)
 SUBSCRIPT="secure_shared_memory_install.sh"
 
 if [ -n "$LOGDIR" ]; then
-    LOGDIR=$LOGDIR
+	LOGDIR=$LOGDIR
 else
-    LOGDIR=/tmp
+	LOGDIR=/tmp
 fi
 
 LOGFILE=$SUBSCRIPT-$DATE.log
@@ -39,12 +39,12 @@ cp -p $CONF_ORG $CONF_BACK && show_yellow "Config file $CONF_ORG backed up to $C
 ##########################################################################################
 
 insertstring='tmpfs /run/shm tmpfs defaults,noexec,nosuid 0 0'
-searchstring=`echo $insertstring | sed 's/ //g'`
+searchstring=$(echo $insertstring | sed 's/ //g')
 
-if (sed -r 's/[ ]+//gi' $CONF_ORG | grep -q "${searchstring}") ; then
+if (sed -r 's/[ ]+//gi' $CONF_ORG | grep -q "${searchstring}"); then
 	show_yellow "$insertstring - already present"
 else
-	echo "${insertstring}" >> $CONF_ORG
+	echo "${insertstring}" >>$CONF_ORG
 	show_yellow "'${insertstring}' appended to $CONF_ORG"
 fi
 
@@ -53,4 +53,3 @@ fi
 ##########################################################################################
 
 show_info "$SUBSCRIPT done. Please reboot server to take effect."
-
