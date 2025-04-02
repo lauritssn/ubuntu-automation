@@ -3,7 +3,7 @@
 ##########################################################################################
 ## Set variables
 ##########################################################################################
-DATE=`date +%Y-%m-%d_%H%M`
+DATE=$(date +%Y-%m-%d_%H%M)
 SUBSCRIPT="docker_install.sh"
 
 if [ -n "$LOGDIR" ]; then
@@ -35,7 +35,7 @@ apt-get --yes remove docker docker.io containerd runc
 apt-get --yes update
 
 show_yellow "Download new Docker installation script."
-curl -fsSL https://get.docker.com -o get-docker.sh >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Download of Docker failed. Please check logfile and fix error manually.")
+curl -fsSL https://get.docker.com -o get-docker.sh >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Download of Docker failed. Please check logfile and fix error manually.")
 sh get-docker.sh
 
 show_yellow "Stop Docker service."
@@ -53,12 +53,11 @@ CONF_GIT=$BASEDIR/configs/docker/daemon.json
 ## Copy Docker configuration
 ##########################################################################################
 
-if [ -a $CONF_ORG ]
-   then
-      cp -p $CONF_ORG $CONF_BACK && show_yellow "Docker daemon json file $CONF_ORG backed up to $CONF_BACK."
-      cp $CONF_GIT $CONF_ORG && show_yellow "Default Docker daemon json deployed."
-   else
-      cp $CONF_GIT $CONF_ORG && show_yellow "Default Docker daemon json deployed."
+if [ -a $CONF_ORG ]; then
+    cp -p $CONF_ORG $CONF_BACK && show_yellow "Docker daemon json file $CONF_ORG backed up to $CONF_BACK."
+    cp $CONF_GIT $CONF_ORG && show_yellow "Default Docker daemon json deployed."
+else
+    cp $CONF_GIT $CONF_ORG && show_yellow "Default Docker daemon json deployed."
 fi
 
 ##########################################################################################
@@ -87,7 +86,7 @@ show_yellow "Docker installed."
 
 show_yellow "Installing docker-compose."
 
-curl -L "https://github.com/docker/compose/releases/download/$DOCKER_COMPOSE_VERSION/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose  >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Download of docker-compose failed. Please check logfile and fix error manually.")
+curl -L "https://github.com/docker/compose/releases/download/$DOCKER_COMPOSE_VERSION/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Download of docker-compose failed. Please check logfile and fix error manually.")
 chmod +x /usr/local/bin/docker-compose
 ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 

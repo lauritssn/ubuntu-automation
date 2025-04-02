@@ -3,7 +3,7 @@
 ##########################################################################################
 ## Set variables
 ##########################################################################################
-DATE=`date +%Y-%m-%d_%H%M`
+DATE=$(date +%Y-%m-%d_%H%M)
 SUBSCRIPT="maldet_install.sh"
 
 if [ -n "$LOGDIR" ]; then
@@ -15,12 +15,11 @@ fi
 LOGFILE=$SUBSCRIPT-$DATE.log
 MALDET_PKG="maldetect-current.tar.gz" # maldetect-current.tar.gz
 
-
 ##########################################################################################
 # General maldet configuration
 ##########################################################################################
 
-CONF_ORG=/usr/local/maldetect/conf.maldet 
+CONF_ORG=/usr/local/maldetect/conf.maldet
 CONF_BACK=$BACKUPDIR/$(basename $CONF_ORG)_$DATE
 
 ##########################################################################################
@@ -32,15 +31,16 @@ show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFIL
 ## Install Maldet from the newest source.
 ##########################################################################################
 
-cd /tmp  
-wget http://www.rfxn.com/downloads/$MALDET_PKG >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Download of maldet failed. Please check logfile and fix error manually.")
+cd /tmp
+apt-get --yes install inotify-tools >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of inotify-tools failed. Please check logfile and fix error manually.")
+wget http://www.rfxn.com/downloads/$MALDET_PKG >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Download of maldet failed. Please check logfile and fix error manually.")
 show_yellow "Maldet downloaded successfully."
-tar xfz $MALDET_PKG >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Extraction of maldet package failed. Please check logfile and fix error manually.")
+tar xfz $MALDET_PKG >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Extraction of maldet package failed. Please check logfile and fix error manually.")
 show_yellow "Maldet package successfully extracted."
 rm -f maldetect-current.tar.gz
 show_yellow "Maldet tar package successfully removed."
 cd maldetect-*
-./install.sh >> $LOGDIR/$LOGFILE 2>&1 || ( show_err "Installation of maldet failed. Please check logfile and fix error manually.")
+./install.sh >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of maldet failed. Please check logfile and fix error manually.")
 show_yellow "Maldet installed successfully."
 
 ##########################################################################################
@@ -64,8 +64,8 @@ show_yellow "Maldet configuration successfully customized."
 
 ## @TODO
 ## Include the scanning of known temporary world-writable paths for
- ## -a|--al and -r|--recent scan types.
- #scan_tmpdir_paths="/tmp /var/tmp /dev/shm /var/fcgi_ipc"
+## -a|--al and -r|--recent scan types.
+#scan_tmpdir_paths="/tmp /var/tmp /dev/shm /var/fcgi_ipc"
 
 ##########################################################################################
 ## Done

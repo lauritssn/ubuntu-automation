@@ -9,7 +9,7 @@ SUBSCRIPT="subscript_template.sh"
 LOGFILE=$SUBSCRIPT-$DATE.log
 
 CONF_ORG=<path-to-original-config-file>
-CONF_BACK=${CONF_ORG}_$DATE
+CONF_BACK="${CONF_ORG}_${DATE}"
 CONF_GIT=$BASEDIR/configs/<service>/<config-file-name>
 
 ##########################################################################################
