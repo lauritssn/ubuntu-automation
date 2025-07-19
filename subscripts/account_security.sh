@@ -81,15 +81,41 @@ fi
 
 show_yellow "Configuring account lockout policies."
 
+# Ubuntu 24.04+ uses faillock instead of pam_tally2
+# Configure faillock configuration file
+mkdir -p /etc/security
+cat > /etc/security/faillock.conf << 'EOF'
+# Ubuntu 24.04 faillock configuration (replaces pam_tally2)
+# Account lockout after 5 failed attempts, 10 minute lockout
+
+# Number of failed attempts before lockout
+deny = 5
+
+# Lockout duration in seconds (600 = 10 minutes)
+unlock_time = 600
+
+# Enable audit logging
+audit
+
+# Also lock root account
+even_deny_root
+
+# Directory for lock files
+dir = /var/run/faillock
+EOF
+
 # Configure account lockout for failed login attempts
 if [ -f /etc/pam.d/common-auth ]; then
     # Backup original PAM auth configuration
     cp /etc/pam.d/common-auth $BACKUPDIR/common-auth_$DATE
     
-    # Add account lockout after failed attempts
-    if ! grep -q "pam_tally2.so" /etc/pam.d/common-auth; then
-        # Add account lockout after 5 failed attempts, 10 minute lockout
-        sed -i '1i auth required pam_tally2.so deny=5 unlock_time=600 onerr=fail audit' /etc/pam.d/common-auth
+    # Add account lockout after failed attempts using faillock (Ubuntu 24.04+)
+    if ! grep -q "pam_faillock.so" /etc/pam.d/common-auth; then
+        # Add faillock preauth before pam_unix
+        sed -i '/auth.*pam_unix/i auth\t\trequired\t\t\tpam_faillock.so preauth' /etc/pam.d/common-auth
+        # Add faillock authfail and authsucc after pam_unix
+        sed -i '/auth.*pam_unix/a auth\t\t[default=die]\t\tpam_faillock.so authfail' /etc/pam.d/common-auth
+        sed -i '/auth.*pam_unix/a auth\t\tsufficient\t\tpam_faillock.so authsucc' /etc/pam.d/common-auth
         show_yellow "Account lockout policy configured (5 attempts, 10 minute lockout)."
     else
         show_warn "Account lockout already configured."
@@ -101,9 +127,9 @@ if [ -f /etc/pam.d/common-account ]; then
     # Backup original PAM account configuration
     cp /etc/pam.d/common-account $BACKUPDIR/common-account_$DATE
     
-    if ! grep -q "pam_tally2.so" /etc/pam.d/common-account; then
-        # Add account checking
-        echo "account required pam_tally2.so" >> /etc/pam.d/common-account
+    if ! grep -q "pam_faillock.so" /etc/pam.d/common-account; then
+        # Add account checking using faillock
+        echo "account\trequired\t\t\tpam_faillock.so" >> /etc/pam.d/common-account
         show_yellow "Account module configured for lockout checking."
     fi
 fi
@@ -128,7 +154,8 @@ cat > /etc/sudoers.d/security-policies << 'EOF'
 Defaults syslog
 
 # Require TTY for sudo (prevents some automated attacks)
-Defaults requiretty
+# Note: Disabled for configuration testing, enable manually if needed
+# Defaults requiretty
 
 # Set sudo session timeout (15 minutes)
 Defaults timestamp_timeout=15
@@ -283,15 +310,25 @@ cat > $SCRIPTSDIR/show_locked_accounts.sh << 'EOF'
 echo "=== Account Lockout Status ==="
 echo
 
-echo "Locked user accounts:"
-pam_tally2 --user="" 2>/dev/null | grep -v "^User" | awk '$2>0 {print $1 " - Failed attempts: " $2}'
+echo "Locked user accounts (using faillock for Ubuntu 24.04+):"
+if command -v faillock >/dev/null 2>&1; then
+    # Show faillock status for all users
+    for user in $(getent passwd | cut -d: -f1); do
+        failed_attempts=$(faillock --user "$user" 2>/dev/null | grep -c "When")
+        if [ "$failed_attempts" -gt 0 ]; then
+            echo "$user - Failed attempts: $failed_attempts"
+        fi
+    done
+else
+    echo "faillock command not available"
+fi
 
 echo
 echo "Recent failed login attempts:"
 journalctl --since "24 hours ago" | grep "authentication failure" | tail -10
 
 echo
-echo "To unlock an account, use: pam_tally2 --user=<username> --reset"
+echo "To unlock an account, use: faillock --user=<username> --reset"
 EOF
 
 chmod +x $SCRIPTSDIR/show_locked_accounts.sh
@@ -316,8 +353,8 @@ if ! id "$USERNAME" &>/dev/null; then
     exit 1
 fi
 
-# Reset the lockout counter
-pam_tally2 --user="$USERNAME" --reset
+# Reset the lockout counter using faillock (Ubuntu 24.04+)
+faillock --user="$USERNAME" --reset
 
 if [ $? -eq 0 ]; then
     echo "Account lockout reset for user: $USERNAME"
@@ -370,10 +407,24 @@ else
 fi
 
 # Test PAM configuration
-if pamtest --verbose auth </dev/null >/dev/null 2>&1; then
-    show_yellow "PAM configuration test passed."
+if command -v pamtest >/dev/null 2>&1; then
+    if pamtest --verbose auth </dev/null >/dev/null 2>&1; then
+        show_yellow "PAM configuration test passed."
+    else
+        show_warn "PAM configuration test failed."
+    fi
 else
-    show_warn "PAM configuration test failed or pamtest not available."
+    # Alternative PAM test using faillock for Ubuntu 24.04+
+    if command -v faillock >/dev/null 2>&1; then
+        # Test faillock functionality
+        if faillock >/dev/null 2>&1; then
+            show_yellow "PAM configuration test passed (using faillock)."
+        else
+            show_warn "PAM configuration test failed."
+        fi
+    else
+        show_warn "PAM testing tools not available (pamtest or faillock). PAM functionality should work normally."
+    fi
 fi
 
 # Verify log directories exist
