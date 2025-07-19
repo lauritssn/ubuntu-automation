@@ -12,7 +12,8 @@ set -e # Exit on error
 
 # Enhanced error handling
 set -o pipefail # Exit on pipe failures
-trap 'handle_error ${LINENO}' ERR
+# Temporarily disable error trap for debugging
+# trap 'handle_error ${LINENO}' ERR
 
 handle_error() {
     local line_no=$1
@@ -81,6 +82,10 @@ log_info() {
 # Standardized application paths - no more company placeholders
 export AUTOMATION_ROOT="/srv/apps"
 export BASEDIR=$(pwd)
+echo "🔍 EARLY DEBUG: BASEDIR set to: '$BASEDIR'"
+echo "🔍 EARLY DEBUG: Current working directory: $(pwd)"
+echo "🔍 EARLY DEBUG: Contents of current directory:"
+ls -la . 2>/dev/null || echo "❌ Cannot list current directory"
 export LOGDIR='/tmp'
 export DATE=$(date +%Y-%m-%d_%H%M)
 export DEBIAN_FRONTEND=noninteractive # Make apt-get install non-interactive
@@ -623,6 +628,20 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     printf "\n\n--------------------\n"
     show_norm "Executing subscripts"
     printf "\n--------------------\n"
+    
+    # Immediate debug output at start of execution
+    echo "🔍 IMMEDIATE DEBUG: Script execution starting"
+    echo "🔍 IMMEDIATE DEBUG: Current working directory: $(pwd)"
+    echo "🔍 IMMEDIATE DEBUG: BASEDIR variable: '$BASEDIR'"
+    echo "🔍 IMMEDIATE DEBUG: Directory listing of current location:"
+    ls -la .
+    echo "🔍 IMMEDIATE DEBUG: Checking if subscripts directory exists at current location:"
+    ls -la subscripts/ 2>/dev/null || echo "❌ No subscripts directory in current location"
+    echo "🔍 IMMEDIATE DEBUG: Checking PATH:"
+    echo "PATH: $PATH"
+    echo "🔍 IMMEDIATE DEBUG: Available commands:"
+    which bash || echo "bash not found"
+    which source || echo "source not found"
 else
     printf "\n\n------------------\n"
     show_warn "Exiting gracefully"
@@ -632,7 +651,11 @@ else
 fi
 
 # Start timer and log installation start
+echo "🔍 PRE-START DEBUG: About to start timer and logging"
+echo "🔍 PRE-START DEBUG: Current directory: $(pwd)"
+echo "🔍 PRE-START DEBUG: BASEDIR: '$BASEDIR'"
 START_TIME=$(date +%s)
+echo "🔍 PRE-START DEBUG: Timer started successfully"
 log_start "Ubuntu 24.04 Automation Installation"
 log_info "Installation ID: $INSTALL_ID"
 log_info "Scripts directory: $SCRIPTSDIR"
