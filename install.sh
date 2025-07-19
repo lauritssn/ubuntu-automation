@@ -409,9 +409,6 @@ if [ ! -d $BACKUPDIR ]; then
     mkdir -p $BACKUPDIR
 fi
 
-# Write to secret file
-echo $DATE >>$SCRIPTSDIR/pswd
-
 ##########################################################################################
 ## Get input
 ##########################################################################################
@@ -473,43 +470,41 @@ done
 echo "DO_CHANGE_NTP_FALLBACK: "$DO_CHANGE_NTP_NTP_FALLBACK
 echo "NTP_FALLBACK: "$NTP_FALLBACK
 
-# Change e-mail domain
-while true; do
-    read -p "Do You want to change e-mail domain? (default is $EMAIL_DOMAIN) (Y/N)? " yn
-    case $yn in
-    [Yy]*)
-        SET_EMAIL_DOMAIN=Y && read -p "Enter e-mail domain (only domain part of e-mail address): " EMAIL_DOMAIN
-        break
-        ;;
-    [Nn]*)
-        SET_EMAIL_DOMAIN=N
-        break
-        ;;
-    *) echo "Please answer yes or no." ;;
-    esac
-done
+# Email domain configuration
+read -p "Email domain (press Enter to keep '$EMAIL_DOMAIN'): " input_email_domain
+if [[ -n "$input_email_domain" ]]; then
+    EMAIL_DOMAIN="$input_email_domain"
+    SET_EMAIL_DOMAIN=Y
+else
+    SET_EMAIL_DOMAIN=N
+fi
 
-echo "SET_EMAIL_DOMAIN: "$SET_EMAIL_DOMAIN
 echo "EMAIL_DOMAIN: "$EMAIL_DOMAIN
 
-# Change e-mail alias
-while true; do
-    read -p "Do You want to change e-mail address? (default is $INFO_EMAIL) (Y/N)? " yn
-    case $yn in
-    [Yy]*)
-        SET_EMAIL_DOMAIN=Y && read -p "Enter the xxx part before @ in the e-mail address (xxx@domain.com): " INFO_EMAIL
-        break
-        ;;
-    [Nn]*)
-        SET_EMAIL_DOMAIN=N
-        break
-        ;;
-    *) echo "Please answer yes or no." ;;
-    esac
-done
+# Email address configuration
+read -p "Email address prefix before @ (press Enter to keep 'my.server.email'): " input_email_prefix
+if [[ -n "$input_email_prefix" ]]; then
+    INFO_EMAIL="${input_email_prefix}@${EMAIL_DOMAIN}"
+    SET_EMAIL_ADDRESS=Y
+else
+    INFO_EMAIL="my.server.email@${EMAIL_DOMAIN}"
+    SET_EMAIL_ADDRESS=N
+fi
 
-echo "SET_EMAIL_ADDRESS: "$SET_EMAIL_ADDRESS
 echo "INFO_EMAIL: "$INFO_EMAIL
+
+# Secure subnet configuration for SSH access
+read -p "Secure subnet for SSH access (press Enter to keep '$SECURE_SUBNET'): " input_secure_subnet
+if [[ -n "$input_secure_subnet" ]]; then
+    SECURE_SUBNET="$input_secure_subnet"
+    read -p "Description for this subnet (e.g., 'Home network' or 'Office'): " SECURE_SUBNET_DESC
+    SET_SECURE_SUBNET=Y
+else
+    SET_SECURE_SUBNET=N
+fi
+
+echo "SECURE_SUBNET: "$SECURE_SUBNET
+echo "SECURE_SUBNET_DESC: "$SECURE_SUBNET_DESC
 
 # System update
 while true; do
@@ -546,6 +541,65 @@ while true; do
 done
 
 echo "DO_GENERAL_SERVER_SETTINGS: "$DO_GENERAL_SERVER_SETTINGS
+
+# SSH 2FA with Google Authenticator
+if [[ $DO_GENERAL_SERVER_SETTINGS =~ [Yy]$ ]]; then
+    while true; do
+        read -p "Do You want to enable SSH 2FA with Google Authenticator (Y/N)? " yn
+        case $yn in
+        [Yy]*)
+            DO_SSH_2FA=Y
+            break
+            ;;
+        [Nn]*)
+            DO_SSH_2FA=N
+            break
+            ;;
+        *) echo "Please answer yes or no." ;;
+        esac
+    done
+else
+    DO_SSH_2FA=N
+fi
+
+echo "DO_SSH_2FA: "$DO_SSH_2FA
+
+# Create sudo user (recommended when SSH 2FA is enabled)
+if [[ $DO_SSH_2FA =~ [Yy]$ ]]; then
+    while true; do
+        read -p "Do You want to create a sudo user (recommended since root SSH will be disabled) (Y/N)? " yn
+        case $yn in
+        [Yy]*)
+            DO_CREATE_SUDO_USER=Y
+            read -p "Enter username for the sudo user: " SUDO_USERNAME
+            while true; do
+                read -s -p "Enter password for $SUDO_USERNAME: " SUDO_PASSWORD
+                echo
+                read -s -p "Confirm password for $SUDO_USERNAME: " SUDO_PASSWORD_CONFIRM
+                echo
+                if [ "$SUDO_PASSWORD" = "$SUDO_PASSWORD_CONFIRM" ]; then
+                    break
+                else
+                    echo "Passwords do not match. Please try again."
+                fi
+            done
+            break
+            ;;
+        [Nn]*)
+            DO_CREATE_SUDO_USER=N
+            break
+            ;;
+        *) echo "Please answer yes or no." ;;
+        esac
+    done
+else
+    DO_CREATE_SUDO_USER=N
+fi
+
+echo "DO_CREATE_SUDO_USER: "$DO_CREATE_SUDO_USER
+if [[ $DO_CREATE_SUDO_USER =~ [Yy]$ ]]; then
+    echo "SUDO_USERNAME: "$SUDO_USERNAME
+fi
 
 # Swap install
 while true; do
@@ -929,6 +983,11 @@ fi
 
 printf "\n--------------------\n"
 
+# SSH 2FA install
+execute_module "SSH_2FA_Installation" "$BASEDIR/subscripts/ssh_2fa_install.sh" "$DO_SSH_2FA"
+
+printf "\n--------------------\n"
+
 # Swap install
 execute_module "Swap_Installation" "$BASEDIR/subscripts/swap_install.sh" "$DO_SWAP_INSTALL"
 
@@ -974,10 +1033,6 @@ printf "\n--------------------\n"
 execute_module "Dokku_Installation" "$BASEDIR/subscripts/dokku_install.sh" "$DO_DOKKU_INSTALL"
 
 printf "\n--------------------\n"
-
-# Write to pswd and secure file
-echo "" >>$SCRIPTSDIR/pswd
-chmod 0600 $SCRIPTSDIR/pswd
 
 # End timer and log completion
 END_TIME=$(date +%s)

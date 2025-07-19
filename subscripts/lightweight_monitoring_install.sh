@@ -42,45 +42,150 @@ cat > $SCRIPTSDIR/system_health_check.sh << 'EOF'
 #!/bin/bash
 
 # System Health Check Script for Ubuntu 24.04
-# Uses built-in systemd and lightweight tools
+# Enhanced with Slack notifications and comprehensive monitoring
+
+# Configuration
+SLACK_WEBHOOK_URL="SLACK_WEBHOOK_PLACEHOLDER"
+HOSTNAME=$(hostname)
+START_TIME=$(date)
+SCRIPT_NAME="System Health Check"
+HEALTH_ISSUES=0
+
+EOF
+
+create_slack_function $SCRIPTSDIR/system_health_check.sh "System Health"
+
+cat >> $SCRIPTSDIR/system_health_check.sh << 'EOF'
+
+# Send start notification
+send_slack_notification "🔍 $SCRIPT_NAME started on $HOSTNAME" "start"
+
+# Function to check for issues and alert
+check_health_metric() {
+    local metric_name="$1"
+    local warning_condition="$2"
+    local critical_condition="$3"
+    local current_value="$4"
+    
+    if [ "$critical_condition" = "true" ]; then
+        send_slack_notification "🚨 CRITICAL: $metric_name on $HOSTNAME - $current_value" "error"
+        HEALTH_ISSUES=$((HEALTH_ISSUES + 1))
+        echo "CRITICAL: $metric_name - $current_value"
+    elif [ "$warning_condition" = "true" ]; then
+        send_slack_notification "⚠️ WARNING: $metric_name on $HOSTNAME - $current_value" "warning"
+        HEALTH_ISSUES=$((HEALTH_ISSUES + 1))
+        echo "WARNING: $metric_name - $current_value"
+    fi
+}
 
 echo "=== System Health Report - $(date) ==="
 echo
 
 # System load and uptime
 echo "=== System Load & Uptime ==="
-uptime
+UPTIME_OUTPUT=$(uptime)
+echo "$UPTIME_OUTPUT"
+
+# Check load average
+LOAD_1MIN=$(echo "$UPTIME_OUTPUT" | awk '{print $(NF-2)}' | sed 's/,//')
+LOAD_5MIN=$(echo "$UPTIME_OUTPUT" | awk '{print $(NF-1)}' | sed 's/,//')
+CPU_CORES=$(nproc)
+LOAD_THRESHOLD_WARNING=$(echo "$CPU_CORES * 0.8" | bc -l 2>/dev/null || echo "$CPU_CORES")
+LOAD_THRESHOLD_CRITICAL=$(echo "$CPU_CORES * 1.5" | bc -l 2>/dev/null || echo "$((CPU_CORES * 2))")
+
+if command -v bc >/dev/null 2>&1; then
+    LOAD_HIGH_WARNING=$(echo "$LOAD_1MIN > $LOAD_THRESHOLD_WARNING" | bc -l)
+    LOAD_HIGH_CRITICAL=$(echo "$LOAD_1MIN > $LOAD_THRESHOLD_CRITICAL" | bc -l)
+    check_health_metric "High Load Average" "$LOAD_HIGH_WARNING" "$LOAD_HIGH_CRITICAL" "1min load: $LOAD_1MIN (cores: $CPU_CORES)"
+fi
+
 echo
 
 # Memory usage
 echo "=== Memory Usage ==="
-free -h
+MEMORY_OUTPUT=$(free -h)
+echo "$MEMORY_OUTPUT"
+
+# Check memory usage percentage
+MEMORY_USED_PERCENT=$(free | awk 'NR==2{printf "%.0f", $3*100/$2}')
+check_health_metric "High Memory Usage" "$((MEMORY_USED_PERCENT > 80))" "$((MEMORY_USED_PERCENT > 95))" "Memory usage: ${MEMORY_USED_PERCENT}%"
+
 echo
 
 # Disk usage
 echo "=== Disk Usage ==="
-df -h / /var /tmp
+DISK_OUTPUT=$(df -h / /var /tmp 2>/dev/null)
+echo "$DISK_OUTPUT"
+
+# Check disk usage for each mount point
+while IFS= read -r line; do
+    if [[ "$line" == *"%"* ]] && [[ "$line" != "Filesystem"* ]]; then
+        USAGE_PERCENT=$(echo "$line" | awk '{print $5}' | sed 's/%//')
+        MOUNT_POINT=$(echo "$line" | awk '{print $6}')
+        if [ "$USAGE_PERCENT" -gt 90 ]; then
+            check_health_metric "Critical Disk Space" "false" "true" "$MOUNT_POINT at ${USAGE_PERCENT}%"
+        elif [ "$USAGE_PERCENT" -gt 80 ]; then
+            check_health_metric "Low Disk Space" "true" "false" "$MOUNT_POINT at ${USAGE_PERCENT}%"
+        fi
+    fi
+done <<< "$DISK_OUTPUT"
+
 echo
 
 # Service status (critical services)
 echo "=== Critical Service Status ==="
-systemctl is-active ssh sshd
-systemctl is-active ufw
-systemctl is-active clamav-daemon
-systemctl is-active fail2ban
+SERVICES_TO_CHECK="ssh ufw clamav-daemon fail2ban"
+FAILED_SERVICES=""
+
+for service in $SERVICES_TO_CHECK; do
+    if systemctl is-active "$service" >/dev/null 2>&1; then
+        echo "$service: active"
+    else
+        echo "$service: FAILED"
+        FAILED_SERVICES="$FAILED_SERVICES $service"
+    fi
+done
+
+# Check Wireguard if enabled
 if systemctl is-enabled wg-quick@wg0 >/dev/null 2>&1; then
-    systemctl is-active wg-quick@wg0
+    if systemctl is-active wg-quick@wg0 >/dev/null 2>&1; then
+        echo "wg-quick@wg0: active"
+    else
+        echo "wg-quick@wg0: FAILED"
+        FAILED_SERVICES="$FAILED_SERVICES wg-quick@wg0"
+    fi
 fi
+
+if [ -n "$FAILED_SERVICES" ]; then
+    check_health_metric "Critical Services Down" "false" "true" "Services failed:$FAILED_SERVICES"
+fi
+
 echo
 
 # Recent failed services
 echo "=== Recent Service Failures ==="
-systemctl --failed --no-pager
+FAILED_SERVICES_OUTPUT=$(systemctl --failed --no-pager --no-legend 2>/dev/null)
+if [ -n "$FAILED_SERVICES_OUTPUT" ]; then
+    echo "$FAILED_SERVICES_OUTPUT"
+    check_health_metric "System Services Failed" "true" "false" "$(echo "$FAILED_SERVICES_OUTPUT" | wc -l) services failed"
+else
+    echo "No failed services"
+fi
 echo
 
 # Last 10 system errors
 echo "=== Recent System Errors ==="
-journalctl -p err --since "24 hours ago" --no-pager -n 10
+ERROR_COUNT=$(journalctl -p err --since "24 hours ago" --no-pager -q | wc -l 2>/dev/null || echo "0")
+if [ "$ERROR_COUNT" -gt 0 ]; then
+    journalctl -p err --since "24 hours ago" --no-pager -n 10
+    if [ "$ERROR_COUNT" -gt 20 ]; then
+        check_health_metric "High Error Rate" "false" "true" "$ERROR_COUNT errors in last 24 hours"
+    elif [ "$ERROR_COUNT" -gt 10 ]; then
+        check_health_metric "Elevated Error Rate" "true" "false" "$ERROR_COUNT errors in last 24 hours"
+    fi
+else
+    echo "No recent errors"
+fi
 echo
 
 # Network connections
@@ -94,6 +199,16 @@ ps aux --sort=-%cpu | head -10
 echo
 
 echo "=== Report completed at $(date) ==="
+
+# Send completion notification
+END_TIME=$(date)
+DURATION=$(($(date +%s) - $(date -d "$START_TIME" +%s)))
+
+if [ "$HEALTH_ISSUES" -eq 0 ]; then
+    send_slack_notification "✅ $SCRIPT_NAME completed on $HOSTNAME - All systems healthy (Duration: ${DURATION}s)" "success"
+else
+    send_slack_notification "⚠️ $SCRIPT_NAME completed on $HOSTNAME - $HEALTH_ISSUES issues detected (Duration: ${DURATION}s)" "warning"
+fi
 EOF
 
 chmod +x $SCRIPTSDIR/system_health_check.sh

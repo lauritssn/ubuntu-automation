@@ -238,10 +238,61 @@ cat > $SCRIPTSDIR/check_swap_usage.sh << 'EOF'
 #!/bin/bash
 
 # Swap Usage Monitor for Ubuntu 24.04
-# Alerts when swap usage exceeds thresholds
+# Enhanced with Slack notifications and comprehensive monitoring
+
+# Configuration
+SLACK_WEBHOOK_URL="SLACK_WEBHOOK_PLACEHOLDER"
+HOSTNAME=$(hostname)
+START_TIME=$(date)
+SCRIPT_NAME="Swap Usage Monitor"
 
 SWAP_WARN_THRESHOLD=25  # Warning at 25% swap usage
 SWAP_CRIT_THRESHOLD=50  # Critical at 50% swap usage
+
+# Common Slack notification function
+send_slack_notification() {
+    local message="$1"
+    local status="$2"  # start, success, warning, error
+    local channel="#monitoring"
+    
+    # Only send Slack message if webhook URL is configured
+    if [ "$SLACK_WEBHOOK_URL" != "SLACK_WEBHOOK_PLACEHOLDER" ] && [ -n "$SLACK_WEBHOOK_URL" ]; then
+        # Set appropriate emoji and username based on status
+        case "$status" in
+            "start")
+                emoji=":hourglass_flowing_sand:"
+                username="System Monitor"
+                ;;
+            "success")
+                emoji=":white_check_mark:"
+                username="System Monitor"
+                ;;
+            "warning")
+                emoji=":warning:"
+                username="System Alert"
+                ;;
+            "error")
+                emoji=":rotating_light:"
+                username="System Alert"
+                ;;
+            *)
+                emoji=":information_source:"
+                username="System Monitor"
+                ;;
+        esac
+        
+        # Send notification
+        curl -X POST -H 'Content-type: application/json' --data "{
+            \"channel\": \"$channel\",
+            \"text\": \"$message\",
+            \"username\": \"$username\",
+            \"icon_emoji\": \"$emoji\"
+        }" "$SLACK_WEBHOOK_URL" 2>/dev/null || echo "Failed to send Slack notification"
+    fi
+}
+
+# Send start notification
+send_slack_notification "💾 $SCRIPT_NAME started on $HOSTNAME" "start"
 
 # Get current swap usage percentage
 SWAP_TOTAL=$(free | grep Swap | awk '{print $2}')
@@ -249,15 +300,29 @@ SWAP_USED=$(free | grep Swap | awk '{print $3}')
 
 if [ "$SWAP_TOTAL" -gt 0 ]; then
     SWAP_PERCENT=$((SWAP_USED * 100 / SWAP_TOTAL))
+    SWAP_USED_MB=$((SWAP_USED / 1024))
+    SWAP_TOTAL_MB=$((SWAP_TOTAL / 1024))
     
     if [ "$SWAP_PERCENT" -ge "$SWAP_CRIT_THRESHOLD" ]; then
+        send_slack_notification "🚨 CRITICAL: Swap usage on $HOSTNAME at ${SWAP_PERCENT}% (${SWAP_USED_MB}MB/${SWAP_TOTAL_MB}MB) - Consider adding more RAM" "error"
         echo "CRITICAL: Swap usage at ${SWAP_PERCENT}% - Consider adding more RAM"
         logger -p user.crit "High swap usage: ${SWAP_PERCENT}%"
     elif [ "$SWAP_PERCENT" -ge "$SWAP_WARN_THRESHOLD" ]; then
+        send_slack_notification "⚠️ WARNING: Swap usage on $HOSTNAME at ${SWAP_PERCENT}% (${SWAP_USED_MB}MB/${SWAP_TOTAL_MB}MB) - Monitor memory usage" "warning"
         echo "WARNING: Swap usage at ${SWAP_PERCENT}% - Monitor memory usage"
         logger -p user.warn "Elevated swap usage: ${SWAP_PERCENT}%"
+    else
+        echo "Swap usage normal: ${SWAP_PERCENT}% (${SWAP_USED_MB}MB/${SWAP_TOTAL_MB}MB)"
+    fi
+    
+    # Send success notification for normal operation
+    if [ "$SWAP_PERCENT" -lt "$SWAP_WARN_THRESHOLD" ]; then
+        END_TIME=$(date)
+        DURATION=$(($(date +%s) - $(date -d "$START_TIME" +%s)))
+        send_slack_notification "✅ $SCRIPT_NAME completed on $HOSTNAME - Swap usage normal at ${SWAP_PERCENT}% (Duration: ${DURATION}s)" "success"
     fi
 else
+    send_slack_notification "⚠️ WARNING: No swap configured on $HOSTNAME" "warning"
     echo "No swap configured or available"
 fi
 EOF
