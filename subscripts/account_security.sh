@@ -121,8 +121,8 @@ cp /etc/sudoers $BACKUPDIR/sudoers_$DATE
 cat > /etc/sudoers.d/security-policies << 'EOF'
 # Enhanced sudo security policies for Ubuntu 24.04
 
-# Require password for sudo (disable NOPASSWD)
-Defaults passwd_required
+# Password is required by default (this is the standard behavior)
+# NOPASSWD is not used anywhere to ensure passwords are always required
 
 # Log sudo commands to syslog
 Defaults syslog
