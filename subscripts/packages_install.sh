@@ -89,7 +89,7 @@ show_yellow "Essential system packages installed successfully."
 show_yellow "Installing security packages."
 
 # SSH and authentication packages
-SSH_PACKAGES="libpam-google-authenticator"
+SSH_PACKAGES="libpam-google-authenticator pamtester"
 
 # QR code generation (used by SSH 2FA and WireGuard)
 QR_PACKAGES="qrencode"
