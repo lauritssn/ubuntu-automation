@@ -145,7 +145,7 @@ check_package() {
     local package="$1"
     local description="$2"
     
-    if dpkg -l | grep -q "^ii  $package "; then
+    if dpkg-query -W -f='${Status}' "$package" 2>/dev/null | grep -q "install ok installed"; then
         show_yellow "$description ($package) is installed."
         return 0
     else
