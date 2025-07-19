@@ -8,9 +8,9 @@ DATE=$(date +%Y-%m-%d_%H%M)
 SUBSCRIPT="rkhunter_install.sh"
 
 if [ -n "$LOGDIR" ]; then
-   LOGDIR=$LOGDIR
+    LOGDIR=$LOGDIR
 else
-   LOGDIR=/tmp
+    LOGDIR=/srv/apps/logs
 fi
 
 LOGFILE=$SUBSCRIPT-$DATE.log

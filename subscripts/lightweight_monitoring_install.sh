@@ -9,7 +9,7 @@ SUBSCRIPT="lightweight_monitoring_install.sh"
 if [ -n "$LOGDIR" ]; then
     LOGDIR=$LOGDIR
 else
-    LOGDIR=/tmp
+    LOGDIR=/srv/apps/logs
 fi
 
 LOGFILE=$SUBSCRIPT-$DATE.log

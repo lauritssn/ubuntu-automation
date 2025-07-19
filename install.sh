@@ -350,7 +350,7 @@ export -f execute_module
 # Standardized application paths - no more company placeholders
 export AUTOMATION_ROOT="/srv/apps"
 export BASEDIR=$(pwd)
-export LOGDIR='/tmp'
+export LOGDIR='/srv/apps/logs'
 export DATE=$(date +%Y-%m-%d_%H%M)
 export DEBIAN_FRONTEND=noninteractive # Make apt-get install non-interactive
 
@@ -460,6 +460,13 @@ fi
 # Create automation-backup dir if it doesn't exist - also creates ($DEPLOYDIR)
 if [ ! -d $BACKUPDIR ]; then
     mkdir -p $BACKUPDIR
+fi
+
+# Create logs directory if it doesn't exist
+if [ ! -d $LOGDIR ]; then
+    mkdir -p $LOGDIR
+    chmod 755 $LOGDIR
+    log_info "Created logs directory: $LOGDIR"
 fi
 
 ##########################################################################################

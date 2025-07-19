@@ -9,7 +9,7 @@ SUBSCRIPT="ufw_install.sh"
 if [ -n "$LOGDIR" ]; then
     LOGDIR=$LOGDIR
 else
-    LOGDIR=/tmp
+    LOGDIR=/srv/apps/logs
 fi
 
 LOGFILE=$SUBSCRIPT-$DATE.log
@@ -88,8 +88,7 @@ show_info "Applying UFW security rules..."
 ufw allow in on lo
 ufw allow out on lo
 
-# Allow established and related incoming connections
-ufw allow in on any to any port 22 proto tcp
+# SSH rules will be configured below based on secure subnet configuration
 
 EOF
 
@@ -123,19 +122,19 @@ EOF
 if [ -n "$SECURE_SUBNET" ] && [ "$SECURE_SUBNET" != "0.0.0.0/0" ]; then
     cat >> $SCRIPTSDIR/ufw.sh << EOF
 
-# Allow SSH only from secure subnet for enhanced security
-ufw allow proto tcp from $SECURE_SUBNET to any port 22 comment '$SECURE_SUBNET_DESC to SSH'
+# Allow SSH only from secure subnet with rate limiting for enhanced security
+ufw limit proto tcp from $SECURE_SUBNET to any port 22 comment '$SECURE_SUBNET_DESC to SSH (rate limited)'
 
-show_info "SSH access restricted to secure subnet: $SECURE_SUBNET"
+show_info "SSH access restricted to secure subnet: $SECURE_SUBNET with rate limiting enabled"
 
 EOF
 else
     cat >> $SCRIPTSDIR/ufw.sh << 'EOF'
 
-# WARNING: SSH allowed from anywhere - CHANGE THIS FOR PRODUCTION
-ufw allow 22/tcp comment 'SSH from anywhere - INSECURE'
+# Rate limiting for SSH (prevent brute force attacks) - no secure subnet defined
+ufw limit ssh comment 'Rate limit SSH connections'
 
-show_warn "SSH is open to the world - configure SECURE_SUBNET for better security!"
+show_warn "SSH is rate-limited from anywhere - configure SECURE_SUBNET for better security!"
 
 EOF
 fi
@@ -148,34 +147,23 @@ if [[ "$DO_WIREGUARD_INSTALL" =~ [Yy]$ ]]; then
 ## WireGuard VPN Rules
 ##########################################################################################
 
-# Allow WireGuard VPN port
+# Allow WireGuard VPN port from anywhere
 ufw allow 51820/udp comment 'WireGuard VPN'
 
-# Allow VPN subnet full access to all services
-ufw allow from ${WIREGUARD_SUBNET%/*}.0/24 comment 'WireGuard VPN clients'
+# Allow VPN subnet full access to all local services
+ufw allow from $WIREGUARD_SUBNET comment 'WireGuard VPN clients to local services'
 
-show_info "WireGuard VPN configured with subnet: ${WIREGUARD_SUBNET%/*}.0/24"
+# Allow VPN clients to access internet through this server (routing)
+ufw route allow in on wg0 out on any
+ufw route allow in on any out on wg0
+
+show_info "WireGuard VPN configured with subnet: $WIREGUARD_SUBNET and routing enabled"
 
 EOF
 fi
 
-# Add Netdata monitoring rules if being installed
-if [[ "$DO_NETDATA_INSTALL" =~ [Yy]$ ]]; then
-    if [ -n "$SECURE_SUBNET" ] && [ "$SECURE_SUBNET" != "0.0.0.0/0" ]; then
-        cat >> $SCRIPTSDIR/ufw.sh << EOF
-
-##########################################################################################
-## Netdata Monitoring Rules
-##########################################################################################
-
-# Allow Netdata monitoring from secure subnet only
-ufw allow proto tcp from $SECURE_SUBNET to any port 19999 comment '$SECURE_SUBNET_DESC to Netdata'
-
-show_info "Netdata monitoring restricted to secure subnet: $SECURE_SUBNET"
-
-EOF
-    fi
-fi
+# Netdata monitoring access is handled via VPN and secure subnet SSH access
+# No additional firewall rules needed for Netdata
 
 # Add final script content
 cat >> $SCRIPTSDIR/ufw.sh << 'EOF'
@@ -190,8 +178,7 @@ ufw default deny incoming
 # Allow all outgoing traffic (applications need internet access)
 ufw default allow outgoing
 
-# Rate limiting for SSH (prevent brute force attacks)
-ufw limit ssh comment 'Rate limit SSH connections'
+# SSH rate limiting is already configured above in SSH section
 
 ##########################################################################################
 ## Apply and Verify Rules
