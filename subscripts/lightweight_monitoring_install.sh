@@ -15,6 +15,62 @@ fi
 LOGFILE=$SUBSCRIPT-$DATE.log
 
 ##########################################################################################
+## Helper function for creating Slack notification function in scripts
+##########################################################################################
+
+create_slack_function() {
+    local script_file="$1"
+    local script_name="$2"
+    
+    # Add Slack notification function to the script
+    cat >> "$script_file" << 'SLACK_FUNCTION_EOF'
+
+# Common Slack notification function
+send_slack_notification() {
+    local message="$1"
+    local status="$2"  # start, success, warning, error
+    local channel="#monitoring"
+    
+    # Only send Slack message if webhook URL is configured
+    if [ "$SLACK_WEBHOOK_URL" != "SLACK_WEBHOOK_PLACEHOLDER" ] && [ -n "$SLACK_WEBHOOK_URL" ]; then
+        # Set appropriate emoji and username based on status
+        case "$status" in
+            "start")
+                emoji=":hourglass_flowing_sand:"
+                username="System Monitor"
+                ;;
+            "success")
+                emoji=":white_check_mark:"
+                username="System Monitor"
+                ;;
+            "warning")
+                emoji=":warning:"
+                username="System Alert"
+                ;;
+            "error")
+                emoji=":rotating_light:"
+                username="System Alert"
+                ;;
+            *)
+                emoji=":information_source:"
+                username="System Monitor"
+                ;;
+        esac
+        
+        # Send notification
+        curl -X POST -H 'Content-type: application/json' --data "{
+            \"channel\": \"$channel\",
+            \"text\": \"$message\",
+            \"username\": \"$username\",
+            \"icon_emoji\": \"$emoji\"
+        }" "$SLACK_WEBHOOK_URL" 2>/dev/null || echo "Failed to send Slack notification"
+    fi
+}
+
+SLACK_FUNCTION_EOF
+}
+
+##########################################################################################
 ## Info
 ##########################################################################################
 show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFILE."
@@ -53,7 +109,52 @@ HEALTH_ISSUES=0
 
 EOF
 
-create_slack_function $SCRIPTSDIR/system_health_check.sh "System Health"
+# Inline the Slack function creation instead of calling the helper function
+cat >> $SCRIPTSDIR/system_health_check.sh << 'SLACK_FUNCTION_EOF'
+
+# Common Slack notification function
+send_slack_notification() {
+    local message="$1"
+    local status="$2"  # start, success, warning, error
+    local channel="#monitoring"
+    
+    # Only send Slack message if webhook URL is configured
+    if [ "$SLACK_WEBHOOK_URL" != "SLACK_WEBHOOK_PLACEHOLDER" ] && [ -n "$SLACK_WEBHOOK_URL" ]; then
+        # Set appropriate emoji and username based on status
+        case "$status" in
+            "start")
+                emoji=":hourglass_flowing_sand:"
+                username="System Monitor"
+                ;;
+            "success")
+                emoji=":white_check_mark:"
+                username="System Monitor"
+                ;;
+            "warning")
+                emoji=":warning:"
+                username="System Alert"
+                ;;
+            "error")
+                emoji=":rotating_light:"
+                username="System Alert"
+                ;;
+            *)
+                emoji=":information_source:"
+                username="System Monitor"
+                ;;
+        esac
+        
+        # Send notification
+        curl -X POST -H 'Content-type: application/json' --data "{
+            \"channel\": \"$channel\",
+            \"text\": \"$message\",
+            \"username\": \"$username\",
+            \"icon_emoji\": \"$emoji\"
+        }" "$SLACK_WEBHOOK_URL" 2>/dev/null || echo "Failed to send Slack notification"
+    fi
+}
+
+SLACK_FUNCTION_EOF
 
 cat >> $SCRIPTSDIR/system_health_check.sh << 'EOF'
 

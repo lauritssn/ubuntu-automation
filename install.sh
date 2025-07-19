@@ -216,7 +216,7 @@ execute_module() {
             case $yn in
                 [Yy]*)
                     log_info "User chose to continue after $module_name failure"
-                    break
+                    return 0  # Return success to continue with next modules
                     ;;
                 [Nn]*)
                     log_info "User chose to exit after $module_name failure"
