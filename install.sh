@@ -10,6 +10,23 @@ printf "############################################\n\n"
 set -e # Exit on error
 #set -x # Enable debugging
 
+# Enhanced error handling
+set -o pipefail # Exit on pipe failures
+trap 'handle_error ${LINENO}' ERR
+
+handle_error() {
+    local line_no=$1
+    echo "❌ ERROR: Script failed at line $line_no"
+    echo "❌ ERROR: Last command: $BASH_COMMAND"
+    echo "❌ ERROR: Exit code: $?"
+    echo "❌ ERROR: Working directory: $(pwd)"
+    echo "❌ ERROR: Environment variables:"
+    echo "   BASEDIR: $BASEDIR"
+    echo "   SCRIPTSDIR: $SCRIPTSDIR"
+    echo "   LOGDIR: $LOGDIR"
+    exit 1
+}
+
 # Initialize systemd journal logging for installation tracking
 INSTALL_ID=$(date +%Y%m%d_%H%M%S)
 JOURNAL_TAG="ubuntu-automation-${INSTALL_ID}"
@@ -622,8 +639,21 @@ log_info "Scripts directory: $SCRIPTSDIR"
 log_info "Email: $INFO_EMAIL"
 log_info "Timezone: $TIMEZONE"
 
+echo "🔍 DEBUG: Key variables:"
+echo "   BASEDIR: $BASEDIR"
+echo "   SCRIPTSDIR: $SCRIPTSDIR" 
+echo "   LOGDIR: $LOGDIR"
+echo "   Working directory: $(pwd)"
+echo "🔍 DEBUG: Checking if subscripts directory exists:"
+ls -la $BASEDIR/subscripts/ 2>/dev/null || echo "❌ SUBSCRIPTS DIRECTORY NOT FOUND"
+
 # Ensure all subscripts have execute permissions
+echo "🔍 DEBUG: Setting execute permissions on: $BASEDIR/subscripts/*.sh"
+echo "🔍 DEBUG: Files in subscripts directory:"
+ls -la $BASEDIR/subscripts/
 chmod +x $BASEDIR/subscripts/*.sh
+echo "🔍 DEBUG: Permissions after chmod:"
+ls -la $BASEDIR/subscripts/
 log_info "Subscript permissions updated"
 
 # Set timezone
@@ -638,6 +668,8 @@ printf "\n--------------------\n"
 # System update
 if [[ $DO_SYSTEM_UPDATE =~ [Yy]$ ]]; then
     log_start "System Update"
+    echo "🔍 DEBUG: About to execute: $BASEDIR/subscripts/system_update.sh"
+    echo "🔍 DEBUG: File exists: $(ls -la $BASEDIR/subscripts/system_update.sh 2>/dev/null || echo 'FILE NOT FOUND')"
     source $BASEDIR/subscripts/system_update.sh
     log_success "System Update"
 else
@@ -650,14 +682,20 @@ printf "\n--------------------\n"
 # General server settings install
 if [[ $DO_GENERAL_SERVER_SETTINGS =~ [Yy]$ ]]; then
     log_start "General Server Settings"
+    echo "🔍 DEBUG: About to execute: $BASEDIR/subscripts/general_system_settings.sh"
+    echo "🔍 DEBUG: File exists: $(ls -la $BASEDIR/subscripts/general_system_settings.sh 2>/dev/null || echo 'FILE NOT FOUND')"
     source $BASEDIR/subscripts/general_system_settings.sh
     log_success "General System Settings"
     printf "\n--------------------\n"
     log_start "Secure Shared Memory"
+    echo "🔍 DEBUG: About to execute: $BASEDIR/subscripts/secure_shared_memory_install.sh"
+    echo "🔍 DEBUG: File exists: $(ls -la $BASEDIR/subscripts/secure_shared_memory_install.sh 2>/dev/null || echo 'FILE NOT FOUND')"
     source $BASEDIR/subscripts/secure_shared_memory_install.sh
     log_success "Secure Shared Memory"
     printf "\n--------------------\n"
     log_start "Sysctl Configuration"
+    echo "🔍 DEBUG: About to execute: $BASEDIR/subscripts/sysctl_install.sh"
+    echo "🔍 DEBUG: File exists: $(ls -la $BASEDIR/subscripts/sysctl_install.sh 2>/dev/null || echo 'FILE NOT FOUND')"
     source $BASEDIR/subscripts/sysctl_install.sh
     log_success "Sysctl Configuration"
     printf "\n--------------------\n"
