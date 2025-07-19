@@ -116,9 +116,6 @@ PermitUserEnvironment no
 # Compression (disabled for security)
 Compression no
 
-# Use privilege separation
-UsePrivilegeSeparation yes
-
 ##########################################################################################
 ## Logging and Monitoring
 ##########################################################################################

@@ -48,15 +48,6 @@ ufw status numbered >>$CONF_BACK_2 2>/dev/null
 show_yellow "Backup of active ufw rules can be found in $CONF_BACK_2."
 
 ##########################################################################################
-## Inform about UFW script - can be changed later if we want to apply rules by default
-##########################################################################################
-
-show_yellow "UFW script can now be run using: $(show_info "sudo bash $CONF_ORG_1")"
-show_yellow "Contents of UFW script is shown below:"
-
-cat $CONF_ORG_1 $CONF_BACK_2
-
-##########################################################################################
 ## Configure UFW for Ubuntu 24.04
 ##########################################################################################
 
@@ -242,6 +233,21 @@ chmod +x $SCRIPTSDIR/ufw.sh
 show_yellow "UFW rules script generated at $SCRIPTSDIR/ufw.sh"
 
 ##########################################################################################
+## Inform about UFW script after it's created
+##########################################################################################
+
+show_yellow "UFW script can now be run using: $(show_info "sudo bash $CONF_ORG_1")"
+show_yellow "Contents of UFW script is shown below:"
+
+# Only show the file if it exists
+if [ -f $CONF_ORG_1 ]; then
+    cat $CONF_ORG_1
+else
+    show_err "UFW script was not created successfully at $CONF_ORG_1"
+    exit 1
+fi
+
+##########################################################################################
 ## Enable UFW
 ##########################################################################################
 
@@ -257,7 +263,8 @@ if [ -f $CONF_ORG_1 ]; then
     bash $CONF_ORG_1 >>$LOGDIR/$LOGFILE 2>&1 || (show_yellow "UFW script execution failed. Please check logfile and fix error manually.")
     show_yellow "UFW configuration script executed."
 else
-    show_yellow "UFW configuration script not found at $CONF_ORG_1"
+    show_err "UFW configuration script not found at $CONF_ORG_1"
+    exit 1
 fi
 
 ##########################################################################################
