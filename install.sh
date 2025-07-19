@@ -139,11 +139,11 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 ##########################################################################################
-## Check if cronscripts folder exists and create it if it doesn't
+## Check if scripts folder exists and create it if it doesn't
 ##########################################################################################
 
-if [ ! -d $CRONDIR ]; then
-    mkdir -p $CRONDIR
+if [ ! -d $SCRIPTSDIR ]; then
+    mkdir -p $SCRIPTSDIR
 fi
 
 ##########################################################################################
@@ -154,13 +154,13 @@ fi
 ## Set standardized directory structure (no company name needed)
 ##########################################################################################
 
-export CRONDIR="/srv/apps/scripts"
+export SCRIPTSDIR="/srv/apps/scripts"
 export DEPLOYDIR="/srv/apps"
 export BACKUPDIR="/srv/apps/backups"
 
-# Create crondir if it doesn't exist
-if [ ! -d $CRONDIR ]; then
-    mkdir -p $CRONDIR
+# Create scripts directory if it doesn't exist
+if [ ! -d $SCRIPTSDIR ]; then
+    mkdir -p $SCRIPTSDIR
 fi
 
 # Create automation-backup dir if it doesn't exist - also creates ($DEPLOYDIR)
@@ -169,7 +169,7 @@ if [ ! -d $BACKUPDIR ]; then
 fi
 
 # Write to secret file
-echo $DATE >>$CRONDIR/pswd
+echo $DATE >>$SCRIPTSDIR/pswd
 
 ##########################################################################################
 ## Get input
@@ -582,7 +582,7 @@ ufw --force enable
 "
 
 if [[ $DO_UFW_INSTALL =~ [Yy]$ ]]; then
-    echo "$UFW_HEADER" >$CRONDIR/ufw.sh
+    echo "$UFW_HEADER" >$SCRIPTSDIR/ufw.sh
 fi
 
 ##########################################################################################
@@ -609,7 +609,7 @@ fi
 START_TIME=$(date +%s)
 log_start "Ubuntu 24.04 Automation Installation"
 log_info "Installation ID: $INSTALL_ID"
-log_info "Scripts directory: $CRONDIR"
+log_info "Scripts directory: $SCRIPTSDIR"
 log_info "Email: $INFO_EMAIL"
 log_info "Timezone: $TIMEZONE"
 
@@ -773,8 +773,8 @@ fi
 printf "\n--------------------\n"
 
 # Write to pswd and secure file
-echo "" >>$CRONDIR/pswd
-chmod 0600 $CRONDIR/pswd
+echo "" >>$SCRIPTSDIR/pswd
+chmod 0600 $SCRIPTSDIR/pswd
 
 # End timer and log completion
 END_TIME=$(date +%s)

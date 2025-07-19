@@ -1,5 +1,5 @@
 # Defaults for rkhunter automatic tasks
-# sourced by /etc/cron.*/rkhunter and /etc/apt/apt.conf.d/90rkhunter
+# sourced by systemd timers and /etc/apt/apt.conf.d/90rkhunter
 #
 # This is a POSIX shell fragment
 #

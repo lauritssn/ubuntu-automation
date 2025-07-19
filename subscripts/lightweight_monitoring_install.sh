@@ -38,7 +38,7 @@ show_yellow "Lightweight monitoring tools installed successfully."
 show_yellow "Creating system monitoring utilities."
 
 # Create system health check script (to be scheduled via systemd timers)
-cat > $CRONDIR/system_health_check.sh << 'EOF'
+cat > $SCRIPTSDIR/system_health_check.sh << 'EOF'
 #!/bin/bash
 
 # System Health Check Script for Ubuntu 24.04
@@ -96,8 +96,8 @@ echo
 echo "=== Report completed at $(date) ==="
 EOF
 
-chmod +x $CRONDIR/system_health_check.sh
-show_yellow "System health check script created at $CRONDIR/system_health_check.sh"
+chmod +x $SCRIPTSDIR/system_health_check.sh
+show_yellow "System health check script created at $SCRIPTSDIR/system_health_check.sh"
 
 ##########################################################################################
 ## Create disk space monitoring script
@@ -106,7 +106,7 @@ show_yellow "System health check script created at $CRONDIR/system_health_check.
 show_yellow "Creating disk space monitoring script."
 
 # Create disk space monitoring script (enhanced version of check_disk_space.sh)
-cat > $CRONDIR/check_disk_space.sh << 'EOF'
+cat > $SCRIPTSDIR/check_disk_space.sh << 'EOF'
 #!/usr/bin/env bash
 
 #########################################################################
@@ -285,17 +285,17 @@ fi
 exit 0
 EOF
 
-chmod +x $CRONDIR/check_disk_space.sh
+chmod +x $SCRIPTSDIR/check_disk_space.sh
 
 # Replace Slack webhook placeholder if enabled
 if [[ "$ENABLE_SLACK_MONITORING" =~ [Yy]$ ]] && [ -n "$SLACK_WEBHOOK_URL" ]; then
-    sed -i 's|SLACK_WEBHOOK_PLACEHOLDER|'${SLACK_WEBHOOK_URL}'|g' $CRONDIR/check_disk_space.sh
+    sed -i 's|SLACK_WEBHOOK_PLACEHOLDER|'${SLACK_WEBHOOK_URL}'|g' $SCRIPTSDIR/check_disk_space.sh
     show_yellow "Disk space monitoring script created with Slack notifications enabled"
 else
     show_yellow "Disk space monitoring script created (Slack notifications disabled)"
 fi
 
-show_yellow "Disk space monitoring script created at $CRONDIR/check_disk_space.sh"
+show_yellow "Disk space monitoring script created at $SCRIPTSDIR/check_disk_space.sh"
 
 ##########################################################################################
 ## Create monitoring aliases and shortcuts

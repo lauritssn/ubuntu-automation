@@ -234,7 +234,7 @@ free -h
 show_yellow "Setting up swap usage monitoring."
 
 # Create swap monitoring script (to be scheduled via systemd timers)
-cat > $CRONDIR/check_swap_usage.sh << 'EOF'
+cat > $SCRIPTSDIR/check_swap_usage.sh << 'EOF'
 #!/bin/bash
 
 # Swap Usage Monitor for Ubuntu 24.04
@@ -262,8 +262,8 @@ else
 fi
 EOF
 
-chmod +x $CRONDIR/check_swap_usage.sh
-show_yellow "Swap monitoring script created at $CRONDIR/check_swap_usage.sh"
+chmod +x $SCRIPTSDIR/check_swap_usage.sh
+show_yellow "Swap monitoring script created at $SCRIPTSDIR/check_swap_usage.sh"
 
 ##########################################################################################
 ## Done
@@ -273,7 +273,7 @@ show_info "=== Modern Ubuntu 24.04 Swap Configuration Complete ==="
 show_info "Your server now has optimal memory protection:"
 show_info "• ZRAM: Compresses inactive pages in memory (if available)"
 show_info "• Traditional Swap: ${SWAP_SIZE_GB}GB safety buffer on disk"
-show_info "• Monitoring: Check swap usage with $CRONDIR/check_swap_usage.sh"
+show_info "• Monitoring: Check swap usage with $SCRIPTSDIR/check_swap_usage.sh"
 show_info "• Memory pressure is handled gracefully with minimal performance impact"
 
 show_info "$SUBSCRIPT done."

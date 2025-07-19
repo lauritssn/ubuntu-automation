@@ -1,8 +1,6 @@
 #!/bin/bash
  
-# Email alert cron job script for ClamAV
-# Original, unmodified script by: Deven Hillard 
-# (http://www.digitalsanctuary.com/tech-blog/debian/automated-clamav-virus-scanning.html)
+# Email alert script for ClamAV (executed via systemd timer)
 # Modified to show infected and/or removed files
  
 # Directories to scan

@@ -19,9 +19,9 @@ LOGFILE=$SUBSCRIPT-$DATE.log
 # General ClamAV configuration
 ##########################################################################################
 
-CONF_ORG=/etc/cron.daily/clamav
-CONF_BACK=$BACKUPDIR/$(basename $CONF_ORG)_$DATE
-CONF_GIT=$BASEDIR/configs/clamav/clamav
+SCRIPT_ORG=/usr/local/bin/clamav-scan.sh
+SCRIPT_BACK=$BACKUPDIR/$(basename $SCRIPT_ORG)_$DATE
+SCRIPT_GIT=$BASEDIR/configs/clamav/clamav
 
 ##########################################################################################
 ## Info
@@ -50,15 +50,14 @@ show_yellow "ClamAV update done."
 ## Note: ClamAV scheduling now handled by systemd timers
 ##########################################################################################
 
-show_yellow "ClamAV scanning will be configured via systemd timers (not cron)."
-show_yellow "Systemd timers provide better logging, control, and reliability."
+show_yellow "ClamAV scanning will be configured via systemd timers."
 
 ##########################################################################################
 ## Make the file executable.
 ##########################################################################################
 
-chmod +x $CONF_ORG >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Making ClamAV cron job $CONF_ORG executable failed. Please check logfile and fix error manually.")
-show_yellow "ClamAV cron job $CONF_ORG made executable."
+chmod +x $SCRIPT_ORG >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Making ClamAV scan script $SCRIPT_ORG executable failed. Please check logfile and fix error manually.")
+show_yellow "ClamAV scan script $SCRIPT_ORG made executable."
 
 ##########################################################################################
 ## Restart ClamAV

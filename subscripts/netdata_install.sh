@@ -39,7 +39,7 @@ show_yellow "Netdata installed successfully."
 ## Create UFW rule
 ##########################################################################################
 
-echo "ufw allow proto tcp from $SECURE_SUBNET to any port 19999 # $SECURE_SUBNET_DESC to Netdata" >>$CRONDIR/ufw.sh || (show_err "Netdata UFW rule installation failed. Please check logfile and fix error manually.")
+echo "ufw allow proto tcp from $SECURE_SUBNET to any port 19999 # $SECURE_SUBNET_DESC to Netdata" >>$SCRIPTSDIR/ufw.sh || (show_err "Netdata UFW rule installation failed. Please check logfile and fix error manually.")
 show_yellow "ufw rule to allow access to Netdata from $SECURE_SUBNET_DESC($SECURE_SUBNET) added."
 
 ##########################################################################################
