@@ -25,8 +25,33 @@ show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFIL
 
 show_yellow "Installing Wireguard."
 
-apt-get --yes update >>$LOGDIR/$LOGFILE 2>&1
-apt-get --yes install wireguard wireguard-tools qrencode >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of Wireguard failed. Please check logfile and fix error manually.")
+# Fix potential APT cache corruption issues
+show_yellow "Cleaning APT cache to prevent corruption issues."
+rm -rf /var/cache/apt/archives/partial/* >>$LOGDIR/$LOGFILE 2>&1
+rm -rf /var/lib/apt/lists/* >>$LOGDIR/$LOGFILE 2>&1
+apt-get clean >>$LOGDIR/$LOGFILE 2>&1
+
+# Update package lists with retries
+show_yellow "Updating package lists."
+for i in {1..3}; do
+    if apt-get --yes update >>$LOGDIR/$LOGFILE 2>&1; then
+        show_yellow "Package lists updated successfully."
+        break
+    else
+        show_yellow "Package update attempt $i failed, cleaning cache and retrying..."
+        apt-get clean >>$LOGDIR/$LOGFILE 2>&1
+        rm -rf /var/lib/apt/lists/* >>$LOGDIR/$LOGFILE 2>&1
+        if [ $i -eq 3 ]; then
+            show_err "Failed to update package lists after 3 attempts. Please check logfile and fix error manually."
+            exit 100
+        fi
+        sleep 2
+    fi
+done
+
+# Install Wireguard packages
+show_yellow "Installing Wireguard packages."
+apt-get --yes install wireguard wireguard-tools qrencode >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of Wireguard failed. Please check logfile and fix error manually." && exit 100)
 
 show_yellow "Wireguard packages installed successfully."
 
