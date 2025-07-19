@@ -1,0 +1,14 @@
+[Unit]
+Description=RKHunter Daily Security Scan
+Documentation=man:rkhunter(8)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/bin/rkhunter --cronjob --check --sk
+StandardOutput=journal
+StandardError=journal
+TimeoutSec=3600
+Nice=19

@@ -1,0 +1,18 @@
+[Unit]
+Description=ClamAV System Scan
+Documentation=man:clamscan(1)
+After=network-online.target clamav-daemon.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/local/bin/clamav-scan.sh
+StandardOutput=journal
+StandardError=journal
+IOSchedulingClass=3
+Nice=19
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/log/clamav /tmp
+TimeoutSec=3600

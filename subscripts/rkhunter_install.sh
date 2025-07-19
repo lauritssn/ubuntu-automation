@@ -77,6 +77,13 @@ rkhunter --propupd --skip-keypress >>$LOGDIR/$LOGFILE 2>&1 && show_yellow "RKHun
 rkhunter --check --skip-keypress >>$LOGDIR/$LOGFILE 2>&1 || show_yellow "RKHunter check done - check log file $LOGDIR/$LOGFILE."
 
 ##########################################################################################
+## Note: RKHunter scheduling now handled by systemd timers
+##########################################################################################
+
+show_yellow "RKHunter scanning and updates will be configured via systemd timers."
+show_yellow "This provides better logging, control, and reliability than cron."
+
+##########################################################################################
 ## Done
 ##########################################################################################
 

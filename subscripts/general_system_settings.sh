@@ -38,17 +38,27 @@ if [ -a $CONF_NTP_ORG ]; then
     cp -p $CONF_NTP_ORG $CONF_NTP_BACK && show_yellow "NTP conf file $CONF_NTP_ORG backed up to $CONF_NTP_BACK."
 fi
 
-apt --yes purge chrony >$LOGDIR/$LOGFILE 2>&1 || (show_err "Removal of Chrony failed. Please check logfile and fix error manually.")
+# Handle potential NTP conflicts gracefully
+if dpkg -l | grep -q chrony; then
+    show_yellow "Removing conflicting chrony package."
+    apt --yes purge chrony >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Chrony removal had issues, continuing with systemd-timesyncd anyway."
+fi
 
-show_yellow "Replace NTP config."
-sed -i 's/#NTP=/'NTP=${NTP}'/ig' $CONF_NTP_ORG
-sed -i 's/#FallbackNTP=ntp\.ubuntu\.com/'FallbackNTP=${NTP_FALLBACK}'/ig' $CONF_NTP_ORG
+show_yellow "Configure NTP using modern timedatectl approach."
+# Use timedatectl for modern NTP configuration
+timedatectl set-ntp true >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Failed to enable NTP synchronization."
 
-show_yellow "Restart NTP services."
-systemctl restart systemd-timesyncd
-systemctl status systemd-timesyncd
-timedatectl
-timedatectl show-timesync
+# Configure timesyncd.conf for custom NTP servers
+if [[ "$NTP" != "dk.pool.ntp.org" ]] || [[ "$NTP_FALLBACK" != "pool.ntp.org" ]]; then
+    show_yellow "Configuring custom NTP servers."
+    sed -i 's/#NTP=.*/NTP='${NTP}'/g' $CONF_NTP_ORG
+    sed -i 's/#FallbackNTP=.*/FallbackNTP='${NTP_FALLBACK}'/g' $CONF_NTP_ORG
+    systemctl restart systemd-timesyncd >>$LOGDIR/$LOGFILE 2>&1
+fi
+
+show_yellow "Verify NTP configuration."
+timedatectl status | grep "NTP service"
+timedatectl show-timesync --property=ServerName --property=ServerAddress 2>/dev/null || true
 
 show_yellow "NTP successfully installed."
 
@@ -70,17 +80,18 @@ show_yellow "NTP successfully installed."
 ##########################################################################################
 ## Install extra packages
 ##########################################################################################
-show_yellow "Install extra packages."
-apt-get --yes install acct atop curl dos2unix perl libnet-ssleay-perl openssl libauthen-pam-perl libpam-runtime libio-pty-perl apt-show-versions git subversion gcc build-essential libc6-dev autoconf automake dkms linux-headers-$(uname -r) sqlite3 libsqlite3-dev >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of extra packages failed. Please check logfile and fix error manually.")
+show_yellow "Install essential dependencies and extra packages."
+apt-get --yes install software-properties-common apt-transport-https ca-certificates gnupg lsb-release >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of essential dependencies failed. Please check logfile and fix error manually.")
+apt-get --yes install acct atop curl dos2unix perl libnet-ssleay-perl openssl libauthen-pam-perl libpam-runtime libio-pty-perl git gcc build-essential libc6-dev dkms linux-headers-generic sqlite3 libsqlite3-dev htop iotop >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of essential packages failed. Please check logfile and fix error manually.")
 show_yellow "Extra packages successfully installed."
 
-# @TODO https://www.informaticar.net/security-hardening-ubuntu-20-04/
+# @TODO https://www.informaticar.net/security-hardening-ubuntu-24-04/
 ##########################################################################################
 ## Secure SSHD
 ##########################################################################################
 
 CONF_SSH_ORG=/etc/ssh/sshd_config
-CONF_SSH_BACK=$BACKUPDIR/$(basename $CONF_NTP_ORG)_$DATE
+CONF_SSH_BACK=$BACKUPDIR/$(basename $CONF_SSH_ORG)_$DATE
 
 ##########################################################################################
 ## Backup config
@@ -101,12 +112,19 @@ sed -i 's/^#LogLevel.*/LogLevel INFO/' $CONF_SSH_ORG
 sed -i 's/^#PermitRootLogin.*/PermitRootLogin no/' $CONF_SSH_ORG
 # sed -i 's/^#PermitRootLogin.*/PermitRootLogin prohibit-password/' $CONF_SSH_ORG
 
-## @todo
-## sed -i 's/^Protocol.*/Protocol 2/' $CONF_SSH_ORG
+# Enhanced SSH security for Ubuntu 24.04
+sed -i 's/^#PubkeyAuthentication.*/PubkeyAuthentication yes/' $CONF_SSH_ORG
+sed -i 's/^#PasswordAuthentication.*/PasswordAuthentication no/' $CONF_SSH_ORG
+sed -i 's/^#PermitEmptyPasswords.*/PermitEmptyPasswords no/' $CONF_SSH_ORG
+sed -i 's/^#MaxSessions.*/MaxSessions 2/' $CONF_SSH_ORG
+sed -i 's/^#X11Forwarding.*/X11Forwarding no/' $CONF_SSH_ORG
+sed -i 's/^#AllowAgentForwarding.*/AllowAgentForwarding no/' $CONF_SSH_ORG
+sed -i 's/^#AllowTcpForwarding.*/AllowTcpForwarding no/' $CONF_SSH_ORG
+sed -i 's/^#PermitTunnel.*/PermitTunnel no/' $CONF_SSH_ORG
 
 # AllowUsers some_user1 some_user2
 
-service ssh restart
+systemctl restart ssh
 
 ##########################################################################################
 ## Disable root account completely
@@ -134,7 +152,7 @@ show_yellow "root account disabled."
 #Permit shew of up to 4 minutes – n
 #Enable rate limiting – y
 #
-#service ssh restart
+#systemctl restart ssh
 
 # @TODO
 ##########################################################################################

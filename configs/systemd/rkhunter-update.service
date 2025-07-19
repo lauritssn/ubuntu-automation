@@ -1,0 +1,14 @@
+[Unit]
+Description=RKHunter Database Update
+Documentation=man:rkhunter(8)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/bin/rkhunter --cronjob --update --sk
+ExecStartPost=/usr/bin/rkhunter --cronjob --propupd --sk
+StandardOutput=journal
+StandardError=journal
+TimeoutSec=1800

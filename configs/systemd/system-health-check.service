@@ -1,0 +1,10 @@
+[Unit]
+Description=System Health Check and Report
+After=multi-user.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/srv/apps/scripts/system_health_check.sh
+StandardOutput=journal
+StandardError=journal

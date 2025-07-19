@@ -47,22 +47,11 @@ systemctl start clamav-freshclam.service >>$LOGDIR/$LOGFILE 2>&1 || (show_err "S
 show_yellow "ClamAV update done."
 
 ##########################################################################################
-## Copy ClamAV cronjob
+## Note: ClamAV scheduling now handled by systemd timers
 ##########################################################################################
 
-if [ -a $CONF_ORG ]; then
-    cp -p $CONF_ORG $CONF_BACK && show_yellow "ClamAV cron job file $CONF_ORG backed up to $CONF_BACK."
-    cp $CONF_GIT $CONF_ORG && show_yellow "Default ClamAV cronjob deployed."
-else
-    cp $CONF_GIT $CONF_ORG && show_yellow "Default ClamAV cronjob deployed."
-fi
-
-##########################################################################################
-## Reconfigure E-mails
-##########################################################################################
-
-sed -i 's/INFO_EMAIL/'${INFO_EMAIL}'/ig' $CONF_ORG
-sed -i 's/EMAIL_DOMAIN/'${EMAIL_DOMAIN}'/ig' $CONF_ORG
+show_yellow "ClamAV scanning will be configured via systemd timers (not cron)."
+show_yellow "Systemd timers provide better logging, control, and reliability."
 
 ##########################################################################################
 ## Make the file executable.
@@ -75,7 +64,7 @@ show_yellow "ClamAV cron job $CONF_ORG made executable."
 ## Restart ClamAV
 ##########################################################################################
 
-service clamav-daemon restart >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Restarting ClamAV failed. Please check logfile and fix error manually.")
+systemctl restart clamav-daemon >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Restarting ClamAV failed. Please check logfile and fix error manually.")
 show_yellow "ClamAV restarted."
 
 ##########################################################################################

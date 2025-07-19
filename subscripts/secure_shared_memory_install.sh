@@ -38,7 +38,7 @@ cp -p $CONF_ORG $CONF_BACK && show_yellow "Config file $CONF_ORG backed up to $C
 ## Check for secure shared memory and insert if not there
 ##########################################################################################
 
-insertstring='tmpfs /run/shm tmpfs defaults,noexec,nosuid 0 0'
+insertstring='tmpfs /dev/shm tmpfs defaults,noexec,nosuid 0 0'
 searchstring=$(echo $insertstring | sed 's/ //g')
 
 if (sed -r 's/[ ]+//gi' $CONF_ORG | grep -q "${searchstring}"); then

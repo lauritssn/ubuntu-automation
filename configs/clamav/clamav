@@ -53,9 +53,9 @@ check_scan () {
  
 if [ $AGGRESSIVE = 1 ]
 then
-        /usr/bin/clamscan -ri --remove $SCAN_DIR >> $LOG_FILE
+        ionice -c 3 nice -n 19 /usr/bin/clamscan -ri --remove $SCAN_DIR >> $LOG_FILE
 else
-        /usr/bin/clamscan -ri $SCAN_DIR >> $LOG_FILE
+        ionice -c 3 nice -n 19 /usr/bin/clamscan -ri $SCAN_DIR >> $LOG_FILE
 fi
  
 check_scan

@@ -1,0 +1,393 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="790b4b74-ef0c-4325-ac77-39dae888aed6" name="Changes" comment="Fix readme.">
+      <change afterPath="$PROJECT_DIR$/configs/wireguard/wg0.conf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/subscripts/wireguard_install.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/install.sh" beforeDir="false" afterPath="$PROJECT_DIR$/install.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/subscripts/sendmail_install.sh" beforeDir="false" afterPath="$PROJECT_DIR$/subscripts/sendmail_install.sh" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;lauritssn&quot;
+  }
+}</component>
+  <component name="GitSEFilterConfiguration">
+    <file-type-list>
+      <filtered-out-file-type name="LOCAL_BRANCH" />
+      <filtered-out-file-type name="REMOTE_BRANCH" />
+      <filtered-out-file-type name="TAG" />
+      <filtered-out-file-type name="COMMIT_BY_MESSAGE" />
+    </file-type-list>
+  </component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/lauritssn/ubuntu-automation.git&quot;,
+    &quot;accountId&quot;: &quot;aac969cf-3d86-4f68-8032-01c651c4129c&quot;
+  }
+}</component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 3
+}</component>
+  <component name="ProjectId" id="26HVTCbn9TC9qxs5TjiD5kjgHHe" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/lauritssn/NoBackup.nosync/Projects/ubuntu-automation&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/configs/docker" />
+      <recent name="$PROJECT_DIR$/subscripts" />
+    </key>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-1d06a55b98c1-0b3e54e931b4-JavaScript-PY-241.17890.14" />
+        <option value="bundled-python-sdk-5b207ade9991-7e9c3bbb6e34-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-241.17890.14" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="790b4b74-ef0c-4325-ac77-39dae888aed6" name="Changes" comment="" />
+      <created>1647080503768</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1647080503768</updated>
+      <workItem from="1647080505803" duration="21050000" />
+      <workItem from="1647284221846" duration="17531000" />
+      <workItem from="1648162301399" duration="1678000" />
+      <workItem from="1648638609613" duration="5340000" />
+      <workItem from="1654172169108" duration="1341000" />
+      <workItem from="1675030858448" duration="1362000" />
+      <workItem from="1695410925634" duration="1963000" />
+      <workItem from="1695802201902" duration="1356000" />
+      <workItem from="1696017653922" duration="704000" />
+      <workItem from="1696027781612" duration="597000" />
+      <workItem from="1696106697847" duration="599000" />
+      <workItem from="1696234971110" duration="1198000" />
+      <workItem from="1696333495186" duration="273000" />
+      <workItem from="1696494719652" duration="597000" />
+      <workItem from="1696626212939" duration="599000" />
+      <workItem from="1696630968788" duration="599000" />
+      <workItem from="1696711017024" duration="48000" />
+      <workItem from="1724267706914" duration="1820000" />
+      <workItem from="1726727008046" duration="599000" />
+      <workItem from="1727187737434" duration="597000" />
+      <workItem from="1729355800506" duration="36000" />
+    </task>
+    <task id="LOCAL-00001" summary="Alter script for Ubuntu 20.04 - first attempt.">
+      <created>1647105133772</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1647105133772</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Alter script for Ubuntu 20.04 - first attempt.">
+      <created>1647105597026</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1647105597026</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Fix folder creation.">
+      <created>1647111198165</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1647111198165</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Remove ethernet variable.">
+      <created>1647111279669</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1647111279669</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Remove administrator user install and fix maldet.">
+      <created>1647111903280</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1647111903280</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Fix maldet.">
+      <created>1647112404569</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1647112404569</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Fix maldet.">
+      <created>1647113716639</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1647113716639</updated>
+    </task>
+    <task id="LOCAL-00008" summary="Fix clamav.">
+      <created>1647113931732</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1647113931732</updated>
+    </task>
+    <task id="LOCAL-00009" summary="Remove force install.">
+      <created>1647114102388</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1647114102388</updated>
+    </task>
+    <task id="LOCAL-00010" summary="Fix freshclam.">
+      <created>1647114628283</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1647114628283</updated>
+    </task>
+    <task id="LOCAL-00011" summary="Fix clamav cron.">
+      <created>1647115272899</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1647115272899</updated>
+    </task>
+    <task id="LOCAL-00012" summary="Rename Digital Ocean to Swap.">
+      <created>1647115596039</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1647115596039</updated>
+    </task>
+    <task id="LOCAL-00013" summary="More fixes.">
+      <created>1647127286205</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1647127286205</updated>
+    </task>
+    <task id="LOCAL-00014" summary="More fixes.">
+      <created>1647128325931</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1647128325931</updated>
+    </task>
+    <task id="LOCAL-00015" summary="More fixes.">
+      <created>1647128534895</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1647128534895</updated>
+    </task>
+    <task id="LOCAL-00016" summary="Fix yes/no input.">
+      <created>1647285215646</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1647285215646</updated>
+    </task>
+    <task id="LOCAL-00017" summary="Fix yes/no input.">
+      <created>1647287567285</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1647287567285</updated>
+    </task>
+    <task id="LOCAL-00018" summary="Fix yes/no input.">
+      <created>1647287711939</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1647287711939</updated>
+    </task>
+    <task id="LOCAL-00019" summary="Fix yes/no input.">
+      <created>1647287828395</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1647287828395</updated>
+    </task>
+    <task id="LOCAL-00020" summary="Fix yes/no input.">
+      <created>1647287956720</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1647287956720</updated>
+    </task>
+    <task id="LOCAL-00021" summary="Fix yes/no input.">
+      <created>1647290681440</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1647290681440</updated>
+    </task>
+    <task id="LOCAL-00022" summary="Fix yes/no input.">
+      <created>1647292273745</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1647292273745</updated>
+    </task>
+    <task id="LOCAL-00023" summary="Fix yes/no input.">
+      <created>1647292416142</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1647292416142</updated>
+    </task>
+    <task id="LOCAL-00024" summary="Add process accounting.">
+      <created>1647294358771</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1647294358771</updated>
+    </task>
+    <task id="LOCAL-00025" summary="Add docker daemon.json to be able to change subnets in docker. Add SSH sed commands. Change Swap to install 10Gb swap in 10 files.">
+      <created>1647524183931</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1647524183931</updated>
+    </task>
+    <task id="LOCAL-00026" summary="Remove e-mail input wrong place.">
+      <created>1647524746971</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1647524746971</updated>
+    </task>
+    <task id="LOCAL-00027" summary="Fix spelling mistake.">
+      <created>1647530342087</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1647530342087</updated>
+    </task>
+    <task id="LOCAL-00028" summary="Update sshd seds.">
+      <created>1647530360040</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1647530360040</updated>
+    </task>
+    <task id="LOCAL-00029" summary="Remove cronjobs and write monitorix password to pswd file.">
+      <created>1648152224773</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1648152224773</updated>
+    </task>
+    <task id="LOCAL-00030" summary="Fix swap issue.">
+      <created>1648759180718</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1648759180718</updated>
+    </task>
+    <task id="LOCAL-00031" summary="Fix swap issue.">
+      <created>1648764378431</created>
+      <option name="number" value="00031" />
+      <option name="presentableId" value="LOCAL-00031" />
+      <option name="project" value="LOCAL" />
+      <updated>1648764378431</updated>
+    </task>
+    <task id="LOCAL-00032" summary="Alter UFW installation.">
+      <created>1675031449795</created>
+      <option name="number" value="00032" />
+      <option name="presentableId" value="LOCAL-00032" />
+      <option name="project" value="LOCAL" />
+      <updated>1675031449795</updated>
+    </task>
+    <task id="LOCAL-00033" summary="Fix readme.">
+      <created>1675031589646</created>
+      <option name="number" value="00033" />
+      <option name="presentableId" value="LOCAL-00033" />
+      <option name="project" value="LOCAL" />
+      <updated>1675031589646</updated>
+    </task>
+    <option name="localTasksCounter" value="34" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.History.Properties">
+    <option name="COLUMN_ID_ORDER">
+      <list>
+        <option value="Default.Root" />
+        <option value="Default.Author" />
+        <option value="Default.Date" />
+        <option value="Default.Subject" />
+      </list>
+    </option>
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Alter script for Ubuntu 20.04 - first attempt." />
+    <MESSAGE value="Fix folder creation." />
+    <MESSAGE value="Remove ethernet variable." />
+    <MESSAGE value="Remove administrator user install and fix maldet." />
+    <MESSAGE value="Fix maldet." />
+    <MESSAGE value="Fix clamav." />
+    <MESSAGE value="Remove force install." />
+    <MESSAGE value="Fix freshclam." />
+    <MESSAGE value="Fix clamav cron." />
+    <MESSAGE value="Rename Digital Ocean to Swap." />
+    <MESSAGE value="More fixes." />
+    <MESSAGE value="Fix yes/no input." />
+    <MESSAGE value="Add process accounting." />
+    <MESSAGE value="Add docker daemon.json to be able to change subnets in docker. Add SSH sed commands. Change Swap to install 10Gb swap in 10 files." />
+    <MESSAGE value="Remove e-mail input wrong place." />
+    <MESSAGE value="Fix spelling mistake." />
+    <MESSAGE value="Update sshd seds." />
+    <MESSAGE value="Remove cronjobs and write monitorix password to pswd file." />
+    <MESSAGE value="Fix swap issue." />
+    <MESSAGE value="Alter UFW installation." />
+    <MESSAGE value="Fix readme." />
+    <option name="LAST_COMMIT_MESSAGE" value="Fix readme." />
+  </component>
+</project>

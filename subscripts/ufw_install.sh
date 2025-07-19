@@ -57,11 +57,26 @@ show_yellow "Contents of UFW script is shown below:"
 cat $CONF_ORG_1 $CONF_BACK_2
 
 ##########################################################################################
-## Enable UFW
+## Configure UFW for Ubuntu 24.04
 ##########################################################################################
 
-ufw default allow outgoing
-ufw default deny incoming
+show_yellow "Configuring UFW defaults for Ubuntu 24.04."
+
+# Configure defaults
+ufw default deny incoming >>$LOGDIR/$LOGFILE 2>&1
+ufw default allow outgoing >>$LOGDIR/$LOGFILE 2>&1
+
+# Enable IPv6 support (Ubuntu 24.04 best practice)
+sed -i 's/IPV6=no/IPV6=yes/' /etc/default/ufw 2>/dev/null || true
+
+# Configure logging (Ubuntu 24.04 recommendation)
+ufw logging on >>$LOGDIR/$LOGFILE 2>&1
+
+show_yellow "UFW configured for Ubuntu 24.04 with IPv6 support and logging enabled."
+
+##########################################################################################
+## Enable UFW
+##########################################################################################
 
 ufw --force enable >>$LOGDIR/$LOGFILE 2>&1 || (show_yellow "ufw enable failed. Please check logfile and fix error manually.")
 show_yellow "ufw enabled."

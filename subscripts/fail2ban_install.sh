@@ -73,7 +73,7 @@ show_yellow "Email adresses reconfigured."
 ## Restart Fail2Ban
 ##########################################################################################
 
-service fail2ban restart >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Restarting Fail2Ban failed. Please check logfile and fix error manually.")
+systemctl restart fail2ban >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Restarting Fail2Ban failed. Please check logfile and fix error manually.")
 show_yellow "Fail2Ban restarted."
 
 ##########################################################################################
