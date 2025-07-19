@@ -140,27 +140,42 @@ fi
 echo "Setting up Authenticator 2FA for user: $USERNAME"
 echo "======================================================="
 
-# Switch to the user and run google-authenticator
+# Switch to the user and run google-authenticator non-interactively
 sudo -u "$USERNAME" -H bash << 'USER_SCRIPT'
 cd ~
-echo "Running Authenticator setup..."
-echo "Please answer the following questions:"
-echo "1. Do you want authentication tokens to be time-based? (y/n) -> y"
-echo "2. Do you want me to update your ~/.google_authenticator file? (y/n) -> y"
-echo "3. Do you want to disallow multiple uses of the same authentication token? (y/n) -> y"
-echo "4. By default, tokens are good for 30 seconds. Do you want to increase time skew? (y/n) -> n"
-echo "5. Do you want to enable rate-limiting? (y/n) -> y"
+echo "Setting up Authenticator 2FA non-interactively..."
+echo "Configuration:"
+echo "• Time-based tokens: YES"
+echo "• Rate limiting: YES (3 attempts per 30 seconds)"
+echo "• Disallow token reuse: YES"
+echo "• Emergency scratch codes: 5 codes generated"
 echo ""
-echo "Setting up Authenticator..."
-google-authenticator -t -d -f -r 3 -R 30 -W
+echo "Generating 2FA configuration..."
+google-authenticator -t -d -f -r 3 -R 30 -W -q
 
 if [ $? -eq 0 ]; then
     echo ""
     echo "Authenticator setup completed successfully!"
-    echo "Your secret key and QR code have been displayed above."
-    echo "Please scan the QR code with your Authenticator app (Google Authenticator, Authy, etc.)."
+    echo ""
+    
+    # Display QR code if qrencode is available
+    if command -v qrencode >/dev/null 2>&1 && [ -f ~/.google_authenticator ]; then
+        SECRET=$(head -1 ~/.google_authenticator)
+        HOSTNAME=$(hostname)
+        echo "QR Code for $USERNAME@$HOSTNAME:"
+        qrencode -t ANSIUTF8 "otpauth://totp/$USERNAME@${HOSTNAME}?secret=${SECRET}&issuer=SSH2FA"
+        echo ""
+        echo "Secret key: $SECRET"
+        echo ""
+    fi
+    
+    echo "Emergency scratch codes:"
+    if [ -f ~/.google_authenticator ]; then
+        tail -n 5 ~/.google_authenticator
+    fi
     echo ""
     echo "IMPORTANT: Save your emergency scratch codes in a safe place!"
+    echo "Please scan the QR code with your Authenticator app (Google Authenticator, Authy, etc.)."
     echo ""
 else
     echo "Error: Authenticator setup failed"
