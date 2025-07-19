@@ -20,11 +20,13 @@ log_install() {
     local message="$2"
     local step="$3"
     
-    # Log to systemd journal with structured data
-    echo "$message" | systemd-cat -t "$JOURNAL_TAG" -p "$level" \
-        INSTALL_STEP="$step" \
-        INSTALL_ID="$INSTALL_ID" \
-        INSTALL_PHASE="main"
+    # Log to systemd journal with structured data (if systemd-cat is available)
+    if command -v systemd-cat >/dev/null 2>&1; then
+        echo "$message" | systemd-cat -t "$JOURNAL_TAG" -p "$level" \
+            INSTALL_STEP="$step" \
+            INSTALL_ID="$INSTALL_ID" \
+            INSTALL_PHASE="main"
+    fi
     
     # Also display to user
     echo "$message"
@@ -128,6 +130,13 @@ show_warn() {
 show_err() {
     echo $(tput bold)$(tput setaf 1) $@ $(tput sgr 0)
 }
+
+# Export functions so they're available in sourced subscripts
+export -f show_yellow
+export -f show_norm
+export -f show_info
+export -f show_warn
+export -f show_err
 
 ##########################################################################################
 ## Check if we're are root
@@ -613,6 +622,10 @@ log_info "Scripts directory: $SCRIPTSDIR"
 log_info "Email: $INFO_EMAIL"
 log_info "Timezone: $TIMEZONE"
 
+# Ensure all subscripts have execute permissions
+chmod +x $BASEDIR/subscripts/*.sh
+log_info "Subscript permissions updated"
+
 # Set timezone
 if [[ $DO_SET_TIMEZONE =~ [Yy]$ ]]; then
     cp -p /usr/share/zoneinfo/$TIMEZONE /etc/localtime
@@ -785,12 +798,14 @@ log_success "Ubuntu 24.04 Automation Installation Complete"
 log_info "Total installation time: ${DURATION} seconds"
 log_info "Installation completed at: $(date)"
 
-# Log final summary to journal
-echo "=== INSTALLATION SUMMARY ===" | systemd-cat -t "$JOURNAL_TAG" -p "info" \
-    INSTALL_STEP="summary" \
-    INSTALL_ID="$INSTALL_ID" \
-    INSTALL_PHASE="complete" \
-    INSTALL_DURATION="$DURATION"
+# Log final summary to journal (if systemd-cat is available)
+if command -v systemd-cat >/dev/null 2>&1; then
+    echo "=== INSTALLATION SUMMARY ===" | systemd-cat -t "$JOURNAL_TAG" -p "info" \
+        INSTALL_STEP="summary" \
+        INSTALL_ID="$INSTALL_ID" \
+        INSTALL_PHASE="complete" \
+        INSTALL_DURATION="$DURATION"
+fi
 
 # Say bye
 show_norm "Installation done (took $DURATION seconds). Have a nice day."
