@@ -283,6 +283,55 @@ show_install_status() {
     echo ""
 }
 
+# User choices persistence
+USER_CHOICES_FILE="/srv/apps/scripts/user_choices.conf"
+
+# Save user choices to file
+save_user_choices() {
+    cat > "$USER_CHOICES_FILE" << EOF
+# Ubuntu Automation User Choices
+# Generated on: $(date)
+DO_SET_TIMEZONE=$DO_SET_TIMEZONE
+DO_SYSTEM_UPDATE=$DO_SYSTEM_UPDATE
+DO_GENERAL_SERVER_SETTINGS=$DO_GENERAL_SERVER_SETTINGS
+DO_SSH_2FA=$DO_SSH_2FA
+DO_SWAP_INSTALL=$DO_SWAP_INSTALL
+DO_LIGHTWEIGHT_MONITORING=$DO_LIGHTWEIGHT_MONITORING
+ENABLE_SLACK_MONITORING=$ENABLE_SLACK_MONITORING
+SLACK_WEBHOOK_URL="$SLACK_WEBHOOK_URL"
+DO_NETDATA_INSTALL=$DO_NETDATA_INSTALL
+DO_SYSTEMD_TIMERS=$DO_SYSTEMD_TIMERS
+DO_DOCKER_INSTALL=$DO_DOCKER_INSTALL
+DOCKER_ROOTLESS=$DOCKER_ROOTLESS
+DOCKER_DATA_ROOT="$DOCKER_DATA_ROOT"
+DO_UFW_INSTALL=$DO_UFW_INSTALL
+DO_DOKKU_INSTALL=$DO_DOKKU_INSTALL
+DO_WIREGUARD_INSTALL=$DO_WIREGUARD_INSTALL
+WIREGUARD_SUBNET="$WIREGUARD_SUBNET"
+EOF
+    chmod 600 "$USER_CHOICES_FILE"
+    log_info "User choices saved to: $USER_CHOICES_FILE"
+}
+
+# Load user choices from file
+load_user_choices() {
+    if [ -f "$USER_CHOICES_FILE" ]; then
+        source "$USER_CHOICES_FILE"
+        log_info "User choices loaded from: $USER_CHOICES_FILE"
+        return 0
+    fi
+    return 1
+}
+
+# Check if we're resuming (have failed modules)
+is_resuming() {
+    if [ -f "$INSTALL_STATUS_LOG" ]; then
+        grep -q "=FAILED$" "$INSTALL_STATUS_LOG" 2>/dev/null
+        return $?
+    fi
+    return 1
+}
+
 # Export the functions so they're available in subscripts
 export -f is_module_installed
 export -f mark_module_success
@@ -533,19 +582,47 @@ echo ""
 echo "These components are required for a secure Ubuntu 24.04 server and cannot be skipped."
 echo "=================================================================="
 echo ""
-echo "📋 Configuration Status:"
-echo "• DO_SYSTEM_UPDATE: $DO_SYSTEM_UPDATE (Mandatory)"
-echo "• DO_GENERAL_SERVER_SETTINGS: $DO_GENERAL_SERVER_SETTINGS (Mandatory)" 
-echo "• DO_SWAP_INSTALL: $DO_SWAP_INSTALL (Mandatory)"
-echo "• DO_LIGHTWEIGHT_MONITORING: $DO_LIGHTWEIGHT_MONITORING (Mandatory)"
-echo "• DO_SYSTEMD_TIMERS: $DO_SYSTEMD_TIMERS (Mandatory)"
-echo "• DO_UFW_INSTALL: $DO_UFW_INSTALL (Mandatory)"
-echo ""
+# Check if we're resuming from a previous failed installation
+if is_resuming && load_user_choices; then
+    echo "🔄 RESUMING INSTALLATION with previous choices:"
+    echo "=================================="
+    echo "• DO_SYSTEM_UPDATE: $DO_SYSTEM_UPDATE (Mandatory)"
+    echo "• DO_GENERAL_SERVER_SETTINGS: $DO_GENERAL_SERVER_SETTINGS (Mandatory)" 
+    echo "• DO_SSH_2FA: $DO_SSH_2FA"
+    echo "• DO_SWAP_INSTALL: $DO_SWAP_INSTALL (Mandatory)"
+    echo "• DO_LIGHTWEIGHT_MONITORING: $DO_LIGHTWEIGHT_MONITORING (Mandatory)"
+    echo "• ENABLE_SLACK_MONITORING: $ENABLE_SLACK_MONITORING"
+    echo "• DO_NETDATA_INSTALL: $DO_NETDATA_INSTALL"
+    echo "• DO_SYSTEMD_TIMERS: $DO_SYSTEMD_TIMERS (Mandatory)"
+    echo "• DO_DOCKER_INSTALL: $DO_DOCKER_INSTALL"
+    if [[ $DO_DOCKER_INSTALL =~ [Yy]$ ]]; then
+        echo "• DOCKER_ROOTLESS: $DOCKER_ROOTLESS"
+        echo "• DOCKER_DATA_ROOT: $DOCKER_DATA_ROOT"
+    fi
+    echo "• DO_UFW_INSTALL: $DO_UFW_INSTALL (Mandatory)"
+    echo "• DO_DOKKU_INSTALL: $DO_DOKKU_INSTALL"
+    echo "• DO_WIREGUARD_INSTALL: $DO_WIREGUARD_INSTALL"
+    if [[ $DO_WIREGUARD_INSTALL =~ [Yy]$ ]]; then
+        echo "• WIREGUARD_SUBNET: $WIREGUARD_SUBNET"
+    fi
+    echo "=================================="
+    echo "ℹ️  Using saved configuration from previous run."
+    echo "ℹ️  Only failed/new modules will be installed."
+    echo ""
+else
+    echo "📋 Configuration Status:"
+    echo "• DO_SYSTEM_UPDATE: $DO_SYSTEM_UPDATE (Mandatory)"
+    echo "• DO_GENERAL_SERVER_SETTINGS: $DO_GENERAL_SERVER_SETTINGS (Mandatory)" 
+    echo "• DO_SWAP_INSTALL: $DO_SWAP_INSTALL (Mandatory)"
+    echo "• DO_LIGHTWEIGHT_MONITORING: $DO_LIGHTWEIGHT_MONITORING (Mandatory)"
+    echo "• DO_SYSTEMD_TIMERS: $DO_SYSTEMD_TIMERS (Mandatory)"
+    echo "• DO_UFW_INSTALL: $DO_UFW_INSTALL (Mandatory)"
+    echo ""
 
-# System update and General server settings are MANDATORY (M) - no user prompts needed
+    # System update and General server settings are MANDATORY (M) - no user prompts needed
 
-# SSH 2FA with Google Authenticator
-if [[ $DO_GENERAL_SERVER_SETTINGS =~ [YyMm]$ ]]; then
+    # SSH 2FA with Google Authenticator
+    if [[ $DO_GENERAL_SERVER_SETTINGS =~ [YyMm]$ ]]; then
     while true; do
         read -p "Do You want to enable SSH 2FA with Google Authenticator (Y/N)? " yn
         case $yn in
@@ -724,6 +801,10 @@ fi
 
 echo "DO_UFW_INSTALL: "$DO_UFW_INSTALL
 echo "DO_WIREGUARD_INSTALL: "$DO_WIREGUARD_INSTALL
+
+    # Save user choices for potential resume scenarios
+    save_user_choices
+fi
 
 ## Ask for UFW port openings
 #if [[ $DO_UFW_INSTALL =~ [Yy]$ ]]

@@ -75,7 +75,10 @@ TEXT_PACKAGES="dos2unix"
 ALL_PACKAGES="$ESSENTIAL_PACKAGES $BUILD_PACKAGES $MONITORING_PACKAGES $SECURITY_PACKAGES $PERL_PACKAGES $TEXT_PACKAGES"
 
 # Install packages
-apt-get --yes install $ALL_PACKAGES >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of essential packages failed. Please check logfile and fix error manually.")
+if ! apt-get --yes install $ALL_PACKAGES >>$LOGDIR/$LOGFILE 2>&1; then
+    show_err "Installation of essential packages failed. Please check logfile and fix error manually."
+    exit 1
+fi
 
 show_yellow "Essential system packages installed successfully."
 
@@ -95,12 +98,15 @@ QR_PACKAGES="qrencode"
 NETWORK_PACKAGES="ufw fail2ban"
 
 # Antivirus and malware detection
-ANTIVIRUS_PACKAGES="clamav clamav-daemon clamav-freshclam clamav-unofficial-sigs"
+ANTIVIRUS_PACKAGES="clamav clamav-daemon clamav-freshclam"
 
 # Install security packages
 SECURITY_ALL="$SSH_PACKAGES $QR_PACKAGES $NETWORK_PACKAGES $ANTIVIRUS_PACKAGES"
 
-apt-get --yes install $SECURITY_ALL >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of security packages failed. Please check logfile and fix error manually.")
+if ! apt-get --yes install $SECURITY_ALL >>$LOGDIR/$LOGFILE 2>&1; then
+    show_err "Installation of security packages failed. Please check logfile and fix error manually."
+    exit 1
+fi
 
 show_yellow "Security packages installed successfully."
 
@@ -111,14 +117,20 @@ show_yellow "Security packages installed successfully."
 # WireGuard VPN (if selected)
 if [[ "$DO_WIREGUARD_INSTALL" =~ [Yy]$ ]]; then
     show_yellow "Installing WireGuard packages."
-    apt-get --yes install wireguard wireguard-tools >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of WireGuard failed. Please check logfile and fix error manually.")
+    if ! apt-get --yes install wireguard wireguard-tools >>$LOGDIR/$LOGFILE 2>&1; then
+        show_err "Installation of WireGuard failed. Please check logfile and fix error manually."
+        exit 1
+    fi
     show_yellow "WireGuard packages installed successfully."
 fi
 
 # Netdata monitoring (if selected)
 if [[ "$DO_NETDATA_INSTALL" =~ [Yy]$ ]]; then
     show_yellow "Installing Netdata packages."
-    apt-get --yes install netdata >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of Netdata failed. Please check logfile and fix error manually.")
+    if ! apt-get --yes install netdata >>$LOGDIR/$LOGFILE 2>&1; then
+        show_err "Installation of Netdata failed. Please check logfile and fix error manually."
+        exit 1
+    fi
     show_yellow "Netdata packages installed successfully."
 fi
 
@@ -130,7 +142,10 @@ if [[ "$DO_GENERAL_SERVER_SETTINGS" =~ [Yy]$ ]]; then
     echo "postfix postfix/mailname string $(hostname -f)" | debconf-set-selections
     echo "postfix postfix/main_mailer_type string 'Internet Site'" | debconf-set-selections
     
-    apt-get --yes install postfix mailutils >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of mail packages failed. Please check logfile and fix error manually.")
+    if ! apt-get --yes install postfix mailutils >>$LOGDIR/$LOGFILE 2>&1; then
+        show_err "Installation of mail packages failed. Please check logfile and fix error manually."
+        exit 1
+    fi
     show_yellow "Mail server packages installed successfully."
 fi
 
