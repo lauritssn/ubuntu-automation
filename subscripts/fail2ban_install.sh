@@ -23,10 +23,6 @@ CONF1_ORG=/etc/fail2ban/jail.conf
 CONF1_BACK=$BACKUPDIR/$(basename $CONF1_ORG)_$DATE
 CONF1_GIT=$BASEDIR/configs/fail2ban/jail.conf
 
-CONF2_ORG=/etc/fail2ban/action.d/sendmail-common.local
-CONF2_BACK=$BACKUPDIR/$(basename $CONF2_ORG)_$DATE
-CONF2_GIT=$BASEDIR/configs/fail2ban/sendmail-common.local
-
 ##########################################################################################
 ## Info
 ##########################################################################################
@@ -50,22 +46,12 @@ else
    cp $CONF1_GIT $CONF1_ORG && show_yellow "Default Fail2Ban configuration deployed."
 fi
 
-if [ -a $CONF2_ORG ]; then
-   cp -p $CONF2_ORG $CONF2_BACK && show_yellow "Fail2Ban file $CONF2_ORG backed up to $CONF2_BACK."
-   cp $CONF2_GIT $CONF2_ORG && show_yellow "Default Fail2Ban sendmail configuration deployed."
-else
-   cp $CONF2_GIT $CONF2_ORG && show_yellow "Default Fail2Ban sendmail configuration deployed."
-fi
-
 ##########################################################################################
 ## Reconfigure E-mails
 ##########################################################################################
 
 sed -i 's/INFO_EMAIL/'${INFO_EMAIL}'/ig' $CONF1_ORG
 sed -i 's/EMAIL_DOMAIN/'${EMAIL_DOMAIN}'/ig' $CONF1_ORG
-
-sed -i 's/INFO_EMAIL/'${INFO_EMAIL}'/ig' $CONF2_ORG
-sed -i 's/EMAIL_DOMAIN/'${EMAIL_DOMAIN}'/ig' $CONF2_ORG
 
 show_yellow "Email adresses reconfigured."
 
