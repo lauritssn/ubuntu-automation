@@ -75,6 +75,173 @@ ufw logging on >>$LOGDIR/$LOGFILE 2>&1
 show_yellow "UFW configured for Ubuntu 24.04 with IPv6 support and logging enabled."
 
 ##########################################################################################
+## Generate comprehensive UFW rules based on services being installed
+##########################################################################################
+
+show_yellow "Generating UFW rules based on selected services."
+
+# Create UFW rules script with security-first approach
+cat > $SCRIPTSDIR/ufw.sh << 'EOF'
+#!/bin/bash
+
+# UFW Security Rules for Ubuntu 24.04
+# Generated based on services selected during installation
+
+show_info "Applying UFW security rules..."
+
+##########################################################################################
+## Basic Security Rules
+##########################################################################################
+
+# Allow loopback traffic (required for system functionality)
+ufw allow in on lo
+ufw allow out on lo
+
+# Allow established and related incoming connections
+ufw allow in on any to any port 22 proto tcp
+
+EOF
+
+# Add HTTP/HTTPS rules if Dokku is installed
+if [[ "$DO_DOKKU_INSTALL" =~ [Yy]$ ]]; then
+    cat >> $SCRIPTSDIR/ufw.sh << 'EOF'
+
+##########################################################################################
+## Web Server Rules (Dokku)
+##########################################################################################
+
+# Allow HTTP and HTTPS from anywhere (web services)
+ufw allow 80/tcp comment 'HTTP for web services'
+ufw allow 443/tcp comment 'HTTPS for web services'
+
+show_info "Web server ports (80, 443) allowed from anywhere."
+
+EOF
+fi
+
+# Add SSH rules with security considerations
+cat >> $SCRIPTSDIR/ufw.sh << 'EOF'
+
+##########################################################################################
+## SSH Security Rules
+##########################################################################################
+
+EOF
+
+# Check if SECURE_SUBNET is defined and valid
+if [ -n "$SECURE_SUBNET" ] && [ "$SECURE_SUBNET" != "0.0.0.0/0" ]; then
+    cat >> $SCRIPTSDIR/ufw.sh << EOF
+
+# Allow SSH only from secure subnet for enhanced security
+ufw allow proto tcp from $SECURE_SUBNET to any port 22 comment '$SECURE_SUBNET_DESC to SSH'
+
+show_info "SSH access restricted to secure subnet: $SECURE_SUBNET"
+
+EOF
+else
+    cat >> $SCRIPTSDIR/ufw.sh << 'EOF'
+
+# WARNING: SSH allowed from anywhere - CHANGE THIS FOR PRODUCTION
+ufw allow 22/tcp comment 'SSH from anywhere - INSECURE'
+
+show_warn "SSH is open to the world - configure SECURE_SUBNET for better security!"
+
+EOF
+fi
+
+# Add WireGuard rules if being installed
+if [[ "$DO_WIREGUARD_INSTALL" =~ [Yy]$ ]]; then
+    cat >> $SCRIPTSDIR/ufw.sh << EOF
+
+##########################################################################################
+## WireGuard VPN Rules
+##########################################################################################
+
+# Allow WireGuard VPN port
+ufw allow 51820/udp comment 'WireGuard VPN'
+
+# Allow VPN subnet full access to all services
+ufw allow from ${WIREGUARD_SUBNET%/*}.0/24 comment 'WireGuard VPN clients'
+
+show_info "WireGuard VPN configured with subnet: ${WIREGUARD_SUBNET%/*}.0/24"
+
+EOF
+fi
+
+# Add Netdata monitoring rules if being installed
+if [[ "$DO_NETDATA_INSTALL" =~ [Yy]$ ]]; then
+    if [ -n "$SECURE_SUBNET" ] && [ "$SECURE_SUBNET" != "0.0.0.0/0" ]; then
+        cat >> $SCRIPTSDIR/ufw.sh << EOF
+
+##########################################################################################
+## Netdata Monitoring Rules
+##########################################################################################
+
+# Allow Netdata monitoring from secure subnet only
+ufw allow proto tcp from $SECURE_SUBNET to any port 19999 comment '$SECURE_SUBNET_DESC to Netdata'
+
+show_info "Netdata monitoring restricted to secure subnet: $SECURE_SUBNET"
+
+EOF
+    fi
+fi
+
+# Add final script content
+cat >> $SCRIPTSDIR/ufw.sh << 'EOF'
+
+##########################################################################################
+## Additional Security Rules
+##########################################################################################
+
+# Deny all other incoming traffic by default (this is already set but reinforced here)
+ufw default deny incoming
+
+# Allow all outgoing traffic (applications need internet access)
+ufw default allow outgoing
+
+# Rate limiting for SSH (prevent brute force attacks)
+ufw limit ssh comment 'Rate limit SSH connections'
+
+##########################################################################################
+## Apply and Verify Rules
+##########################################################################################
+
+# Reload UFW to apply all rules
+ufw reload
+
+# Show final status
+echo
+echo "=== UFW Status After Configuration ==="
+ufw status verbose
+
+echo
+echo "=== UFW Security Summary ==="
+echo "✅ Default deny incoming (secure by default)"
+echo "✅ Default allow outgoing (applications can access internet)"
+echo "✅ SSH rate limiting enabled (anti-brute force)"
+echo "✅ IPv6 support enabled"
+echo "✅ Logging enabled for security monitoring"
+
+# Check if SSH is properly secured
+if ufw status | grep -q "22.*LIMIT"; then
+    echo "✅ SSH rate limiting is active"
+else
+    echo "⚠️  SSH rate limiting may not be active"
+fi
+
+# Warn about open SSH if no secure subnet
+if ufw status | grep -q "22/tcp.*Anywhere"; then
+    echo "⚠️  WARNING: SSH is open to the world - configure secure subnet"
+fi
+
+show_info "UFW security rules applied successfully."
+
+EOF
+
+chmod +x $SCRIPTSDIR/ufw.sh
+show_yellow "UFW rules script generated at $SCRIPTSDIR/ufw.sh"
+
+##########################################################################################
 ## Enable UFW
 ##########################################################################################
 

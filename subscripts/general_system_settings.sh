@@ -78,60 +78,19 @@ show_yellow "NTP successfully installed."
 #show_yellow "/etc/environment updated."
 
 ##########################################################################################
-## Install extra packages
-##########################################################################################
-show_yellow "Install essential dependencies and extra packages."
-apt-get --yes install software-properties-common apt-transport-https ca-certificates gnupg lsb-release >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of essential dependencies failed. Please check logfile and fix error manually.")
-apt-get --yes install acct atop curl dos2unix perl libnet-ssleay-perl openssl libauthen-pam-perl libpam-runtime libio-pty-perl git gcc build-essential libc6-dev dkms linux-headers-generic sqlite3 libsqlite3-dev htop iotop >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of essential packages failed. Please check logfile and fix error manually.")
-show_yellow "Extra packages successfully installed."
-
-# @TODO https://www.informaticar.net/security-hardening-ubuntu-24-04/
-##########################################################################################
-## Secure SSHD
+## Package installation is now handled by packages_install.sh script
 ##########################################################################################
 
-CONF_SSH_ORG=/etc/ssh/sshd_config
-CONF_SSH_BACK=$BACKUPDIR/$(basename $CONF_SSH_ORG)_$DATE
+show_yellow "Package installation is now handled by the dedicated packages_install.sh script."
+show_yellow "This provides better organization and eliminates redundancy."
 
 ##########################################################################################
-## Backup config
+## SSH and account security now handled by dedicated security scripts
 ##########################################################################################
 
-if [ -a $CONF_SSH_ORG ]; then
-    cp -p $CONF_SSH_ORG $CONF_SSH_BACK && show_yellow "SSH conf file $CONF_SSH_ORG backed up to $CONF_SSH_BACK."
-fi
-
-sed -i 's/^#MaxAuthTries.*/MaxAuthTries 5/' $CONF_SSH_ORG
-sed -i 's/^#ClientAliveInterval.*/ClientAliveInterval 300/' $CONF_SSH_ORG
-
-sed -i 's/^#LoginGraceTime.*/LoginGraceTime 2m/' $CONF_SSH_ORG
-
-sed -i 's/^#SyslogFacility.*/SyslogFacility AUTH/' $CONF_SSH_ORG
-sed -i 's/^#LogLevel.*/LogLevel INFO/' $CONF_SSH_ORG
-
-sed -i 's/^#PermitRootLogin.*/PermitRootLogin no/' $CONF_SSH_ORG
-# sed -i 's/^#PermitRootLogin.*/PermitRootLogin prohibit-password/' $CONF_SSH_ORG
-
-# Enhanced SSH security for Ubuntu 24.04
-sed -i 's/^#PubkeyAuthentication.*/PubkeyAuthentication yes/' $CONF_SSH_ORG
-sed -i 's/^#PasswordAuthentication.*/PasswordAuthentication no/' $CONF_SSH_ORG
-sed -i 's/^#PermitEmptyPasswords.*/PermitEmptyPasswords no/' $CONF_SSH_ORG
-sed -i 's/^#MaxSessions.*/MaxSessions 2/' $CONF_SSH_ORG
-sed -i 's/^#X11Forwarding.*/X11Forwarding no/' $CONF_SSH_ORG
-sed -i 's/^#AllowAgentForwarding.*/AllowAgentForwarding no/' $CONF_SSH_ORG
-sed -i 's/^#AllowTcpForwarding.*/AllowTcpForwarding no/' $CONF_SSH_ORG
-sed -i 's/^#PermitTunnel.*/PermitTunnel no/' $CONF_SSH_ORG
-
-# AllowUsers some_user1 some_user2
-
-systemctl restart ssh
-
-##########################################################################################
-## Disable root account completely
-##########################################################################################
-show_yellow "Disable root account."
-passwd -l root >$LOGDIR/$LOGFILE 2>&1 || (show_err "root disable failed. Please check logfile and fix error manually.")
-show_yellow "root account disabled."
+show_yellow "SSH security is now handled by the dedicated ssh_security.sh script."
+show_yellow "Account security is now handled by the dedicated account_security.sh script."
+show_yellow "This provides better organization and comprehensive security hardening."
 
 # @TODO
 ##########################################################################################

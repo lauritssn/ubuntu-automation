@@ -301,16 +301,16 @@ export DATE=$(date +%Y-%m-%d_%H%M)
 export DEBIAN_FRONTEND=noninteractive # Make apt-get install non-interactive
 
 export DO_CHANGE_TIMEZONE=N
-export DO_SYSTEM_UPDATE=N
-export DO_SWAPFILE_INSTALL=N
-export DO_EXTRAS_INSTALL=N
-export DO_GENERAL_SERVER_SETTINGS=N
-export DO_LIGHTWEIGHT_MONITORING=N
+export DO_SYSTEM_UPDATE=Y     # MANDATORY
+export DO_SWAPFILE_INSTALL=Y  # MANDATORY
+export DO_EXTRAS_INSTALL=Y    # MANDATORY
+export DO_GENERAL_SERVER_SETTINGS=Y  # MANDATORY
+export DO_LIGHTWEIGHT_MONITORING=Y   # MANDATORY
 export DO_NETDATA_INSTALL=N
-export DO_SYSTEMD_TIMERS=N
+export DO_SYSTEMD_TIMERS=Y    # MANDATORY
 export DO_DOCKER_INSTALL=N
-export DO_UFW_INSTALL=N
-export DO_SWAP_INSTALL=N
+export DO_UFW_INSTALL=Y  # MANDATORY
+export DO_SWAP_INSTALL=Y  # MANDATORY
 export DO_DOKKU_INSTALL=N
 export DO_WIREGUARD_INSTALL=N
 
@@ -325,7 +325,6 @@ export WIREGUARD_SUBNET="10.66.66.0/24"
 
 export UFW_ALLOW_PUBLIC_HTTP=Y
 export UFW_ALLOW_PUBLIC_HTTPS=Y
-export UFW_ALLOW_POSTHOG=Y
 export UFW_ALLOW_NETDATA=Y
 
 export TIMEZONE="Europe/Copenhagen"
@@ -506,41 +505,37 @@ fi
 echo "SECURE_SUBNET: "$SECURE_SUBNET
 echo "SECURE_SUBNET_DESC: "$SECURE_SUBNET_DESC
 
-# System update
-while true; do
-    read -p "Do You want to update system (Y/N)? " yn
-    case $yn in
-    [Yy]*)
-        DO_SYSTEM_UPDATE=Y
-        break
-        ;;
-    [Nn]*)
-        DO_SYSTEM_UPDATE=N
-        break
-        ;;
-    *) echo "Please answer yes or no." ;;
-    esac
-done
+##########################################################################################
+## Display mandatory components that will be installed
+##########################################################################################
 
-echo "DO_SYSTEM_UPDATE: "$DO_SYSTEM_UPDATE
+echo ""
+echo "=================================================================="
+echo "🔒 MANDATORY SECURITY COMPONENTS (will be installed automatically)"
+echo "=================================================================="
+echo "✅ System Updates: Critical security patches and updates"
+echo "✅ Essential Packages: Core system utilities and development tools"
+echo "✅ Network Security: Comprehensive network hardening and sysctl tuning"
+echo "✅ Account Security: Password policies, sudo security, and account lockouts"
+echo "✅ SSH Security: Complete SSH hardening with modern algorithms"
+echo "✅ Security Tools: Malware detection (ClamAV, Maldet, RKHunter) and intrusion prevention (Fail2Ban)"
+echo "✅ Secure Swap: Encrypted swap file for memory protection"
+echo "✅ System Monitoring: Essential monitoring tools (htop, iotop, sysstat)"
+echo "✅ Automated Scanning: Systemd timers for automated security scans"
+echo "✅ Firewall Protection: UFW firewall with intelligent rule generation"
+echo "✅ Mail Server: Postfix for system notifications and alerts"
+echo ""
+echo "These components are required for a secure Ubuntu 24.04 server and cannot be skipped."
+echo "=================================================================="
+echo ""
 
-# General server settings install
-while true; do
-    read -p "Do You want to install general server settings (Y/N)? " yn
-    case $yn in
-    [Yy]*)
-        DO_GENERAL_SERVER_SETTINGS=Y
-        break
-        ;;
-    [Nn]*)
-        DO_GENERAL_SERVER_SETTINGS=N
-        break
-        ;;
-    *) echo "Please answer yes or no." ;;
-    esac
-done
+# System update (MANDATORY)
+DO_SYSTEM_UPDATE=Y
+echo "DO_SYSTEM_UPDATE: $DO_SYSTEM_UPDATE (MANDATORY - system updates are required for security)"
 
-echo "DO_GENERAL_SERVER_SETTINGS: "$DO_GENERAL_SERVER_SETTINGS
+# General server settings install (MANDATORY)
+DO_GENERAL_SERVER_SETTINGS=Y
+echo "DO_GENERAL_SERVER_SETTINGS: $DO_GENERAL_SERVER_SETTINGS (MANDATORY - security hardening is required)"
 
 # SSH 2FA with Google Authenticator
 if [[ $DO_GENERAL_SERVER_SETTINGS =~ [Yy]$ ]]; then
@@ -567,41 +562,13 @@ echo "DO_SSH_2FA: "$DO_SSH_2FA
 # Note: User creation is now handled by separate add_user.sh script
 # This keeps the installation focused on system setup
 
-# Swap install
-while true; do
-    read -p "Do you want to install secure swap file (Y/N)? " yn
-    case $yn in
-    [Yy]*)
-        DO_SWAP_INSTALL=Y
-        break
-        ;;
-    [Nn]*)
-        DO_SWAP_INSTALL=N
-        break
-        ;;
-    *) echo "Please answer yes or no." ;;
-    esac
-done
+# Swap install (MANDATORY)
+DO_SWAP_INSTALL=Y
+echo "DO_SWAP_INSTALL: $DO_SWAP_INSTALL (MANDATORY - secure swap is required for system stability)"
 
-echo "DO_SWAP_INSTALL: "$DO_SWAP_INSTALL
-
-# Lightweight monitoring install
-while true; do
-    read -p "Do You want to install lightweight monitoring tools (htop, iotop, sysstat) (Y/N)? " yn
-    case $yn in
-    [Yy]*)
-        DO_LIGHTWEIGHT_MONITORING=Y
-        break
-        ;;
-    [Nn]*)
-        DO_LIGHTWEIGHT_MONITORING=N
-        break
-        ;;
-    *) echo "Please answer yes or no." ;;
-    esac
-done
-
-echo "DO_LIGHTWEIGHT_MONITORING: "$DO_LIGHTWEIGHT_MONITORING
+# Lightweight monitoring install (MANDATORY)
+DO_LIGHTWEIGHT_MONITORING=Y
+echo "DO_LIGHTWEIGHT_MONITORING: $DO_LIGHTWEIGHT_MONITORING (MANDATORY - monitoring tools are required for system management)"
 
 # Slack webhook for disk monitoring
 if [[ $DO_LIGHTWEIGHT_MONITORING =~ [Yy]$ ]]; then
@@ -645,23 +612,9 @@ done
 
 echo "DO_NETDATA_INSTALL: "$DO_NETDATA_INSTALL
 
-# Systemd timers install
-while true; do
-    read -p "Do You want to install systemd timers for security scanning (Y/N)? " yn
-    case $yn in
-    [Yy]*)
-        DO_SYSTEMD_TIMERS=Y
-        break
-        ;;
-    [Nn]*)
-        DO_SYSTEMD_TIMERS=N
-        break
-        ;;
-    *) echo "Please answer yes or no." ;;
-    esac
-done
-
-echo "DO_SYSTEMD_TIMERS: "$DO_SYSTEMD_TIMERS
+# Systemd timers install (MANDATORY)
+DO_SYSTEMD_TIMERS=Y
+echo "DO_SYSTEMD_TIMERS: $DO_SYSTEMD_TIMERS (MANDATORY - automated security scanning is required)"
 
 # Docker install
 while true; do
@@ -717,21 +670,9 @@ fi
 
 echo "DO_DOCKER_INSTALL: "$DO_DOCKER_INSTALL
 
-# UFW install
-while true; do
-    read -p "Do You want to install UFW (Y/N)? " yn
-    case $yn in
-    [Yy]*)
-        DO_UFW_INSTALL=Y
-        break
-        ;;
-    [Nn]*)
-        DO_UFW_INSTALL=N
-        break
-        ;;
-    *) echo "Please answer yes or no." ;;
-    esac
-done
+# UFW install (MANDATORY)
+DO_UFW_INSTALL=Y
+echo "DO_UFW_INSTALL: $DO_UFW_INSTALL (MANDATORY - firewall protection is required for security)"
 
 # Dokku install
 while true; do
@@ -797,54 +738,12 @@ echo "DO_WIREGUARD_INSTALL: "$DO_WIREGUARD_INSTALL
 #fi
 
 ##########################################################################################
-## Prepare ufw.sh
+## UFW configuration now handled by ufw_install.sh script
 ##########################################################################################
 
-# Build UFW_HEADER
-UFW_HEADER="#!/bin/bash
-# UFW Ubuntu 24.04 Configuration Script
-# UFW_HEADER START
-ufw --force reset
-
-# Configure defaults for Ubuntu 24.04
-ufw default deny incoming
-ufw default allow outgoing
-
-# Enable IPv6 support (Ubuntu 24.04 best practice)
-sed -i 's/IPV6=no/IPV6=yes/' /etc/default/ufw 2>/dev/null || true
-
-# Enable logging
-ufw logging on
-
-# Allow HTTP and HTTPS to everyone
-ufw allow 80/tcp # HTTP
-ufw allow 443/tcp # HTTPS
-
-# Allow SSH only from secure subnet - REPLACE THESE VALUES
-ufw allow proto tcp from $SECURE_SUBNET to any port 22 # $SECURE_SUBNET_DESC to SSH"
-
-# Add Wireguard port if Wireguard is being installed
-if [[ $DO_WIREGUARD_INSTALL =~ [Yy]$ ]]; then
-    UFW_HEADER="${UFW_HEADER}
-
-# Allow Wireguard VPN port
-ufw allow 51820/udp # WIREGUARD VPN
-
-# Allow VPN subnet full access to all services
-ufw allow from ${WIREGUARD_SUBNET%/*}.0/24 # Full VPN access"
-fi
-
-UFW_HEADER="${UFW_HEADER}
-
-# Enable UFW with force to avoid prompts
-ufw --force enable
-
-# UFW_HEADER END
-"
-
-if [[ $DO_UFW_INSTALL =~ [Yy]$ ]]; then
-    echo "$UFW_HEADER" >$SCRIPTSDIR/ufw.sh
-fi
+# UFW rules are now generated dynamically by the ufw_install.sh script
+# based on the services being installed (Dokku, WireGuard, Netdata, etc.)
+# This provides better organization and security-focused rule generation
 
 ##########################################################################################
 ## Execute subscripts
@@ -904,25 +803,39 @@ execute_module "System_Update" "$BASEDIR/subscripts/system_update.sh" "$DO_SYSTE
 
 printf "\n--------------------\n"
 
-# General server settings install (this is a complex module with sub-modules)
+# Common packages installation (foundational - needed by all other modules)
+execute_module "Packages_Installation" "$BASEDIR/subscripts/packages_install.sh" "Y"
+
+printf "\n--------------------\n"
+
+# Network security configuration (must be early in process)
+execute_module "Network_Security" "$BASEDIR/subscripts/network_security.sh" "Y"
+
+printf "\n--------------------\n"
+
+# Account security configuration (must be before SSH configuration)
+execute_module "Account_Security" "$BASEDIR/subscripts/account_security.sh" "Y"
+
+printf "\n--------------------\n"
+
+# SSH security configuration (replaces old SSH 2FA and general SSH hardening)
+execute_module "SSH_Security" "$BASEDIR/subscripts/ssh_security.sh" "$DO_SSH_2FA"
+
+printf "\n--------------------\n"
+
+# Security and system hardening tools
 if [[ $DO_GENERAL_SERVER_SETTINGS =~ [Yy]$ ]]; then
-    # Check if the entire general server settings suite is already complete
-    if is_module_installed "General_Server_Settings" && \
-       is_module_installed "Secure_Shared_Memory" && \
-       is_module_installed "Sysctl_Configuration" && \
+    # Check if the entire security suite is already complete
+    if is_module_installed "Secure_Shared_Memory" && \
        is_module_installed "Maldet_Installation" && \
        is_module_installed "RKHunter_Installation" && \
        is_module_installed "ClamAV_Installation" && \
        is_module_installed "Fail2Ban_Installation" && \
        is_module_installed "Postfix_Installation"; then
-        log_info "All General Server Settings modules already installed successfully, skipping..."
-        show_warn "All General Server Settings modules already installed successfully, skipping..."
+        log_info "All security hardening modules already installed successfully, skipping..."
+        show_warn "All security hardening modules already installed successfully, skipping..."
     else
-        execute_module "General_Server_Settings" "$BASEDIR/subscripts/general_system_settings.sh" "Y"
-        printf "\n--------------------\n"
         execute_module "Secure_Shared_Memory" "$BASEDIR/subscripts/secure_shared_memory_install.sh" "Y"
-        printf "\n--------------------\n"
-        execute_module "Sysctl_Configuration" "$BASEDIR/subscripts/sysctl_install.sh" "Y"
         printf "\n--------------------\n"
         execute_module "Maldet_Installation" "$BASEDIR/subscripts/maldet_install.sh" "Y"
         printf "\n--------------------\n"
@@ -935,22 +848,15 @@ if [[ $DO_GENERAL_SERVER_SETTINGS =~ [Yy]$ ]]; then
         execute_module "Postfix_Installation" "$BASEDIR/subscripts/postfix_install.sh" "Y"
     fi
 else
-    mark_module_skipped "General_Server_Settings"
     mark_module_skipped "Secure_Shared_Memory"
-    mark_module_skipped "Sysctl_Configuration"
     mark_module_skipped "Maldet_Installation"
     mark_module_skipped "RKHunter_Installation"
     mark_module_skipped "ClamAV_Installation"
     mark_module_skipped "Fail2Ban_Installation"
     mark_module_skipped "Postfix_Installation"
-    log_info "General server settings skipped by user choice"
-    show_warn "General server settings will not be installed"
+    log_info "Security hardening tools skipped by user choice"
+    show_warn "Security hardening tools will not be installed"
 fi
-
-printf "\n--------------------\n"
-
-# SSH 2FA install
-execute_module "SSH_2FA_Installation" "$BASEDIR/subscripts/ssh_2fa_install.sh" "$DO_SSH_2FA"
 
 printf "\n--------------------\n"
 

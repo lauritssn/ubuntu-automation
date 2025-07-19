@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ##########################################################################################
-## Set variables
+## DEPRECATED: This script is now replaced by network_security.sh
 ##########################################################################################
 
 DATE=$(date +%Y-%m-%d_%H%M)
@@ -16,18 +16,25 @@ fi
 LOGFILE=$SUBSCRIPT-$DATE.log
 
 ##########################################################################################
-## General sysctl configuration
-##########################################################################################
-
-CONF_ORG=/etc/sysctl.conf
-CONF_BACK=$BACKUPDIR/$(basename $CONF_ORG)_$DATE
-CONF_GIT=$BASEDIR/configs/sysctl/sysctl.conf
-
-##########################################################################################
 ## Info
 ##########################################################################################
 
 show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFILE."
+
+##########################################################################################
+## Migration Notice
+##########################################################################################
+
+show_warn "NOTICE: This script has been replaced by network_security.sh"
+show_warn "The new script provides comprehensive network security configuration"
+show_warn "including sysctl hardening, DNS security, and network interface protection."
+show_warn ""
+show_warn "This script will continue to work for compatibility but is deprecated."
+show_warn "Please use the new security-focused script structure."
+
+##########################################################################################
+## Compatibility execution - just run basic sysctl if really needed
+##########################################################################################
 
 ##########################################################################################
 ## Copy sysctl config
