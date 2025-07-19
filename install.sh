@@ -139,6 +139,14 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 ##########################################################################################
+## Set standardized directory structure (no company name needed)
+##########################################################################################
+
+export SCRIPTSDIR="/srv/apps/scripts"
+export DEPLOYDIR="/srv/apps"
+export BACKUPDIR="/srv/apps/backups"
+
+##########################################################################################
 ## Check if scripts folder exists and create it if it doesn't
 ##########################################################################################
 
@@ -149,14 +157,6 @@ fi
 ##########################################################################################
 ## Get input
 ##########################################################################################
-
-##########################################################################################
-## Set standardized directory structure (no company name needed)
-##########################################################################################
-
-export SCRIPTSDIR="/srv/apps/scripts"
-export DEPLOYDIR="/srv/apps"
-export BACKUPDIR="/srv/apps/backups"
 
 # Create scripts directory if it doesn't exist
 if [ ! -d $SCRIPTSDIR ]; then
