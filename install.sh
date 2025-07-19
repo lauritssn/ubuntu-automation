@@ -172,12 +172,17 @@ execute_module() {
     local module_script="$2"
     local user_choice="$3"
     
-    # Check if user chose to install this module
-    if [[ ! $user_choice =~ [Yy]$ ]]; then
+    # Check if user chose to install this module (Y=Yes, M=Mandatory)
+    if [[ ! $user_choice =~ [YyMm]$ ]]; then
         mark_module_skipped "$module_name"
         log_info "$module_name installation skipped by user choice"
         show_warn "$module_name will not be installed"
         return 0
+    fi
+    
+    # Show different messages for mandatory vs optional installations
+    if [[ $user_choice =~ [Mm]$ ]]; then
+        log_info "$module_name is MANDATORY and will be installed automatically"
     fi
     
     # Check if module is already successfully installed
@@ -301,16 +306,16 @@ export DATE=$(date +%Y-%m-%d_%H%M)
 export DEBIAN_FRONTEND=noninteractive # Make apt-get install non-interactive
 
 export DO_CHANGE_TIMEZONE=N
-export DO_SYSTEM_UPDATE=Y     # MANDATORY
-export DO_SWAPFILE_INSTALL=Y  # MANDATORY
-export DO_EXTRAS_INSTALL=Y    # MANDATORY
-export DO_GENERAL_SERVER_SETTINGS=Y  # MANDATORY
-export DO_LIGHTWEIGHT_MONITORING=Y   # MANDATORY
+export DO_SYSTEM_UPDATE=M     # MANDATORY
+export DO_SWAPFILE_INSTALL=M  # MANDATORY
+export DO_EXTRAS_INSTALL=M    # MANDATORY
+export DO_GENERAL_SERVER_SETTINGS=M  # MANDATORY
+export DO_LIGHTWEIGHT_MONITORING=M   # MANDATORY
 export DO_NETDATA_INSTALL=N
-export DO_SYSTEMD_TIMERS=Y    # MANDATORY
+export DO_SYSTEMD_TIMERS=M    # MANDATORY
 export DO_DOCKER_INSTALL=N
-export DO_UFW_INSTALL=Y  # MANDATORY
-export DO_SWAP_INSTALL=Y  # MANDATORY
+export DO_UFW_INSTALL=M  # MANDATORY
+export DO_SWAP_INSTALL=M  # MANDATORY
 export DO_DOKKU_INSTALL=N
 export DO_WIREGUARD_INSTALL=N
 
@@ -528,17 +533,19 @@ echo ""
 echo "These components are required for a secure Ubuntu 24.04 server and cannot be skipped."
 echo "=================================================================="
 echo ""
+echo "📋 Configuration Status:"
+echo "• DO_SYSTEM_UPDATE: $DO_SYSTEM_UPDATE (Mandatory)"
+echo "• DO_GENERAL_SERVER_SETTINGS: $DO_GENERAL_SERVER_SETTINGS (Mandatory)" 
+echo "• DO_SWAP_INSTALL: $DO_SWAP_INSTALL (Mandatory)"
+echo "• DO_LIGHTWEIGHT_MONITORING: $DO_LIGHTWEIGHT_MONITORING (Mandatory)"
+echo "• DO_SYSTEMD_TIMERS: $DO_SYSTEMD_TIMERS (Mandatory)"
+echo "• DO_UFW_INSTALL: $DO_UFW_INSTALL (Mandatory)"
+echo ""
 
-# System update (MANDATORY)
-DO_SYSTEM_UPDATE=Y
-echo "DO_SYSTEM_UPDATE: $DO_SYSTEM_UPDATE (MANDATORY - system updates are required for security)"
-
-# General server settings install (MANDATORY)
-DO_GENERAL_SERVER_SETTINGS=Y
-echo "DO_GENERAL_SERVER_SETTINGS: $DO_GENERAL_SERVER_SETTINGS (MANDATORY - security hardening is required)"
+# System update and General server settings are MANDATORY (M) - no user prompts needed
 
 # SSH 2FA with Google Authenticator
-if [[ $DO_GENERAL_SERVER_SETTINGS =~ [Yy]$ ]]; then
+if [[ $DO_GENERAL_SERVER_SETTINGS =~ [YyMm]$ ]]; then
     while true; do
         read -p "Do You want to enable SSH 2FA with Google Authenticator (Y/N)? " yn
         case $yn in
@@ -562,16 +569,10 @@ echo "DO_SSH_2FA: "$DO_SSH_2FA
 # Note: User creation is now handled by separate add_user.sh script
 # This keeps the installation focused on system setup
 
-# Swap install (MANDATORY)
-DO_SWAP_INSTALL=Y
-echo "DO_SWAP_INSTALL: $DO_SWAP_INSTALL (MANDATORY - secure swap is required for system stability)"
-
-# Lightweight monitoring install (MANDATORY)
-DO_LIGHTWEIGHT_MONITORING=Y
-echo "DO_LIGHTWEIGHT_MONITORING: $DO_LIGHTWEIGHT_MONITORING (MANDATORY - monitoring tools are required for system management)"
+# Swap install and Lightweight monitoring are MANDATORY (M) - no user prompts needed
 
 # Slack webhook for disk monitoring
-if [[ $DO_LIGHTWEIGHT_MONITORING =~ [Yy]$ ]]; then
+if [[ $DO_LIGHTWEIGHT_MONITORING =~ [YyMm]$ ]]; then
     while true; do
         read -p "Do You want to enable Slack notifications for disk space monitoring (Y/N)? " yn
         case $yn in
@@ -612,9 +613,7 @@ done
 
 echo "DO_NETDATA_INSTALL: "$DO_NETDATA_INSTALL
 
-# Systemd timers install (MANDATORY)
-DO_SYSTEMD_TIMERS=Y
-echo "DO_SYSTEMD_TIMERS: $DO_SYSTEMD_TIMERS (MANDATORY - automated security scanning is required)"
+# Systemd timers install is MANDATORY (M) - no user prompts needed
 
 # Docker install
 while true; do
@@ -670,9 +669,7 @@ fi
 
 echo "DO_DOCKER_INSTALL: "$DO_DOCKER_INSTALL
 
-# UFW install (MANDATORY)
-DO_UFW_INSTALL=Y
-echo "DO_UFW_INSTALL: $DO_UFW_INSTALL (MANDATORY - firewall protection is required for security)"
+# UFW install is MANDATORY (M) - no user prompts needed
 
 # Dokku install
 while true; do
@@ -824,7 +821,7 @@ execute_module "SSH_Security" "$BASEDIR/subscripts/ssh_security.sh" "$DO_SSH_2FA
 printf "\n--------------------\n"
 
 # Security and system hardening tools
-if [[ $DO_GENERAL_SERVER_SETTINGS =~ [Yy]$ ]]; then
+if [[ $DO_GENERAL_SERVER_SETTINGS =~ [YyMm]$ ]]; then
     # Check if the entire security suite is already complete
     if is_module_installed "Secure_Shared_Memory" && \
        is_module_installed "Maldet_Installation" && \
@@ -891,7 +888,7 @@ execute_module "Systemd_Timers" "$BASEDIR/subscripts/systemd_timers_install.sh" 
 printf "\n--------------------\n"
 
 # UFW script install / MUST BE DONE LAST DUE TO UFW BEING ALTERED ACCORDING TO INSTALLATION
-if [[ $DO_UFW_INSTALL =~ [Yy]$ ]]; then
+if [[ $DO_UFW_INSTALL =~ [YyMm]$ ]]; then
     # UFW needs special handling to backup existing configuration
     if ! is_module_installed "UFW_Firewall"; then
         ufw status numbered >>$BACKUPDIR/ufw 2>/dev/null || true
