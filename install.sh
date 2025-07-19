@@ -39,10 +39,7 @@ log_install() {
     
     # Log to systemd journal with structured data (if systemd-cat is available)
     if command -v systemd-cat >/dev/null 2>&1; then
-        echo "$message" | systemd-cat -t "$JOURNAL_TAG" -p "$level" \
-            INSTALL_STEP="$step" \
-            INSTALL_ID="$INSTALL_ID" \
-            INSTALL_PHASE="main"
+        echo "$message" | systemd-cat -t "$JOURNAL_TAG" -p "$level"
     fi
     
     # Also display to user
@@ -860,11 +857,7 @@ log_info "Installation completed at: $(date)"
 
 # Log final summary to journal (if systemd-cat is available)
 if command -v systemd-cat >/dev/null 2>&1; then
-    echo "=== INSTALLATION SUMMARY ===" | systemd-cat -t "$JOURNAL_TAG" -p "info" \
-        INSTALL_STEP="summary" \
-        INSTALL_ID="$INSTALL_ID" \
-        INSTALL_PHASE="complete" \
-        INSTALL_DURATION="$DURATION"
+    echo "=== INSTALLATION SUMMARY ===" | systemd-cat -t "$JOURNAL_TAG" -p "info"
 fi
 
 # Say bye
