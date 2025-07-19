@@ -93,10 +93,16 @@ fi
 
 show_yellow "Maldet configuration successfully customized for ClamAV integration."
 
-## @TODO
-## Include the scanning of known temporary world-writable paths for
-## -a|--al and -r|--recent scan types.
-#scan_tmpdir_paths="/tmp /var/tmp /dev/shm /var/fcgi_ipc"
+# Configure scan paths for temporary directories to reduce false positives
+# Enable scanning of temporary paths but with reduced sensitivity for false positives
+# This helps with targeted malware detection in high-risk temporary areas
+# Comment out the next line if you experience too many false positives in /tmp
+sed -i 's/scan_tmpdir_paths=.*/scan_tmpdir_paths="\/tmp \/var\/tmp"/ig' $CONF_ORG
+
+# Disable scanning of /dev/shm to reduce false positives from systemd and applications
+# sed -i 's/scan_tmpdir_paths=.*/scan_tmpdir_paths="\/tmp \/var\/tmp"/ig' $CONF_ORG
+
+show_yellow "Maldet temporary directory scanning configured to reduce false positives."
 
 ##########################################################################################
 ## Done

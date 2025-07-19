@@ -5,9 +5,45 @@
  
 # Directories to scan
 SCAN_DIR="/home /tmp /var /srv"
+
+# Exclude common false positive locations and file types
+# You can uncomment and modify these as needed
+EXCLUDE_OPTS="--exclude-dir=/tmp/systemd-private* --exclude-dir=/var/lib/docker --exclude-dir=/var/cache --exclude=*.pid --exclude=*.lock --exclude=*.sock"
+
+# Alternative: More restrictive /tmp scanning (recommended for high false positive environments)
+# SCAN_DIR="/home /var/log /var/www /srv"
  
 # Location of log file
 LOG_FILE="/var/log/clamav/manual_clamscan.log"
+
+# ============================================================================
+# FALSE POSITIVE REDUCTION CONFIGURATION
+# ============================================================================
+# 
+# Common directories that may cause false positives:
+# - /var/lib/docker (Docker containers and images)
+# - /var/cache (Package manager caches)  
+# - /tmp/systemd-private* (Systemd private temp directories)
+# - /proc, /sys (Virtual filesystems)
+# - /dev (Device files)
+#
+# Common file types that may cause false positives:
+# - *.pid (Process ID files)
+# - *.lock (Lock files)  
+# - *.sock (Socket files)
+# - *.tmp (Temporary files)
+# - core.* (Core dump files)
+#
+# To add more exclusions, modify EXCLUDE_OPTS above or create a custom exclude file:
+# echo "/path/to/exclude" >> /etc/clamav/exclude.list
+# Then add: --exclude-dir-file=/etc/clamav/exclude.list
+#
+# For application-specific exclusions, consider:
+# - Docker: --exclude-dir=/var/lib/docker
+# - Snap packages: --exclude-dir=/var/lib/snapd
+# - Node.js: --exclude-dir=**/node_modules
+# - Python: --exclude=*.pyc --exclude-dir=**/__pycache__
+# ============================================================================
  
 # Uncomment to have scan remove files
 #AGGRESSIVE=1
@@ -51,9 +87,9 @@ check_scan () {
  
 if [ $AGGRESSIVE = 1 ]
 then
-        ionice -c 3 nice -n 19 /usr/bin/clamscan -ri --remove $SCAN_DIR >> $LOG_FILE
+        ionice -c 3 nice -n 19 /usr/bin/clamscan -ri --remove $EXCLUDE_OPTS $SCAN_DIR >> $LOG_FILE
 else
-        ionice -c 3 nice -n 19 /usr/bin/clamscan -ri $SCAN_DIR >> $LOG_FILE
+        ionice -c 3 nice -n 19 /usr/bin/clamscan -ri $EXCLUDE_OPTS $SCAN_DIR >> $LOG_FILE
 fi
  
 check_scan

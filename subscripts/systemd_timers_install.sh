@@ -48,6 +48,13 @@ cat > /usr/local/bin/clamav-scan.sh << 'EOF'
 # Directories to scan
 SCAN_DIR="/home /tmp /var /srv"
 
+# Exclude common false positive locations and file types
+# You can uncomment and modify these as needed
+EXCLUDE_OPTS="--exclude-dir=/tmp/systemd-private* --exclude-dir=/var/lib/docker --exclude-dir=/var/cache --exclude=*.pid --exclude=*.lock --exclude=*.sock"
+
+# Alternative: More restrictive /tmp scanning (recommended for high false positive environments)
+# SCAN_DIR="/home /var/log /var/www /srv"
+
 # Location of log file
 LOG_FILE="/var/log/clamav/manual_clamscan.log"
 
@@ -96,9 +103,9 @@ check_scan () {
 # Run ClamAV scan with low priority
 echo "Starting ClamAV scan at $(date)"
 if [ $AGGRESSIVE = 1 ]; then
-    /usr/bin/clamscan -ri --remove $SCAN_DIR >> $LOG_FILE 2>&1
+    /usr/bin/clamscan -ri --remove $EXCLUDE_OPTS $SCAN_DIR >> $LOG_FILE 2>&1
 else
-    /usr/bin/clamscan -ri $SCAN_DIR >> $LOG_FILE 2>&1
+    /usr/bin/clamscan -ri $EXCLUDE_OPTS $SCAN_DIR >> $LOG_FILE 2>&1
 fi
 
 # Check scan results and send notifications
@@ -113,7 +120,7 @@ chmod +x /usr/local/bin/clamav-scan.sh
 sed -i 's/INFO_EMAIL/'${INFO_EMAIL}'/g' /usr/local/bin/clamav-scan.sh
 sed -i 's/EMAIL_DOMAIN/'${EMAIL_DOMAIN}'/g' /usr/local/bin/clamav-scan.sh
 
-show_yellow "ClamAV systemd timer installed."
+show_yellow "ClamAV systemd timer installed with false positive reduction enabled."
 
 ##########################################################################################
 ## Install RKHunter systemd timers

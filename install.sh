@@ -78,10 +78,6 @@ log_info() {
 # Standardized application paths - no more company placeholders
 export AUTOMATION_ROOT="/srv/apps"
 export BASEDIR=$(pwd)
-echo "🔍 EARLY DEBUG: BASEDIR set to: '$BASEDIR'"
-echo "🔍 EARLY DEBUG: Current working directory: $(pwd)"
-echo "🔍 EARLY DEBUG: Contents of current directory:"
-ls -la . 2>/dev/null || echo "❌ Cannot list current directory"
 export LOGDIR='/tmp'
 export DATE=$(date +%Y-%m-%d_%H%M)
 export DEBIAN_FRONTEND=noninteractive # Make apt-get install non-interactive
@@ -624,20 +620,6 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     printf "\n\n--------------------\n"
     show_norm "Executing subscripts"
     printf "\n--------------------\n"
-    
-    # Immediate debug output at start of execution
-    echo "🔍 IMMEDIATE DEBUG: Script execution starting"
-    echo "🔍 IMMEDIATE DEBUG: Current working directory: $(pwd)"
-    echo "🔍 IMMEDIATE DEBUG: BASEDIR variable: '$BASEDIR'"
-    echo "🔍 IMMEDIATE DEBUG: Directory listing of current location:"
-    ls -la .
-    echo "🔍 IMMEDIATE DEBUG: Checking if subscripts directory exists at current location:"
-    ls -la subscripts/ 2>/dev/null || echo "❌ No subscripts directory in current location"
-    echo "🔍 IMMEDIATE DEBUG: Checking PATH:"
-    echo "PATH: $PATH"
-    echo "🔍 IMMEDIATE DEBUG: Available commands:"
-    which bash || echo "bash not found"
-    which source || echo "source not found"
 else
     printf "\n\n------------------\n"
     show_warn "Exiting gracefully"
@@ -647,32 +629,15 @@ else
 fi
 
 # Start timer and log installation start
-echo "🔍 PRE-START DEBUG: About to start timer and logging"
-echo "🔍 PRE-START DEBUG: Current directory: $(pwd)"
-echo "🔍 PRE-START DEBUG: BASEDIR: '$BASEDIR'"
 START_TIME=$(date +%s)
-echo "🔍 PRE-START DEBUG: Timer started successfully"
 log_start "Ubuntu 24.04 Automation Installation"
 log_info "Installation ID: $INSTALL_ID"
 log_info "Scripts directory: $SCRIPTSDIR"
 log_info "Email: $INFO_EMAIL"
 log_info "Timezone: $TIMEZONE"
 
-echo "🔍 DEBUG: Key variables:"
-echo "   BASEDIR: $BASEDIR"
-echo "   SCRIPTSDIR: $SCRIPTSDIR" 
-echo "   LOGDIR: $LOGDIR"
-echo "   Working directory: $(pwd)"
-echo "🔍 DEBUG: Checking if subscripts directory exists:"
-ls -la $BASEDIR/subscripts/ 2>/dev/null || echo "❌ SUBSCRIPTS DIRECTORY NOT FOUND"
-
 # Ensure all subscripts have execute permissions
-echo "🔍 DEBUG: Setting execute permissions on: $BASEDIR/subscripts/*.sh"
-echo "🔍 DEBUG: Files in subscripts directory:"
-ls -la $BASEDIR/subscripts/
 chmod +x $BASEDIR/subscripts/*.sh
-echo "🔍 DEBUG: Permissions after chmod:"
-ls -la $BASEDIR/subscripts/
 log_info "Subscript permissions updated"
 
 # Set timezone
@@ -687,8 +652,6 @@ printf "\n--------------------\n"
 # System update
 if [[ $DO_SYSTEM_UPDATE =~ [Yy]$ ]]; then
     log_start "System Update"
-    echo "🔍 DEBUG: About to execute: $BASEDIR/subscripts/system_update.sh"
-    echo "🔍 DEBUG: File exists: $(ls -la $BASEDIR/subscripts/system_update.sh 2>/dev/null || echo 'FILE NOT FOUND')"
     . $BASEDIR/subscripts/system_update.sh
     log_success "System Update"
 else
@@ -701,26 +664,20 @@ printf "\n--------------------\n"
 # General server settings install
 if [[ $DO_GENERAL_SERVER_SETTINGS =~ [Yy]$ ]]; then
     log_start "General Server Settings"
-    echo "🔍 DEBUG: About to execute: $BASEDIR/subscripts/general_system_settings.sh"
-    echo "🔍 DEBUG: File exists: $(ls -la $BASEDIR/subscripts/general_system_settings.sh 2>/dev/null || echo 'FILE NOT FOUND')"
     . $BASEDIR/subscripts/general_system_settings.sh
     log_success "General System Settings"
     printf "\n--------------------\n"
     log_start "Secure Shared Memory"
-    echo "🔍 DEBUG: About to execute: $BASEDIR/subscripts/secure_shared_memory_install.sh"
-    echo "🔍 DEBUG: File exists: $(ls -la $BASEDIR/subscripts/secure_shared_memory_install.sh 2>/dev/null || echo 'FILE NOT FOUND')"
     . $BASEDIR/subscripts/secure_shared_memory_install.sh
     log_success "Secure Shared Memory"
     printf "\n--------------------\n"
     log_start "Sysctl Configuration"
-    echo "🔍 DEBUG: About to execute: $BASEDIR/subscripts/sysctl_install.sh"
-    echo "🔍 DEBUG: File exists: $(ls -la $BASEDIR/subscripts/sysctl_install.sh 2>/dev/null || echo 'FILE NOT FOUND')"
     . $BASEDIR/subscripts/sysctl_install.sh
     log_success "Sysctl Configuration"
     printf "\n--------------------\n"
     log_start "Maldet Installation"
     . $BASEDIR/subscripts/maldet_install.sh
-    log_success "Maldet Installation"
+    log_success "Maldet Installation (with ClamAV Integration)"
     printf "\n--------------------\n"
     log_start "RKHunter Installation"
     . $BASEDIR/subscripts/rkhunter_install.sh
@@ -728,7 +685,7 @@ if [[ $DO_GENERAL_SERVER_SETTINGS =~ [Yy]$ ]]; then
     printf "\n--------------------\n"
     log_start "ClamAV Installation"
     . $BASEDIR/subscripts/clamav_install.sh
-    log_success "ClamAV Installation"
+    log_success "ClamAV Installation (with False Positive Reduction)"
     printf "\n--------------------\n"
     log_start "Fail2Ban Installation"
     . $BASEDIR/subscripts/fail2ban_install.sh
@@ -871,3 +828,13 @@ show_info "   journalctl -t ubuntu-automation-${INSTALL_ID} INSTALL_STEP=summary
 show_info ""
 show_info "🔍 To view specific installation steps:"
 show_info "   journalctl -t ubuntu-automation-${INSTALL_ID} INSTALL_PHASE=main --no-pager"
+show_info ""
+if [[ $DO_GENERAL_SERVER_SETTINGS =~ [Yy]$ ]]; then
+    show_info "🛡️ SECURITY SCANNING INFORMATION:"
+    show_info "   • ClamAV/Maldet: Configured with false positive reduction"
+    show_info "   • Exclusions: Applied for common system files and applications"
+    show_info "   • Helper script: Run 'clamav-exclude-helper.sh' to optimize for your software stack"
+    show_info "   • Scan logs: Available in /var/log/clamav/manual_clamscan.log"
+    show_info "   • Manual scan: Run '/usr/local/bin/clamav-scan.sh' to test configuration"
+    show_info ""
+fi

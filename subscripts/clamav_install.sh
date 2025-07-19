@@ -47,6 +47,33 @@ systemctl start clamav-freshclam.service >>$LOGDIR/$LOGFILE 2>&1 || (show_err "S
 show_yellow "ClamAV update done."
 
 ##########################################################################################
+## Deploy optimized ClamAV scan script with false positive reduction
+##########################################################################################
+
+show_yellow "Deploying optimized ClamAV scan script with false positive reduction."
+
+# Copy the optimized scan script from our configs
+cp $SCRIPT_GIT $SCRIPT_ORG >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Copying ClamAV scan script failed. Please check logfile and fix error manually.")
+
+# Replace email placeholders in the deployed script
+sed -i 's/INFO_EMAIL@EMAIL_DOMAIN/'${INFO_EMAIL}'/g' $SCRIPT_ORG
+sed -i 's/EMAIL_DOMAIN/'${EMAIL_DOMAIN}'/g' $SCRIPT_ORG
+sed -i 's/clamav@EMAIL_DOMAIN/clamav@'${EMAIL_DOMAIN}'/g' $SCRIPT_ORG
+
+show_yellow "ClamAV scan script deployed with false positive reduction enabled."
+
+##########################################################################################
+## Deploy ClamAV exclusion helper script
+##########################################################################################
+
+# Copy the exclusion helper script
+cp $BASEDIR/configs/clamav/clamav-exclude-helper.sh /usr/local/bin/clamav-exclude-helper.sh >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Copying ClamAV exclusion helper failed. Please check logfile and fix error manually.")
+chmod +x /usr/local/bin/clamav-exclude-helper.sh >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Making ClamAV exclusion helper executable failed. Please check logfile and fix error manually.")
+
+show_yellow "ClamAV exclusion helper installed at /usr/local/bin/clamav-exclude-helper.sh"
+show_yellow "Run 'clamav-exclude-helper.sh' anytime to optimize exclusions for your software stack."
+
+##########################################################################################
 ## Note: ClamAV scheduling now handled by systemd timers
 ##########################################################################################
 
