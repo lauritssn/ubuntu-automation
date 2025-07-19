@@ -37,55 +37,6 @@ apt-get --yes install libpam-google-authenticator qrencode >>$LOGDIR/$LOGFILE 2>
 show_yellow "Authenticator PAM module installed successfully."
 
 ##########################################################################################
-## Create sudo user if requested
-##########################################################################################
-
-if [[ "$DO_CREATE_SUDO_USER" =~ [Yy]$ ]] && [ -n "$SUDO_USERNAME" ] && [ -n "$SUDO_PASSWORD" ]; then
-    show_yellow "Creating sudo user: $SUDO_USERNAME"
-    
-    # Create the user
-    useradd -m -s /bin/bash "$SUDO_USERNAME" >>$LOGDIR/$LOGFILE 2>&1
-    if [ $? -eq 0 ]; then
-        show_yellow "User $SUDO_USERNAME created successfully."
-        
-        # Set password
-        echo "$SUDO_USERNAME:$SUDO_PASSWORD" | chpasswd
-        if [ $? -eq 0 ]; then
-            show_yellow "Password set for user $SUDO_USERNAME."
-        else
-            show_err "Failed to set password for user $SUDO_USERNAME."
-        fi
-        
-        # Add user to sudo group
-        usermod -aG sudo "$SUDO_USERNAME" >>$LOGDIR/$LOGFILE 2>&1
-        if [ $? -eq 0 ]; then
-            show_yellow "User $SUDO_USERNAME added to sudo group."
-        else
-            show_err "Failed to add user $SUDO_USERNAME to sudo group."
-        fi
-        
-        # Create .ssh directory and set proper permissions
-        USER_HOME="/home/$SUDO_USERNAME"
-        USER_SSH_DIR="$USER_HOME/.ssh"
-        
-        mkdir -p "$USER_SSH_DIR"
-        chown "$SUDO_USERNAME:$SUDO_USERNAME" "$USER_SSH_DIR"
-        chmod 700 "$USER_SSH_DIR"
-        
-        # Create authorized_keys file
-        touch "$USER_SSH_DIR/authorized_keys"
-        chown "$SUDO_USERNAME:$SUDO_USERNAME" "$USER_SSH_DIR/authorized_keys"
-        chmod 600 "$USER_SSH_DIR/authorized_keys"
-        
-        show_yellow "SSH directory created for user $SUDO_USERNAME."
-        show_info "Add your public key to: $USER_SSH_DIR/authorized_keys"
-        
-    else
-        show_err "Failed to create user $SUDO_USERNAME."
-    fi
-fi
-
-##########################################################################################
 ## Configure PAM for SSH 2FA
 ##########################################################################################
 
@@ -110,10 +61,10 @@ else
 fi
 
 ##########################################################################################
-## Configure SSH daemon for 2FA
+## Configure SSH daemon for 2FA and security
 ##########################################################################################
 
-show_yellow "Configuring SSH daemon for 2FA."
+show_yellow "Configuring SSH daemon for 2FA and security."
 
 # Backup SSH configuration (already done in general_system_settings.sh, but double-check)
 CONF_SSH_ORG=/etc/ssh/sshd_config
@@ -143,19 +94,17 @@ else
     show_yellow "SSH 2FA authentication methods updated."
 fi
 
-# Disable root login if sudo user was created
-if [[ "$DO_CREATE_SUDO_USER" =~ [Yy]$ ]] && [ -n "$SUDO_USERNAME" ]; then
-    show_yellow "Disabling root SSH login since sudo user $SUDO_USERNAME was created."
-    sed -i 's/^#PermitRootLogin.*/PermitRootLogin no/' $CONF_SSH_ORG
-    sed -i 's/^PermitRootLogin.*/PermitRootLogin no/' $CONF_SSH_ORG
-    show_warn "ROOT SSH LOGIN HAS BEEN DISABLED"
-    show_info "Use sudo user '$SUDO_USERNAME' for SSH access and 'sudo su -' for root privileges"
-fi
+# Disable root SSH login for security
+show_yellow "Disabling root SSH login for security."
+sed -i 's/^#PermitRootLogin.*/PermitRootLogin no/' $CONF_SSH_ORG
+sed -i 's/^PermitRootLogin.*/PermitRootLogin no/' $CONF_SSH_ORG
+show_warn "ROOT SSH LOGIN HAS BEEN DISABLED"
+show_info "Use regular user accounts created with add_user.sh for SSH access"
 
-show_yellow "SSH daemon configured for 2FA authentication."
+show_yellow "SSH daemon configured for 2FA authentication with root login disabled."
 
 ##########################################################################################
-## Create 2FA setup script for root user
+## Create 2FA setup script for users
 ##########################################################################################
 
 show_yellow "Creating 2FA setup script for users."
@@ -174,6 +123,13 @@ if [ $# -eq 0 ]; then
 fi
 
 USERNAME="$1"
+
+# Prevent setting up 2FA for root user
+if [ "$USERNAME" = "root" ]; then
+    echo "Error: Root user SSH access is disabled for security."
+    echo "Use regular user accounts created with add_user.sh instead."
+    exit 1
+fi
 
 # Check if user exists
 if ! id "$USERNAME" &>/dev/null; then
@@ -230,48 +186,6 @@ chmod +x $SCRIPTSDIR/setup_user_2fa.sh
 show_yellow "2FA setup script created at $SCRIPTSDIR/setup_user_2fa.sh"
 
 ##########################################################################################
-## Setup 2FA for root user (only if no sudo user created)
-##########################################################################################
-
-if [[ "$DO_CREATE_SUDO_USER" =~ [Yy]$ ]] && [ -n "$SUDO_USERNAME" ]; then
-    show_yellow "Skipping root 2FA setup since sudo user $SUDO_USERNAME was created."
-    show_info "Root SSH login is disabled. Configure 2FA for sudo user instead."
-else
-    show_yellow "Setting up 2FA for root user."
-    
-    # Generate 2FA for root user non-interactively
-    if [ ! -f /root/.google_authenticator ]; then
-        google-authenticator -t -d -f -r 3 -R 30 -W -q
-        
-        if [ $? -eq 0 ]; then
-            show_yellow "Authenticator configured for root user."
-            show_info "QR code and secret key saved to /root/.google_authenticator"
-            show_warn "IMPORTANT: You must scan the QR code with your Authenticator app!"
-            
-            # Display QR code if qrencode is available
-            if command -v qrencode >/dev/null 2>&1; then
-                echo ""
-                show_info "QR Code for root user:"
-                SECRET=$(head -1 /root/.google_authenticator)
-                HOSTNAME=$(hostname)
-                qrencode -t ANSIUTF8 "otpauth://totp/root@${HOSTNAME}?secret=${SECRET}&issuer=SSH2FA"
-                echo ""
-            fi
-            
-            show_warn "Emergency scratch codes:"
-            tail -n 5 /root/.google_authenticator
-            echo ""
-            show_warn "SAVE THESE EMERGENCY CODES IN A SAFE PLACE!"
-            echo ""
-        else
-            show_err "Failed to configure Authenticator for root user."
-        fi
-    else
-        show_warn "Authenticator already configured for root user."
-    fi
-fi
-
-##########################################################################################
 ## Create 2FA management scripts
 ##########################################################################################
 
@@ -289,10 +203,14 @@ else
     USERNAME="$1"
 fi
 
-GOOGLE_AUTH_FILE="/home/$USERNAME/.google_authenticator"
+# Prevent showing QR for root user
 if [ "$USERNAME" = "root" ]; then
-    GOOGLE_AUTH_FILE="/root/.google_authenticator"
+    echo "Error: Root user SSH access is disabled for security."
+    echo "Use regular user accounts created with add_user.sh instead."
+    exit 1
 fi
+
+GOOGLE_AUTH_FILE="/home/$USERNAME/.google_authenticator"
 
 if [ ! -f "$GOOGLE_AUTH_FILE" ]; then
     echo "Error: 2FA not configured for user $USERNAME"
@@ -329,10 +247,14 @@ fi
 
 USERNAME="$1"
 
-GOOGLE_AUTH_FILE="/home/$USERNAME/.google_authenticator"
+# Prevent disabling 2FA for root user
 if [ "$USERNAME" = "root" ]; then
-    GOOGLE_AUTH_FILE="/root/.google_authenticator"
+    echo "Error: Root user SSH access is disabled for security."
+    echo "Use regular user accounts created with add_user.sh instead."
+    exit 1
 fi
+
+GOOGLE_AUTH_FILE="/home/$USERNAME/.google_authenticator"
 
 if [ -f "$GOOGLE_AUTH_FILE" ]; then
     mv "$GOOGLE_AUTH_FILE" "${GOOGLE_AUTH_FILE}.disabled.$(date +%Y%m%d_%H%M%S)"
@@ -367,37 +289,25 @@ fi
 
 show_info "=== SSH 2FA Installation Complete ==="
 
-if [[ "$DO_CREATE_SUDO_USER" =~ [Yy]$ ]] && [ -n "$SUDO_USERNAME" ]; then
-    show_warn "IMPORTANT SETUP STEPS (with sudo user):"
-    show_info "1. Sudo user '$SUDO_USERNAME' has been created"
-    show_info "2. Root SSH login has been DISABLED for security"
-    show_info "3. Add your public key to: /home/$SUDO_USERNAME/.ssh/authorized_keys"
-    show_info "4. Install an Authenticator app on your mobile device (Google Authenticator, Authy, etc.)"
-    show_info "5. Setup 2FA for sudo user: $SCRIPTSDIR/setup_user_2fa.sh $SUDO_USERNAME"
-    show_info "6. Test SSH login with sudo user in a NEW terminal session before closing this one"
-    show_info "7. Use 'sudo su -' to become root after logging in as $SUDO_USERNAME"
-    show_info ""
-    show_warn "LOGIN INSTRUCTIONS:"
-    show_info "• SSH as: ssh -i ~/.ssh/your_key $SUDO_USERNAME@server"
-    show_info "• Enter your 2FA code when prompted"
-    show_info "• Use 'sudo su -' for root access"
-    show_info ""
-    show_warn "NOTE: Root 2FA was NOT configured since root SSH login is disabled"
-else
-    show_warn "IMPORTANT SETUP STEPS (root user):"
-    show_info "1. Root user 2FA is already configured"
-    show_info "2. Install an Authenticator app on your mobile device (Google Authenticator, Authy, etc.)"
-    show_info "3. Scan the QR code displayed above for root user"
-    show_info "4. Test SSH login in a NEW terminal session before closing this one"
-fi
-
-show_info "5. For additional users, run: $SCRIPTSDIR/setup_user_2fa.sh <username>"
+show_warn "IMPORTANT SETUP STEPS:"
+show_info "1. SSH 2FA is configured for non-root users only"
+show_info "2. Root SSH login has been DISABLED for security"
+show_info "3. Create users with: $SCRIPTSDIR/add_user.sh --interactive"
+show_info "4. All new users will get sudo access, 2FA, and VPN configuration"
+show_info "5. Use 'sudo su -' to become root after logging in as a regular user"
 show_info ""
 show_warn "SECURITY NOTES:"
-show_info "• SSH now requires BOTH public key AND 2FA code"
-show_info "• Save emergency scratch codes in a secure location"
-show_info "• Test login before closing current session"
-show_info "• Use 'show_2fa_qr.sh' to redisplay QR codes"
+show_info "• SSH now requires BOTH public key AND 2FA code for user accounts"
+show_info "• Root SSH access is completely disabled"
+show_info "• Only users created with add_user.sh can access the system via SSH"
+show_info "• All users get sudo privileges and can become root with 'sudo su -'"
+show_info "• Test user access before closing current session"
+show_info ""
+show_warn "NEXT STEPS:"
+show_info "1. Create at least one user account: $SCRIPTSDIR/add_user.sh --interactive"
+show_info "2. Add the user's SSH public key to their authorized_keys file"
+show_info "3. Test SSH login with the new user in a NEW terminal session"
+show_info "4. Verify sudo access works: sudo su -"
 show_info ""
 show_warn "SSH will be restarted to apply 2FA configuration..."
 

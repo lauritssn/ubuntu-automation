@@ -202,13 +202,93 @@ systemctl start wg-quick@wg0 >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Starting Wire
 show_yellow "Wireguard service started successfully."
 
 ##########################################################################################
+## Create global WireGuard management scripts
+##########################################################################################
+
+show_yellow "Creating global WireGuard management scripts."
+
+# Create global add-wg-client script
+cat > /usr/local/bin/add-wg-client << 'EOF'
+#!/bin/bash
+
+# Global WireGuard client management script
+# Wrapper for the local add_client.sh script
+
+if [ $# -ne 1 ]; then
+    echo "Usage: $0 <client_name>"
+    echo "Example: $0 john"
+    exit 1
+fi
+
+if [ ! -f /etc/wireguard/add_client.sh ]; then
+    echo "Error: WireGuard add_client.sh script not found."
+    echo "Make sure WireGuard is properly installed."
+    exit 1
+fi
+
+# Run the local script
+/etc/wireguard/add_client.sh "$1"
+EOF
+
+chmod +x /usr/local/bin/add-wg-client
+
+# Create global remove-wg-client script
+cat > /usr/local/bin/remove-wg-client << 'EOF'
+#!/bin/bash
+
+# Global WireGuard client removal script
+
+if [ $# -ne 1 ]; then
+    echo "Usage: $0 <client_name>"
+    echo "Example: $0 john"
+    exit 1
+fi
+
+CLIENT_NAME="$1"
+
+if [ ! -f /etc/wireguard/wg0.conf ]; then
+    echo "Error: WireGuard server configuration not found."
+    exit 1
+fi
+
+# Check if client exists
+if ! grep -q "# Client: $CLIENT_NAME" /etc/wireguard/wg0.conf; then
+    echo "Error: Client '$CLIENT_NAME' not found in WireGuard configuration."
+    exit 1
+fi
+
+echo "Removing WireGuard client: $CLIENT_NAME"
+
+# Remove client from server config
+# Remove the client block (from "# Client: name" to the next empty line or EOF)
+sed -i "/# Client: $CLIENT_NAME/,/^$/d" /etc/wireguard/wg0.conf
+
+# Remove client config file
+if [ -f "/etc/wireguard/clients/${CLIENT_NAME}.conf" ]; then
+    rm "/etc/wireguard/clients/${CLIENT_NAME}.conf"
+    echo "Removed client config file: /etc/wireguard/clients/${CLIENT_NAME}.conf"
+fi
+
+# Restart WireGuard to apply changes
+systemctl restart wg-quick@wg0
+
+echo "Client '$CLIENT_NAME' removed successfully!"
+echo "WireGuard service restarted to apply changes."
+EOF
+
+chmod +x /usr/local/bin/remove-wg-client
+
+show_yellow "Global WireGuard management scripts created."
+
+##########################################################################################
 ## Display setup information
 ##########################################################################################
 
 show_yellow "Wireguard setup completed!"
 show_info "Server public key: $SERVER_PUBLIC_KEY"
 show_info "Server IP: $WG_SERVER_IP/$WG_CIDR"
-show_info "To add clients, run: /etc/wireguard/add_client.sh <client_name>"
+show_info "To add clients, run: add-wg-client <client_name>"
+show_info "To remove clients, run: remove-wg-client <client_name>"
 
 ##########################################################################################
 ## Done

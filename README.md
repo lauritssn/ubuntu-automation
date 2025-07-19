@@ -5,8 +5,9 @@ This project provides a comprehensive automation suite for Ubuntu 24.04 server i
 ## 🎯 Overview
 
 The automation script installs and configures:
-- **Security hardening** with modern Ubuntu 24.04 practices and optional SSH 2FA
+- **Security hardening** with modern Ubuntu 24.04 practices and mandatory SSH 2FA (root login disabled)
 - **Multi-factor authentication** with Authenticator integration for SSH
+- **User management** with comprehensive user addition script (sudo + 2FA + VPN)
 - **Antivirus protection** with ClamAV and Maldet integration
 - **Intrusion detection** with RKHunter and Fail2Ban
 - **Firewall protection** with UFW (IPv6 enabled)
@@ -209,7 +210,7 @@ The automation suite is modular, allowing you to choose which components to inst
 - **Real-time monitoring:** Web-based dashboards
 - **Metrics collection:** CPU, memory, disk, network, services
 - **Alerting:** Built-in notification system
-- **VPN access:** Accessible via Wireguard VPN only (port 19999)
+- **VPN access:** Accessible via Wireguard VPN only (port 51820)
 
 **Recommended:** ✅ Lightweight tools with Slack always, Netdata for advanced monitoring needs
 
@@ -315,14 +316,15 @@ Generate QR codes: qrencode -t ansiutf8 < /etc/wireguard/clients/<username>.conf
 ```bash
 # SSH 2FA with Authenticator setup
 1. Enable SSH 2FA during installation when prompted
-2. Choose to create a sudo user (recommended for security)
-3. Install an Authenticator app on your mobile device (Google Authenticator, Authy, etc.)
-4. Scan the QR code displayed during installation
-5. Save emergency backup codes in a secure location
-6. Test login in a new session before closing current session
+2. Root SSH login is automatically DISABLED for security
+3. Create users after installation: /srv/apps/scripts/add_user.sh --interactive
+4. Install an Authenticator app on your mobile device (Google Authenticator, Authy, etc.)
+5. Scan the QR code displayed during user creation
+6. Save emergency backup codes in a secure location
+7. Test login with new user in a new session before closing current session
 
-# 2FA Management Commands
-/srv/apps/scripts/setup_user_2fa.sh <username>    # Setup 2FA for additional users
+# 2FA Management Commands (for regular users only)
+/srv/apps/scripts/setup_user_2fa.sh <username>    # Setup 2FA for existing users
 /srv/apps/scripts/show_2fa_qr.sh [username]       # Display QR code again
 /srv/apps/scripts/disable_user_2fa.sh <username>  # Disable 2FA for a user
 ```
@@ -333,12 +335,45 @@ Generate QR codes: qrencode -t ansiutf8 < /etc/wireguard/clients/<username>.conf
 3. **Access Granted:** Both factors must succeed for login
 
 **Security Benefits:**
+- **Root access disabled:** Root SSH login is completely disabled for security
 - **Enhanced protection:** Even if SSH key is compromised, 2FA prevents access
 - **Time-based codes:** TOTP codes change every 30 seconds
 - **Emergency recovery:** Backup scratch codes for emergency access
 - **User-specific:** Each user has their own 2FA configuration
-- **Root login disabled:** When sudo user is created, root SSH access is automatically disabled
-- **Sudo access:** Use 'sudo su -' for root privileges after logging in as sudo user
+- **Sudo access:** All users get sudo privileges and can become root with 'sudo su -'
+
+#### User Management
+```bash
+# Comprehensive user addition script (after initial installation)
+/srv/apps/scripts/add_user.sh --interactive    # Interactive mode with prompts
+/srv/apps/scripts/add_user.sh -u username      # Quick user creation
+/srv/apps/scripts/add_user.sh --help           # Show all options
+
+# The script automatically:
+1. Creates user account with home directory
+2. Adds user to sudo group (full admin privileges)
+3. Sets up SSH directory with proper permissions
+4. Configures SSH 2FA (if system has 2FA enabled)
+5. Creates WireGuard VPN access (if WireGuard is installed)
+6. Generates secure password (or accepts custom password)
+7. Displays QR codes for 2FA and VPN setup
+```
+
+**User Creation Features:**
+- **Sudo access:** Users can run commands with sudo and access root via 'sudo su -'
+- **SSH 2FA integration:** Automatically configures 2FA if the system supports it
+- **WireGuard VPN:** Creates VPN config for secure remote access
+- **Secure defaults:** Auto-generated passwords, proper file permissions
+- **Validation:** Username format checking, duplicate prevention
+- **Interactive mode:** Step-by-step prompts for all configuration options
+- **Flexible options:** Skip 2FA or VPN setup if not needed
+
+**Security Notes:**
+- Root SSH login is completely DISABLED for security
+- Each user gets individual 2FA configuration (separate QR codes and backup codes)
+- VPN access is isolated per user with unique IP addresses
+- SSH key authentication is required in addition to 2FA
+- All users get sudo privileges and can become root with 'sudo su -'
 
 #### Slack Monitoring Configuration
 ```bash
@@ -454,9 +489,19 @@ All monitoring scripts send notifications to your configured Slack channel:
 🔄 RKHunter Security Scan started on server-01
 ```
 
+### User Management
+```bash
+# Add a new user with sudo, 2FA, and WireGuard access (all-in-one script)
+/srv/apps/scripts/add_user.sh --interactive          # Interactive mode
+/srv/apps/scripts/add_user.sh -u john                # Create user 'john' with auto-generated password
+/srv/apps/scripts/add_user.sh -u jane -p mypassword  # Create user 'jane' with specific password
+/srv/apps/scripts/add_user.sh -u bob --no-2fa        # Create user 'bob' without 2FA
+/srv/apps/scripts/add_user.sh --help                 # Show help and options
+```
+
 ### SSH 2FA Management
 ```bash
-# Setup 2FA for new users
+# Setup 2FA for existing users
 /srv/apps/scripts/setup_user_2fa.sh myuser
 
 # Display QR code for existing user

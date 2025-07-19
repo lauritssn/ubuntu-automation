@@ -564,42 +564,8 @@ fi
 
 echo "DO_SSH_2FA: "$DO_SSH_2FA
 
-# Create sudo user (recommended when SSH 2FA is enabled)
-if [[ $DO_SSH_2FA =~ [Yy]$ ]]; then
-    while true; do
-        read -p "Do You want to create a sudo user (recommended since root SSH will be disabled) (Y/N)? " yn
-        case $yn in
-        [Yy]*)
-            DO_CREATE_SUDO_USER=Y
-            read -p "Enter username for the sudo user: " SUDO_USERNAME
-            while true; do
-                read -s -p "Enter password for $SUDO_USERNAME: " SUDO_PASSWORD
-                echo
-                read -s -p "Confirm password for $SUDO_USERNAME: " SUDO_PASSWORD_CONFIRM
-                echo
-                if [ "$SUDO_PASSWORD" = "$SUDO_PASSWORD_CONFIRM" ]; then
-                    break
-                else
-                    echo "Passwords do not match. Please try again."
-                fi
-            done
-            break
-            ;;
-        [Nn]*)
-            DO_CREATE_SUDO_USER=N
-            break
-            ;;
-        *) echo "Please answer yes or no." ;;
-        esac
-    done
-else
-    DO_CREATE_SUDO_USER=N
-fi
-
-echo "DO_CREATE_SUDO_USER: "$DO_CREATE_SUDO_USER
-if [[ $DO_CREATE_SUDO_USER =~ [Yy]$ ]]; then
-    echo "SUDO_USERNAME: "$SUDO_USERNAME
-fi
+# Note: User creation is now handled by separate add_user.sh script
+# This keeps the installation focused on system setup
 
 # Swap install
 while true; do
@@ -1065,6 +1031,13 @@ show_info "   journalctl -t ubuntu-automation-${INSTALL_ID} INSTALL_PHASE=main -
 show_info ""
 show_info "📝 Installation status log location:"
 show_info "   $INSTALL_STATUS_LOG"
+show_info ""
+show_info "👤 USER MANAGEMENT:"
+show_info "   • Root SSH login is DISABLED for security"
+show_info "   • Add new users: $SCRIPTSDIR/add_user.sh --interactive"
+show_info "   • Quick user creation: $SCRIPTSDIR/add_user.sh -u username"
+show_info "   • All users get sudo access, SSH 2FA, and WireGuard VPN (if available)"
+show_info "   • Use 'sudo su -' to become root after logging in as a regular user"
 show_info ""
 if [[ $DO_GENERAL_SERVER_SETTINGS =~ [Yy]$ ]]; then
     show_info "🛡️ SECURITY SCANNING INFORMATION:"
