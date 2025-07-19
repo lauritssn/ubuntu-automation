@@ -68,6 +68,224 @@ log_info() {
 }
 
 ##########################################################################################
+## Installation Status Tracking System
+##########################################################################################
+
+# Installation status log file
+export INSTALL_STATUS_LOG="/srv/apps/scripts/installation_status.log"
+
+# Initialize the installation status log
+init_install_status_log() {
+    # Create scripts directory if it doesn't exist
+    if [ ! -d "/srv/apps/scripts" ]; then
+        mkdir -p "/srv/apps/scripts"
+    fi
+    
+    # Create the status log if it doesn't exist
+    if [ ! -f "$INSTALL_STATUS_LOG" ]; then
+        cat > "$INSTALL_STATUS_LOG" << EOF
+# Ubuntu Automation Installation Status Log
+# Format: MODULE_NAME=STATUS
+# STATUS: SUCCESS, FAILED, SKIPPED
+# Generated on: $(date)
+EOF
+        chmod 600 "$INSTALL_STATUS_LOG"
+        log_info "Created new installation status log: $INSTALL_STATUS_LOG"
+    else
+        log_info "Using existing installation status log: $INSTALL_STATUS_LOG"
+    fi
+}
+
+# Check if a module has been successfully installed
+is_module_installed() {
+    local module_name="$1"
+    if [ -f "$INSTALL_STATUS_LOG" ]; then
+        grep -q "^${module_name}=SUCCESS$" "$INSTALL_STATUS_LOG" 2>/dev/null
+        return $?
+    fi
+    return 1  # Not installed
+}
+
+# Mark a module as successfully installed
+mark_module_success() {
+    local module_name="$1"
+    local temp_file=$(mktemp)
+    
+    # Remove any existing entry for this module
+    if [ -f "$INSTALL_STATUS_LOG" ]; then
+        grep -v "^${module_name}=" "$INSTALL_STATUS_LOG" > "$temp_file" 2>/dev/null || touch "$temp_file"
+    else
+        touch "$temp_file"
+    fi
+    
+    # Add new success entry
+    echo "${module_name}=SUCCESS" >> "$temp_file"
+    mv "$temp_file" "$INSTALL_STATUS_LOG"
+    chmod 600 "$INSTALL_STATUS_LOG"
+    
+    log_info "Module '$module_name' marked as successfully installed"
+}
+
+# Mark a module as failed
+mark_module_failed() {
+    local module_name="$1"
+    local temp_file=$(mktemp)
+    
+    # Remove any existing entry for this module
+    if [ -f "$INSTALL_STATUS_LOG" ]; then
+        grep -v "^${module_name}=" "$INSTALL_STATUS_LOG" > "$temp_file" 2>/dev/null || touch "$temp_file"
+    else
+        touch "$temp_file"
+    fi
+    
+    # Add new failed entry
+    echo "${module_name}=FAILED" >> "$temp_file"
+    mv "$temp_file" "$INSTALL_STATUS_LOG"
+    chmod 600 "$INSTALL_STATUS_LOG"
+    
+    log_error "Module '$module_name' marked as failed"
+}
+
+# Mark a module as skipped
+mark_module_skipped() {
+    local module_name="$1"
+    local temp_file=$(mktemp)
+    
+    # Remove any existing entry for this module
+    if [ -f "$INSTALL_STATUS_LOG" ]; then
+        grep -v "^${module_name}=" "$INSTALL_STATUS_LOG" > "$temp_file" 2>/dev/null || touch "$temp_file"
+    else
+        touch "$temp_file"
+    fi
+    
+    # Add new skipped entry
+    echo "${module_name}=SKIPPED" >> "$temp_file"
+    mv "$temp_file" "$INSTALL_STATUS_LOG"
+    chmod 600 "$INSTALL_STATUS_LOG"
+    
+    log_info "Module '$module_name' marked as skipped"
+}
+
+# Execute a module with status tracking
+execute_module() {
+    local module_name="$1"
+    local module_script="$2"
+    local user_choice="$3"
+    
+    # Check if user chose to install this module
+    if [[ ! $user_choice =~ [Yy]$ ]]; then
+        mark_module_skipped "$module_name"
+        log_info "$module_name installation skipped by user choice"
+        show_warn "$module_name will not be installed"
+        return 0
+    fi
+    
+    # Check if module is already successfully installed
+    if is_module_installed "$module_name"; then
+        log_info "$module_name is already successfully installed, skipping..."
+        show_warn "$module_name already installed successfully, skipping..."
+        return 0
+    fi
+    
+    # Execute the module
+    log_start "$module_name"
+    
+    # Create a temporary error trap for this module
+    set +e  # Temporarily disable exit on error
+    (
+        set -e  # Re-enable exit on error in subshell
+        . "$module_script"
+    )
+    local exit_code=$?
+    set -e  # Re-enable exit on error
+    
+    if [ $exit_code -eq 0 ]; then
+        mark_module_success "$module_name"
+        log_success "$module_name"
+        show_yellow "$module_name installation completed successfully"
+    else
+        mark_module_failed "$module_name"
+        log_error "$module_name installation failed with exit code $exit_code"
+        show_err "$module_name installation failed. Check logs for details."
+        echo "❌ $module_name failed. You can retry by running the script again."
+        echo "   Only failed/new modules will be reinstalled."
+        
+        # Ask user if they want to continue or exit
+        while true; do
+            read -p "Do you want to continue with other modules (Y/N)? " yn
+            case $yn in
+                [Yy]*)
+                    log_info "User chose to continue after $module_name failure"
+                    break
+                    ;;
+                [Nn]*)
+                    log_info "User chose to exit after $module_name failure"
+                    exit 1
+                    ;;
+                *) echo "Please answer yes or no." ;;
+            esac
+        done
+    fi
+    
+    return $exit_code
+}
+
+# Display installation status summary
+show_install_status() {
+    if [ ! -f "$INSTALL_STATUS_LOG" ]; then
+        echo "No installation status log found."
+        return
+    fi
+    
+    echo ""
+    echo "📋 INSTALLATION STATUS SUMMARY:"
+    echo "=================================="
+    
+    local success_count=0
+    local failed_count=0
+    local skipped_count=0
+    
+    while IFS='=' read -r module status; do
+        # Skip comments and empty lines
+        if [[ "$module" =~ ^#.*$ ]] || [[ -z "$module" ]]; then
+            continue
+        fi
+        
+        case "$status" in
+            "SUCCESS")
+                echo "✅ $module: Successfully installed"
+                ((success_count++))
+                ;;
+            "FAILED")
+                echo "❌ $module: Installation failed"
+                ((failed_count++))
+                ;;
+            "SKIPPED")
+                echo "⏭️  $module: Skipped by user"
+                ((skipped_count++))
+                ;;
+        esac
+    done < "$INSTALL_STATUS_LOG"
+    
+    echo "=================================="
+    echo "📊 SUMMARY: $success_count successful, $failed_count failed, $skipped_count skipped"
+    
+    if [ $failed_count -gt 0 ]; then
+        echo ""
+        echo "⚠️  Some modules failed. You can re-run this script to retry failed modules."
+        echo "   Successfully installed modules will be skipped automatically."
+    fi
+    echo ""
+}
+
+# Export the functions so they're available in subscripts
+export -f is_module_installed
+export -f mark_module_success
+export -f mark_module_failed
+export -f mark_module_skipped
+export -f execute_module
+
+##########################################################################################
 ## Define helper functions
 ##########################################################################################
 
@@ -615,6 +833,18 @@ fi
 printf "\n-----------------------------------------------------------\n"
 printf "\nWill now execute subscripts based on Your previous choices.\n"
 
+# Initialize installation status log
+init_install_status_log
+
+# Show current installation status if log exists
+if [ -f "$INSTALL_STATUS_LOG" ] && [ -s "$INSTALL_STATUS_LOG" ]; then
+    show_install_status
+    echo ""
+    echo "⚡ Modules marked as SUCCESS will be skipped."
+    echo "⚡ Failed or new modules will be installed/retried."
+    echo ""
+fi
+
 read -p "Do You want to continue (Y/N)?" -n 1 -r
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     printf "\n\n--------------------\n"
@@ -650,51 +880,49 @@ fi
 printf "\n--------------------\n"
 
 # System update
-if [[ $DO_SYSTEM_UPDATE =~ [Yy]$ ]]; then
-    log_start "System Update"
-    . $BASEDIR/subscripts/system_update.sh
-    log_success "System Update"
-else
-    log_info "System update skipped by user choice"
-    show_warn "System update will not be performed"
-fi
+execute_module "System_Update" "$BASEDIR/subscripts/system_update.sh" "$DO_SYSTEM_UPDATE"
 
 printf "\n--------------------\n"
 
-# General server settings install
+# General server settings install (this is a complex module with sub-modules)
 if [[ $DO_GENERAL_SERVER_SETTINGS =~ [Yy]$ ]]; then
-    log_start "General Server Settings"
-    . $BASEDIR/subscripts/general_system_settings.sh
-    log_success "General System Settings"
-    printf "\n--------------------\n"
-    log_start "Secure Shared Memory"
-    . $BASEDIR/subscripts/secure_shared_memory_install.sh
-    log_success "Secure Shared Memory"
-    printf "\n--------------------\n"
-    log_start "Sysctl Configuration"
-    . $BASEDIR/subscripts/sysctl_install.sh
-    log_success "Sysctl Configuration"
-    printf "\n--------------------\n"
-    log_start "Maldet Installation"
-    . $BASEDIR/subscripts/maldet_install.sh
-    log_success "Maldet Installation (with ClamAV Integration)"
-    printf "\n--------------------\n"
-    log_start "RKHunter Installation"
-    . $BASEDIR/subscripts/rkhunter_install.sh
-    log_success "RKHunter Installation"
-    printf "\n--------------------\n"
-    log_start "ClamAV Installation"
-    . $BASEDIR/subscripts/clamav_install.sh
-    log_success "ClamAV Installation (with False Positive Reduction)"
-    printf "\n--------------------\n"
-    log_start "Fail2Ban Installation"
-    . $BASEDIR/subscripts/fail2ban_install.sh
-    log_success "Fail2Ban Installation"
-    printf "\n--------------------\n"
-    log_start "Postfix Installation"
-    . $BASEDIR/subscripts/postfix_install.sh
-    log_success "Postfix Installation"
+    # Check if the entire general server settings suite is already complete
+    if is_module_installed "General_Server_Settings" && \
+       is_module_installed "Secure_Shared_Memory" && \
+       is_module_installed "Sysctl_Configuration" && \
+       is_module_installed "Maldet_Installation" && \
+       is_module_installed "RKHunter_Installation" && \
+       is_module_installed "ClamAV_Installation" && \
+       is_module_installed "Fail2Ban_Installation" && \
+       is_module_installed "Postfix_Installation"; then
+        log_info "All General Server Settings modules already installed successfully, skipping..."
+        show_warn "All General Server Settings modules already installed successfully, skipping..."
+    else
+        execute_module "General_Server_Settings" "$BASEDIR/subscripts/general_system_settings.sh" "Y"
+        printf "\n--------------------\n"
+        execute_module "Secure_Shared_Memory" "$BASEDIR/subscripts/secure_shared_memory_install.sh" "Y"
+        printf "\n--------------------\n"
+        execute_module "Sysctl_Configuration" "$BASEDIR/subscripts/sysctl_install.sh" "Y"
+        printf "\n--------------------\n"
+        execute_module "Maldet_Installation" "$BASEDIR/subscripts/maldet_install.sh" "Y"
+        printf "\n--------------------\n"
+        execute_module "RKHunter_Installation" "$BASEDIR/subscripts/rkhunter_install.sh" "Y"
+        printf "\n--------------------\n"
+        execute_module "ClamAV_Installation" "$BASEDIR/subscripts/clamav_install.sh" "Y"
+        printf "\n--------------------\n"
+        execute_module "Fail2Ban_Installation" "$BASEDIR/subscripts/fail2ban_install.sh" "Y"
+        printf "\n--------------------\n"
+        execute_module "Postfix_Installation" "$BASEDIR/subscripts/postfix_install.sh" "Y"
+    fi
 else
+    mark_module_skipped "General_Server_Settings"
+    mark_module_skipped "Secure_Shared_Memory"
+    mark_module_skipped "Sysctl_Configuration"
+    mark_module_skipped "Maldet_Installation"
+    mark_module_skipped "RKHunter_Installation"
+    mark_module_skipped "ClamAV_Installation"
+    mark_module_skipped "Fail2Ban_Installation"
+    mark_module_skipped "Postfix_Installation"
     log_info "General server settings skipped by user choice"
     show_warn "General server settings will not be installed"
 fi
@@ -702,100 +930,48 @@ fi
 printf "\n--------------------\n"
 
 # Swap install
-if [[ $DO_SWAP_INSTALL =~ [Yy]$ ]]; then
-    log_start "Swap Installation"
-    . $BASEDIR/subscripts/swap_install.sh
-    log_success "Swap Installation"
-else
-    log_info "Swap installation skipped by user choice"
-    show_warn "Swap not selected."
-fi
+execute_module "Swap_Installation" "$BASEDIR/subscripts/swap_install.sh" "$DO_SWAP_INSTALL"
 
 printf "\n--------------------\n"
 
 # Docker install
-if [[ $DO_DOCKER_INSTALL =~ [Yy]$ ]]; then
-    log_start "Docker Installation"
-    . $BASEDIR/subscripts/docker_install.sh
-    log_success "Docker Installation"
-else
-    log_info "Docker installation skipped by user choice"
-    show_warn "Docker will not be installed"
-fi
+execute_module "Docker_Installation" "$BASEDIR/subscripts/docker_install.sh" "$DO_DOCKER_INSTALL"
 
 printf "\n--------------------\n"
 
 # Lightweight monitoring install
-if [[ $DO_LIGHTWEIGHT_MONITORING =~ [Yy]$ ]]; then
-    log_start "Lightweight Monitoring Tools"
-    . $BASEDIR/subscripts/lightweight_monitoring_install.sh
-    log_success "Lightweight Monitoring Tools"
-else
-    log_info "Lightweight monitoring skipped by user choice"
-    show_warn "Lightweight monitoring tools will not be installed"
-fi
+execute_module "Lightweight_Monitoring" "$BASEDIR/subscripts/lightweight_monitoring_install.sh" "$DO_LIGHTWEIGHT_MONITORING"
 
 printf "\n--------------------\n"
 
 # Netdata install
-if [[ $DO_NETDATA_INSTALL =~ [Yy]$ ]]; then
-    log_start "Netdata Installation"
-    . $BASEDIR/subscripts/netdata_install.sh
-    log_success "Netdata Installation"
-else
-    log_info "Netdata installation skipped by user choice"
-    show_warn "Netdata will not be installed"
-fi
+execute_module "Netdata_Installation" "$BASEDIR/subscripts/netdata_install.sh" "$DO_NETDATA_INSTALL"
 
 printf "\n--------------------\n"
 
 # Wireguard install
-if [[ $DO_WIREGUARD_INSTALL =~ [Yy]$ ]]; then
-    log_start "Wireguard VPN Installation"
-    . $BASEDIR/subscripts/wireguard_install.sh
-    log_success "Wireguard VPN Installation"
-else
-    log_info "Wireguard VPN installation skipped by user choice"
-    show_warn "Wireguard VPN will not be installed"
-fi
+execute_module "Wireguard_VPN" "$BASEDIR/subscripts/wireguard_install.sh" "$DO_WIREGUARD_INSTALL"
 
 printf "\n--------------------\n"
 
 # Systemd timers install (after security tools are configured)
-if [[ $DO_SYSTEMD_TIMERS =~ [Yy]$ ]]; then
-    log_start "Systemd Timers Installation"
-    . $BASEDIR/subscripts/systemd_timers_install.sh
-    log_success "Systemd Timers Installation"
-else
-    log_info "Systemd timers installation skipped by user choice"
-    show_warn "Systemd timers will not be installed"
-fi
+execute_module "Systemd_Timers" "$BASEDIR/subscripts/systemd_timers_install.sh" "$DO_SYSTEMD_TIMERS"
 
 printf "\n--------------------\n"
 
 # UFW script install / MUST BE DONE LAST DUE TO UFW BEING ALTERED ACCORDING TO INSTALLATION
 if [[ $DO_UFW_INSTALL =~ [Yy]$ ]]; then
-    log_start "UFW Firewall Installation"
-    ufw status numbered >>$BACKUPDIR/ufw
-
-    . $BASEDIR/subscripts/ufw_install.sh
-    log_success "UFW Firewall Installation"
-else
-    log_info "UFW firewall installation skipped by user choice"
-    show_warn "UFW script will not be installed"
+    # UFW needs special handling to backup existing configuration
+    if ! is_module_installed "UFW_Firewall"; then
+        ufw status numbered >>$BACKUPDIR/ufw 2>/dev/null || true
+    fi
 fi
+execute_module "UFW_Firewall" "$BASEDIR/subscripts/ufw_install.sh" "$DO_UFW_INSTALL"
 
 printf "\n--------------------\n"
 
 # Dokku install
-if [[ $DO_DOKKU_INSTALL =~ [Yy]$ ]]; then
-    log_start "Dokku Installation"
-    . $BASEDIR/subscripts/dokku_install.sh
-    log_success "Dokku Installation"
-else
-    log_info "Dokku installation skipped by user choice"
-    show_warn "Dokku will not be installed"
-fi
+execute_module "Dokku_Installation" "$BASEDIR/subscripts/dokku_install.sh" "$DO_DOKKU_INSTALL"
 
 printf "\n--------------------\n"
 
@@ -806,6 +982,9 @@ chmod 0600 $SCRIPTSDIR/pswd
 # End timer and log completion
 END_TIME=$(date +%s)
 DURATION=$(expr $END_TIME - $START_TIME)
+
+# Display final installation status
+show_install_status
 
 # Log installation completion with summary
 log_success "Ubuntu 24.04 Automation Installation Complete"
@@ -828,6 +1007,9 @@ show_info "   journalctl -t ubuntu-automation-${INSTALL_ID} INSTALL_STEP=summary
 show_info ""
 show_info "🔍 To view specific installation steps:"
 show_info "   journalctl -t ubuntu-automation-${INSTALL_ID} INSTALL_PHASE=main --no-pager"
+show_info ""
+show_info "📝 Installation status log location:"
+show_info "   $INSTALL_STATUS_LOG"
 show_info ""
 if [[ $DO_GENERAL_SERVER_SETTINGS =~ [Yy]$ ]]; then
     show_info "🛡️ SECURITY SCANNING INFORMATION:"

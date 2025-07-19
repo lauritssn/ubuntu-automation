@@ -46,6 +46,39 @@ The automation script installs and configures:
 
 5. **Follow the interactive prompts** to configure your server according to your needs.
 
+## 🔄 Installation Status Tracking
+
+The automation includes a robust status tracking system that prevents re-installing modules that completed successfully:
+
+### Status Management
+- **Automatic tracking:** Each module's success/failure status is recorded
+- **Smart retry:** Failed modules can be retried without affecting successful ones
+- **Skip successful:** Successfully installed modules are automatically skipped on subsequent runs
+- **Status log location:** `/srv/apps/scripts/installation_status.log`
+
+### Viewing Installation Status
+```bash
+# View current installation status
+./view_install_status.sh
+
+# View help and all options
+./view_install_status.sh help
+```
+
+### Managing Module Status
+```bash
+# Reset specific module (force reinstall)
+./view_install_status.sh reset-module Docker_Installation
+
+# Reset all modules (force complete reinstall)
+./view_install_status.sh reset
+```
+
+### Status Indicators
+- ✅ **SUCCESS:** Module installed successfully, will be skipped
+- ❌ **FAILED:** Module installation failed, will be retried
+- ⏭️ **SKIPPED:** Module was skipped by user choice
+
 ## 📋 Installation Modules
 
 The automation suite is modular, allowing you to choose which components to install:
@@ -474,6 +507,7 @@ For issues and questions:
 
 - Check the troubleshooting section above
 - Review installation logs with `view_install_log.sh`
+- Check installation status with `view_install_status.sh`
 - Create an issue on GitHub with relevant log excerpts
 
 ---
