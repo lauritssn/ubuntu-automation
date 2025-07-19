@@ -82,6 +82,32 @@ ufw --force enable >>$LOGDIR/$LOGFILE 2>&1 || (show_yellow "ufw enable failed. P
 show_yellow "ufw enabled."
 
 ##########################################################################################
+## Run UFW configuration script
+##########################################################################################
+
+if [ -f $CONF_ORG_1 ]; then
+    show_yellow "Running UFW configuration script: $CONF_ORG_1"
+    bash $CONF_ORG_1 >>$LOGDIR/$LOGFILE 2>&1 || (show_yellow "UFW script execution failed. Please check logfile and fix error manually.")
+    show_yellow "UFW configuration script executed."
+else
+    show_yellow "UFW configuration script not found at $CONF_ORG_1"
+fi
+
+##########################################################################################
+## Reload UFW to apply all configuration changes
+##########################################################################################
+
+ufw reload >>$LOGDIR/$LOGFILE 2>&1 || (show_yellow "ufw reload failed. Please check logfile and fix error manually.")
+show_yellow "ufw reloaded to apply configuration changes."
+
+##########################################################################################
+## Verify UFW status
+##########################################################################################
+
+ufw status verbose >>$LOGDIR/$LOGFILE 2>&1
+show_yellow "UFW status verified and logged."
+
+##########################################################################################
 ## Done
 ##########################################################################################
 
