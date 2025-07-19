@@ -12,8 +12,7 @@ set -e # Exit on error
 
 # Enhanced error handling
 set -o pipefail # Exit on pipe failures
-# Temporarily disable error trap for debugging
-# trap 'handle_error ${LINENO}' ERR
+trap 'handle_error ${LINENO}' ERR
 
 handle_error() {
     local line_no=$1
@@ -693,7 +692,7 @@ if [[ $DO_SYSTEM_UPDATE =~ [Yy]$ ]]; then
     log_start "System Update"
     echo "🔍 DEBUG: About to execute: $BASEDIR/subscripts/system_update.sh"
     echo "🔍 DEBUG: File exists: $(ls -la $BASEDIR/subscripts/system_update.sh 2>/dev/null || echo 'FILE NOT FOUND')"
-    source $BASEDIR/subscripts/system_update.sh
+    . $BASEDIR/subscripts/system_update.sh
     log_success "System Update"
 else
     log_info "System update skipped by user choice"
@@ -707,39 +706,39 @@ if [[ $DO_GENERAL_SERVER_SETTINGS =~ [Yy]$ ]]; then
     log_start "General Server Settings"
     echo "🔍 DEBUG: About to execute: $BASEDIR/subscripts/general_system_settings.sh"
     echo "🔍 DEBUG: File exists: $(ls -la $BASEDIR/subscripts/general_system_settings.sh 2>/dev/null || echo 'FILE NOT FOUND')"
-    source $BASEDIR/subscripts/general_system_settings.sh
+    . $BASEDIR/subscripts/general_system_settings.sh
     log_success "General System Settings"
     printf "\n--------------------\n"
     log_start "Secure Shared Memory"
     echo "🔍 DEBUG: About to execute: $BASEDIR/subscripts/secure_shared_memory_install.sh"
     echo "🔍 DEBUG: File exists: $(ls -la $BASEDIR/subscripts/secure_shared_memory_install.sh 2>/dev/null || echo 'FILE NOT FOUND')"
-    source $BASEDIR/subscripts/secure_shared_memory_install.sh
+    . $BASEDIR/subscripts/secure_shared_memory_install.sh
     log_success "Secure Shared Memory"
     printf "\n--------------------\n"
     log_start "Sysctl Configuration"
     echo "🔍 DEBUG: About to execute: $BASEDIR/subscripts/sysctl_install.sh"
     echo "🔍 DEBUG: File exists: $(ls -la $BASEDIR/subscripts/sysctl_install.sh 2>/dev/null || echo 'FILE NOT FOUND')"
-    source $BASEDIR/subscripts/sysctl_install.sh
+    . $BASEDIR/subscripts/sysctl_install.sh
     log_success "Sysctl Configuration"
     printf "\n--------------------\n"
     log_start "Maldet Installation"
-    source $BASEDIR/subscripts/maldet_install.sh
+    . $BASEDIR/subscripts/maldet_install.sh
     log_success "Maldet Installation"
     printf "\n--------------------\n"
     log_start "RKHunter Installation"
-    source $BASEDIR/subscripts/rkhunter_install.sh
+    . $BASEDIR/subscripts/rkhunter_install.sh
     log_success "RKHunter Installation"
     printf "\n--------------------\n"
     log_start "ClamAV Installation"
-    source $BASEDIR/subscripts/clamav_install.sh
+    . $BASEDIR/subscripts/clamav_install.sh
     log_success "ClamAV Installation"
     printf "\n--------------------\n"
     log_start "Fail2Ban Installation"
-    source $BASEDIR/subscripts/fail2ban_install.sh
+    . $BASEDIR/subscripts/fail2ban_install.sh
     log_success "Fail2Ban Installation"
     printf "\n--------------------\n"
     log_start "Postfix Installation"
-    source $BASEDIR/subscripts/postfix_install.sh
+    . $BASEDIR/subscripts/postfix_install.sh
     log_success "Postfix Installation"
 else
     log_info "General server settings skipped by user choice"
@@ -751,7 +750,7 @@ printf "\n--------------------\n"
 # Swap install
 if [[ $DO_SWAP_INSTALL =~ [Yy]$ ]]; then
     log_start "Swap Installation"
-    source $BASEDIR/subscripts/swap_install.sh
+    . $BASEDIR/subscripts/swap_install.sh
     log_success "Swap Installation"
 else
     log_info "Swap installation skipped by user choice"
@@ -763,7 +762,7 @@ printf "\n--------------------\n"
 # Docker install
 if [[ $DO_DOCKER_INSTALL =~ [Yy]$ ]]; then
     log_start "Docker Installation"
-    source $BASEDIR/subscripts/docker_install.sh
+    . $BASEDIR/subscripts/docker_install.sh
     log_success "Docker Installation"
 else
     log_info "Docker installation skipped by user choice"
@@ -775,7 +774,7 @@ printf "\n--------------------\n"
 # Lightweight monitoring install
 if [[ $DO_LIGHTWEIGHT_MONITORING =~ [Yy]$ ]]; then
     log_start "Lightweight Monitoring Tools"
-    source $BASEDIR/subscripts/lightweight_monitoring_install.sh
+    . $BASEDIR/subscripts/lightweight_monitoring_install.sh
     log_success "Lightweight Monitoring Tools"
 else
     log_info "Lightweight monitoring skipped by user choice"
@@ -787,7 +786,7 @@ printf "\n--------------------\n"
 # Netdata install
 if [[ $DO_NETDATA_INSTALL =~ [Yy]$ ]]; then
     log_start "Netdata Installation"
-    source $BASEDIR/subscripts/netdata_install.sh
+    . $BASEDIR/subscripts/netdata_install.sh
     log_success "Netdata Installation"
 else
     log_info "Netdata installation skipped by user choice"
@@ -799,7 +798,7 @@ printf "\n--------------------\n"
 # Wireguard install
 if [[ $DO_WIREGUARD_INSTALL =~ [Yy]$ ]]; then
     log_start "Wireguard VPN Installation"
-    source $BASEDIR/subscripts/wireguard_install.sh
+    . $BASEDIR/subscripts/wireguard_install.sh
     log_success "Wireguard VPN Installation"
 else
     log_info "Wireguard VPN installation skipped by user choice"
@@ -811,7 +810,7 @@ printf "\n--------------------\n"
 # Systemd timers install (after security tools are configured)
 if [[ $DO_SYSTEMD_TIMERS =~ [Yy]$ ]]; then
     log_start "Systemd Timers Installation"
-    source $BASEDIR/subscripts/systemd_timers_install.sh
+    . $BASEDIR/subscripts/systemd_timers_install.sh
     log_success "Systemd Timers Installation"
 else
     log_info "Systemd timers installation skipped by user choice"
@@ -825,7 +824,7 @@ if [[ $DO_UFW_INSTALL =~ [Yy]$ ]]; then
     log_start "UFW Firewall Installation"
     ufw status numbered >>$BACKUPDIR/ufw
 
-    source $BASEDIR/subscripts/ufw_install.sh
+    . $BASEDIR/subscripts/ufw_install.sh
     log_success "UFW Firewall Installation"
 else
     log_info "UFW firewall installation skipped by user choice"
@@ -837,7 +836,7 @@ printf "\n--------------------\n"
 # Dokku install
 if [[ $DO_DOKKU_INSTALL =~ [Yy]$ ]]; then
     log_start "Dokku Installation"
-    source $BASEDIR/subscripts/dokku_install.sh
+    . $BASEDIR/subscripts/dokku_install.sh
     log_success "Dokku Installation"
 else
     log_info "Dokku installation skipped by user choice"
