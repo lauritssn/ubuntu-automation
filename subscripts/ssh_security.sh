@@ -31,6 +31,13 @@ show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFIL
 
 show_yellow "Configuring SSH daemon security hardening for Ubuntu 24.04."
 
+# Create SSH privilege separation directory
+show_yellow "Creating SSH privilege separation directory."
+mkdir -p /run/sshd
+chmod 755 /run/sshd
+chown root:root /run/sshd
+show_yellow "SSH privilege separation directory /run/sshd created."
+
 # Backup SSH configuration
 CONF_SSH_ORG=/etc/ssh/sshd_config
 CONF_SSH_BACK=$BACKUPDIR/$(basename $CONF_SSH_ORG)_ssh_security_$DATE

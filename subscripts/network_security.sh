@@ -120,9 +120,8 @@ net.core.wmem_max = 16777216
 net.ipv4.tcp_rmem = 4096 65536 16777216
 net.ipv4.tcp_wmem = 4096 65536 16777216
 
-# Connection tracking limits
-net.netfilter.nf_conntrack_max = 65536
-net.netfilter.nf_conntrack_tcp_timeout_established = 1800
+# Connection tracking limits (only if netfilter modules are loaded)
+# These will be applied conditionally by the load script
 
 # Maximum number of connections
 net.core.somaxconn = 1024
@@ -197,9 +196,12 @@ fs.protected_symlinks = 1
 EOF
 
 # Apply the new sysctl configuration
-sysctl -p /etc/sysctl.d/99-network-security.conf >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Network security sysctl configuration failed. Please check logfile and fix error manually.")
+if ! sysctl -p /etc/sysctl.d/99-network-security.conf >>$LOGDIR/$LOGFILE 2>&1; then
+    show_err "Network security sysctl configuration failed. Please check logfile and fix error manually."
+    exit 1
+fi
 
-show_yellow "Network security sysctl configuration applied."
+show_yellow "Network security sysctl configuration applied successfully."
 
 ##########################################################################################
 ## Configure network interface security
