@@ -85,7 +85,7 @@ show_yellow "Configuring account lockout policies."
 # Configure faillock configuration file
 mkdir -p /etc/security
 cat > /etc/security/faillock.conf << 'EOF'
-# Ubuntu 24.04 faillock configuration (replaces pam_tally2)
+# Ubuntu 24.04 faillock configuration
 # Account lockout after 5 failed attempts, 10 minute lockout
 
 # Number of failed attempts before lockout
@@ -199,8 +199,8 @@ show_yellow "Configuring root account security."
 # Lock the root account password (disable password login for root)
 passwd -l root >>$LOGDIR/$LOGFILE 2>&1 || (show_warn "Failed to lock root password, continuing.")
 
-# Set root account to expire (security best practice)
-chage -E -1 root >>$LOGDIR/$LOGFILE 2>&1 || (show_warn "Failed to set root account expiry, continuing.")
+# Set root account to expire (security best practice) - COMMENTED OUT PER USER REQUEST
+#chage -E -1 root >>$LOGDIR/$LOGFILE 2>&1 || (show_warn "Failed to set root account expiry, continuing.")
 
 # Ensure root home directory has secure permissions
 chmod 700 /root
@@ -238,11 +238,18 @@ if [ -f /etc/login.defs ]; then
     # Set secure umask
     sed -i 's/^UMASK.*/UMASK\t\t027/' /etc/login.defs
     
-    # Configure encryption method
+    # Configure encryption method - SHA512 is still secure for password hashing
+    # but modern systems should prefer stronger methods like yescrypt
     if ! grep -q "ENCRYPT_METHOD" /etc/login.defs; then
-        echo "ENCRYPT_METHOD SHA512" >> /etc/login.defs
+        # Use yescrypt if available (Ubuntu 22.04+), fallback to SHA512
+        if grep -q "yescrypt" /etc/login.defs 2>/dev/null || command -v mkpasswd >/dev/null 2>&1 && mkpasswd --method=help 2>/dev/null | grep -q "yescrypt"; then
+            echo "ENCRYPT_METHOD yescrypt" >> /etc/login.defs
+            show_yellow "Password encryption set to yescrypt (recommended)."
+        else
+            echo "ENCRYPT_METHOD SHA512" >> /etc/login.defs
+            show_yellow "Password encryption set to SHA512 (fallback)."
+        fi
     fi
-    
     show_yellow "System account policies configured."
 fi
 

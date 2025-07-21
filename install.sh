@@ -29,7 +29,7 @@ handle_error() {
 
 # Initialize systemd journal logging for installation tracking
 INSTALL_ID=$(date +%Y%m%d_%H%M%S)
-JOURNAL_TAG="ubuntu-automation-${INSTALL_ID}"
+JOURNAL_TAG="install-${INSTALL_ID}"
 
 # Function to log to both stdout and systemd journal
 log_install() {
