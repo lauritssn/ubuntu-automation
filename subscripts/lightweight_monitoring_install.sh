@@ -15,60 +15,11 @@ fi
 LOGFILE=$SUBSCRIPT-$DATE.log
 
 ##########################################################################################
-## Helper function for creating Slack notification function in scripts
+## Load script template helper functions
 ##########################################################################################
 
-create_slack_function() {
-    local script_file="$1"
-    local script_name="$2"
-    
-    # Add Slack notification function to the script
-    cat >> "$script_file" << 'SLACK_FUNCTION_EOF'
-
-# Common Slack notification function
-send_slack_notification() {
-    local message="$1"
-    local status="$2"  # start, success, warning, error
-    local channel="#monitoring"
-    
-    # Only send Slack message if webhook URL is configured
-    if [ "$SLACK_WEBHOOK_URL" != "SLACK_WEBHOOK_PLACEHOLDER" ] && [ -n "$SLACK_WEBHOOK_URL" ]; then
-        # Set appropriate emoji and username based on status
-        case "$status" in
-            "start")
-                emoji=":hourglass_flowing_sand:"
-                username="System Monitor"
-                ;;
-            "success")
-                emoji=":white_check_mark:"
-                username="System Monitor"
-                ;;
-            "warning")
-                emoji=":warning:"
-                username="System Alert"
-                ;;
-            "error")
-                emoji=":rotating_light:"
-                username="System Alert"
-                ;;
-            *)
-                emoji=":information_source:"
-                username="System Monitor"
-                ;;
-        esac
-        
-        # Send notification
-        curl -X POST -H 'Content-type: application/json' --data "{
-            \"channel\": \"$channel\",
-            \"text\": \"$message\",
-            \"username\": \"$username\",
-            \"icon_emoji\": \"$emoji\"
-        }" "$SLACK_WEBHOOK_URL" 2>/dev/null || echo "Failed to send Slack notification"
-    fi
-}
-
-SLACK_FUNCTION_EOF
-}
+# Source helper functions for script template management
+source "$BASEDIR/configs/script-templates/script_helper_functions.sh"
 
 ##########################################################################################
 ## Info
@@ -93,132 +44,23 @@ show_yellow "Lightweight monitoring tools installed successfully."
 
 show_yellow "Creating system monitoring utilities."
 
-# Create system health check script (to be scheduled via systemd timers)
-cat > $SCRIPTSDIR/system_health_check.sh << 'EOF'
-#!/bin/bash
+# Create system health check script using template
+copy_and_configure_script "system_health_check.sh" "$SCRIPTSDIR/system_health_check.sh" "System Health Check Script"
 
-# System Health Check Script for Ubuntu 24.04
-# Enhanced with Slack notifications and comprehensive monitoring
+# Verify script template variables
+verify_script_template "$SCRIPTSDIR/system_health_check.sh" "System Health Check"
 
-# Configuration
-SLACK_WEBHOOK_URL="SLACK_WEBHOOK_PLACEHOLDER"
-HOSTNAME=$(hostname)
-START_TIME=$(date)
-SCRIPT_NAME="System Health Check"
-HEALTH_ISSUES=0
+##########################################################################################
+## Create disk space monitoring script
+##########################################################################################
 
-EOF
+show_yellow "Creating disk space monitoring script."
 
-# Inline the Slack function creation instead of calling the helper function
-cat >> $SCRIPTSDIR/system_health_check.sh << 'SLACK_FUNCTION_EOF'
+# Create disk space monitoring script using template
+copy_and_configure_script "check_disk_space.sh" "$SCRIPTSDIR/check_disk_space.sh" "Disk Space Monitor Script"
 
-# Common Slack notification function
-send_slack_notification() {
-    local message="$1"
-    local status="$2"  # start, success, warning, error
-    local channel="#monitoring"
-    
-    # Only send Slack message if webhook URL is configured
-    if [ "$SLACK_WEBHOOK_URL" != "SLACK_WEBHOOK_PLACEHOLDER" ] && [ -n "$SLACK_WEBHOOK_URL" ]; then
-        # Set appropriate emoji and username based on status
-        case "$status" in
-            "start")
-                emoji=":hourglass_flowing_sand:"
-                username="System Monitor"
-                ;;
-            "success")
-                emoji=":white_check_mark:"
-                username="System Monitor"
-                ;;
-            "warning")
-                emoji=":warning:"
-                username="System Alert"
-                ;;
-            "error")
-                emoji=":rotating_light:"
-                username="System Alert"
-                ;;
-            *)
-                emoji=":information_source:"
-                username="System Monitor"
-                ;;
-        esac
-        
-        # Send notification
-        curl -X POST -H 'Content-type: application/json' --data "{
-            \"channel\": \"$channel\",
-            \"text\": \"$message\",
-            \"username\": \"$username\",
-            \"icon_emoji\": \"$emoji\"
-        }" "$SLACK_WEBHOOK_URL" 2>/dev/null || echo "Failed to send Slack notification"
-    fi
-}
-
-SLACK_FUNCTION_EOF
-
-cat >> $SCRIPTSDIR/system_health_check.sh << 'EOF'
-
-# Send start notification
-send_slack_notification "🔍 $SCRIPT_NAME started on $HOSTNAME" "start"
-
-# Function to check for issues and alert
-check_health_metric() {
-    local metric_name="$1"
-    local warning_condition="$2"
-    local critical_condition="$3"
-    local current_value="$4"
-    
-    if [ "$critical_condition" = "true" ]; then
-        send_slack_notification "🚨 CRITICAL: $metric_name on $HOSTNAME - $current_value" "error"
-        HEALTH_ISSUES=$((HEALTH_ISSUES + 1))
-        echo "CRITICAL: $metric_name - $current_value"
-    elif [ "$warning_condition" = "true" ]; then
-        send_slack_notification "⚠️ WARNING: $metric_name on $HOSTNAME - $current_value" "warning"
-        HEALTH_ISSUES=$((HEALTH_ISSUES + 1))
-        echo "WARNING: $metric_name - $current_value"
-    fi
-}
-
-echo "=== System Health Report - $(date) ==="
-echo
-
-# System load and uptime
-echo "=== System Load & Uptime ==="
-UPTIME_OUTPUT=$(uptime)
-echo "$UPTIME_OUTPUT"
-
-# Check load average
-LOAD_1MIN=$(echo "$UPTIME_OUTPUT" | awk '{print $(NF-2)}' | sed 's/,//')
-LOAD_5MIN=$(echo "$UPTIME_OUTPUT" | awk '{print $(NF-1)}' | sed 's/,//')
-CPU_CORES=$(nproc)
-LOAD_THRESHOLD_WARNING=$(echo "$CPU_CORES * 0.8" | bc -l 2>/dev/null || echo "$CPU_CORES")
-LOAD_THRESHOLD_CRITICAL=$(echo "$CPU_CORES * 1.5" | bc -l 2>/dev/null || echo "$((CPU_CORES * 2))")
-
-if command -v bc >/dev/null 2>&1; then
-    LOAD_HIGH_WARNING=$(echo "$LOAD_1MIN > $LOAD_THRESHOLD_WARNING" | bc -l)
-    LOAD_HIGH_CRITICAL=$(echo "$LOAD_1MIN > $LOAD_THRESHOLD_CRITICAL" | bc -l)
-    check_health_metric "High Load Average" "$LOAD_HIGH_WARNING" "$LOAD_HIGH_CRITICAL" "1min load: $LOAD_1MIN (cores: $CPU_CORES)"
-fi
-
-echo
-
-# Memory usage
-echo "=== Memory Usage ==="
-MEMORY_OUTPUT=$(free -h)
-echo "$MEMORY_OUTPUT"
-
-# Check memory usage percentage
-MEMORY_USED_PERCENT=$(free | awk 'NR==2{printf "%.0f", $3*100/$2}')
-check_health_metric "High Memory Usage" "$((MEMORY_USED_PERCENT > 80))" "$((MEMORY_USED_PERCENT > 95))" "Memory usage: ${MEMORY_USED_PERCENT}%"
-
-echo
-
-# Disk usage
-echo "=== Disk Usage ==="
-DISK_OUTPUT=$(df -h / /var /tmp 2>/dev/null)
-echo "$DISK_OUTPUT"
-
-# Check disk usage for each mount point
+# Verify script template variables
+verify_script_template "$SCRIPTSDIR/check_disk_space.sh" "Disk Space Monitor"
 while IFS= read -r line; do
     if [[ "$line" == *"%"* ]] && [[ "$line" != "Filesystem"* ]]; then
         USAGE_PERCENT=$(echo "$line" | awk '{print $5}' | sed 's/%//')
