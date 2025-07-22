@@ -95,12 +95,46 @@ chown clamav:clamav /var/run/clamav
 chmod 755 /var/run/clamav
 
 # Update ClamAV databases with manual freshclam to avoid conflicts
-freshclam --log=/var/log/clamav/freshclam_install.log >>$LOGDIR/$LOGFILE 2>&1 || (show_err "ClamAV update failed. Please check logfile and fix error manually.")
+show_yellow "Downloading ClamAV virus signature databases..."
+if ! freshclam --log=/var/log/clamav/freshclam_install.log >>$LOGDIR/$LOGFILE 2>&1; then
+    show_err "ClamAV signature database download failed. Please check logfile and fix error manually."
+    exit 1
+fi
+
+# Verify that basic ClamAV databases were downloaded
+if [ ! -f "/var/lib/clamav/main.cvd" ] && [ ! -f "/var/lib/clamav/main.cld" ]; then
+    show_err "ClamAV main signature database not found after download. Installation failed."
+    exit 1
+fi
+
+if [ ! -f "/var/lib/clamav/daily.cvd" ] && [ ! -f "/var/lib/clamav/daily.cld" ]; then
+    show_err "ClamAV daily signature database not found after download. Installation failed."
+    exit 1
+fi
+
+show_yellow "ClamAV signature databases downloaded successfully."
+
+# Remove any broken Maldet signature links before starting daemon
+# These will be recreated properly when Maldet is installed
+show_yellow "Cleaning up any broken Maldet signature links..."
+find /var/lib/clamav -name "maldet_*" -type l ! -e -delete 2>/dev/null || true
 
 # Start services in proper order
 systemctl start clamav-freshclam.service >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Starting freshclam service failed. Please check logfile and fix error manually.")
 sleep 5
-systemctl start clamav-daemon.service >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Starting clamav-daemon service failed. Please check logfile and fix error manually.")
+
+# Verify ClamAV daemon can start with current database files
+if ! systemctl start clamav-daemon.service >>$LOGDIR/$LOGFILE 2>&1; then
+    show_err "ClamAV daemon failed to start. Check 'systemctl status clamav-daemon' and logfile for details."
+    exit 1
+fi
+
+# Verify daemon is actually running and functional
+sleep 3
+if ! systemctl is-active --quiet clamav-daemon.service; then
+    show_err "ClamAV daemon is not running after startup attempt. Installation failed."
+    exit 1
+fi
 
 # Enable services to start at boot
 systemctl enable clamav-freshclam.service >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Enabling freshclam service failed. Please check logfile and fix error manually.")

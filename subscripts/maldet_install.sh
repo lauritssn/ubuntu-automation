@@ -88,27 +88,56 @@ MALDET_SIG_DIR="/usr/local/maldetect/sigs"
 if [ -d "$CLAMAV_DB_DIR" ] && [ -d "$MALDET_SIG_DIR" ]; then
     show_yellow "Integrating Maldet signatures with ClamAV database directory."
 
+    # First, ensure Maldet has updated signatures
+    show_yellow "Updating Maldet signatures before linking..."
+    if command -v maldet >/dev/null 2>&1; then
+        maldet --update-ver >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Maldet version update reported issues - continuing with existing signatures"
+    fi
+
+    # Remove any existing broken Maldet links
+    rm -f "$CLAMAV_DB_DIR"/maldet_* 2>/dev/null || true
+
     # Create symbolic links for Maldet signatures in ClamAV's main database directory
     # This way ClamAV can access Maldet signatures without duplicate database directories
+    LINKED_SIGNATURES=0
     for sig_type in hdb ndb ldb; do
         if ls "$MALDET_SIG_DIR"/*.$sig_type >/dev/null 2>&1; then
             for sig_file in "$MALDET_SIG_DIR"/*.$sig_type; do
-                if [ -f "$sig_file" ]; then
+                if [ -f "$sig_file" ] && [ -s "$sig_file" ]; then
                     sig_basename=$(basename "$sig_file")
                     # Create link with maldet prefix to avoid naming conflicts
-                    ln -sf "$sig_file" "$CLAMAV_DB_DIR/maldet_$sig_basename" 2>/dev/null || true
+                    if ln -sf "$sig_file" "$CLAMAV_DB_DIR/maldet_$sig_basename" 2>/dev/null; then
+                        LINKED_SIGNATURES=$((LINKED_SIGNATURES + 1))
+                    fi
                 fi
             done
-            show_yellow "Linked Maldet .$sig_type signature files to ClamAV database."
+            show_yellow "Processed Maldet .$sig_type signature files."
+        else
+            show_yellow "No Maldet .$sig_type signature files found in $MALDET_SIG_DIR"
         fi
     done
 
     # Ensure proper permissions for ClamAV to read the linked signatures
-    chown -h clamav:clamav "$CLAMAV_DB_DIR"/maldet_* 2>/dev/null || true
+    if [ $LINKED_SIGNATURES -gt 0 ]; then
+        chown -h clamav:clamav "$CLAMAV_DB_DIR"/maldet_* 2>/dev/null || true
+        show_yellow "Maldet signatures successfully integrated via symbolic links ($LINKED_SIGNATURES files)."
+        
+        # Only reload ClamAV daemon if it's running and we actually linked signatures
+        if systemctl is-active --quiet clamav-daemon.service; then
+            show_yellow "Reloading ClamAV daemon to recognize new Maldet signatures..."
+            systemctl reload clamav-daemon.service >>$LOGDIR/$LOGFILE 2>&1 || show_warn "ClamAV daemon reload failed - restart may be needed"
+        fi
+    else
+        show_warn "No Maldet signature files were linked. ClamAV will work with standard signatures only."
+    fi
 
-    show_yellow "Maldet signatures successfully integrated via symbolic links."
 else
-    show_warn "ClamAV database directory ($CLAMAV_DB_DIR) or Maldet signature directory ($MALDET_SIG_DIR) not found."
+    if [ ! -d "$CLAMAV_DB_DIR" ]; then
+        show_warn "ClamAV database directory ($CLAMAV_DB_DIR) not found. Install ClamAV first."
+    fi
+    if [ ! -d "$MALDET_SIG_DIR" ]; then
+        show_warn "Maldet signature directory ($MALDET_SIG_DIR) not found. Maldet may not be properly installed."
+    fi
 fi
 
 # Deploy the separate Maldet signature link update script

@@ -55,16 +55,28 @@ update_signature_links() {
         show_err "Maldet signature directory not found: $MALDET_SIG_DIR"
     fi
 
+    # Verify ClamAV has basic signature databases
+    if [ ! -f "$CLAMAV_DB_DIR/main.cvd" ] && [ ! -f "$CLAMAV_DB_DIR/main.cld" ]; then
+        show_warn "ClamAV main signature database not found. Run 'freshclam' to download basic signatures first."
+        return 1
+    fi
+
     # Remove old maldet links
     show_info "Removing old Maldet signature links..."
     rm -f "$CLAMAV_DB_DIR"/maldet_* 2>/dev/null || true
+
+    # Update Maldet signatures first if possible
+    if command -v maldet >/dev/null 2>&1; then
+        show_info "Updating Maldet signatures before linking..."
+        maldet --update-ver >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Maldet signature update reported issues - continuing with existing signatures"
+    fi
 
     # Create new links for each signature type
     for sig_type in hdb ndb ldb; do
         if ls "$MALDET_SIG_DIR"/*.$sig_type >/dev/null 2>&1; then
             show_info "Processing .$sig_type signature files..."
             for sig_file in "$MALDET_SIG_DIR"/*.$sig_type; do
-                if [ -f "$sig_file" ]; then
+                if [ -f "$sig_file" ] && [ -s "$sig_file" ]; then
                     sig_basename=$(basename "$sig_file")
                     link_target="$CLAMAV_DB_DIR/maldet_$sig_basename"
 
@@ -74,6 +86,8 @@ update_signature_links() {
                     else
                         show_warn "Failed to link: $sig_basename"
                     fi
+                elif [ -f "$sig_file" ]; then
+                    show_warn "Skipping empty signature file: $(basename "$sig_file")"
                 fi
             done
         else
@@ -82,22 +96,31 @@ update_signature_links() {
     done
 
     # Fix permissions for all maldet links
-    show_info "Setting proper permissions for signature links..."
-    if chown -h clamav:clamav "$CLAMAV_DB_DIR"/maldet_* 2>>$LOGDIR/$LOGFILE; then
-        show_info "Permissions updated successfully."
-    else
-        show_warn "Some permission updates may have failed. Check log: $LOGDIR/$LOGFILE"
-    fi
+    if [ $updated_count -gt 0 ]; then
+        show_info "Setting proper permissions for signature links..."
+        if chown -h clamav:clamav "$CLAMAV_DB_DIR"/maldet_* 2>>$LOGDIR/$LOGFILE; then
+            show_info "Permissions updated successfully."
+        else
+            show_warn "Some permission updates may have failed. Check log: $LOGDIR/$LOGFILE"
+        fi
 
-    # Reload ClamAV daemon to pick up new signatures
-    show_info "Reloading ClamAV daemon to apply new signatures..."
-    if systemctl reload clamav-daemon.service 2>>$LOGDIR/$LOGFILE; then
-        show_info "ClamAV daemon reloaded successfully."
-    else
-        show_warn "Failed to reload ClamAV daemon. Service may not be running."
-    fi
+        # Reload ClamAV daemon to pick up new signatures
+        show_info "Reloading ClamAV daemon to apply new signatures..."
+        if systemctl is-active --quiet clamav-daemon.service; then
+            if systemctl reload clamav-daemon.service 2>>$LOGDIR/$LOGFILE; then
+                show_info "ClamAV daemon reloaded successfully."
+            else
+                show_warn "Failed to reload ClamAV daemon. Service may need restart."
+            fi
+        else
+            show_warn "ClamAV daemon is not running. Signatures will be available when service starts."
+        fi
 
-    show_info "Signature link update completed. Updated $updated_count signature files."
+        show_info "Signature link update completed. Updated $updated_count signature files."
+    else
+        show_warn "No signature files were linked. ClamAV will work with standard signatures only."
+        return 1
+    fi
 }
 
 # Function to verify signature integration

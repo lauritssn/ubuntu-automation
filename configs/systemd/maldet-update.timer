@@ -3,8 +3,11 @@ Description=Daily Maldet Signature Update
 Documentation=man:maldet(8)
 
 [Timer]
-OnCalendar=daily
-RandomizedDelaySec=2h
+# Run daily at 2:30 AM (before ClamAV update at 3:30 AM)
+OnCalendar=*-*-* 02:30:00
+# Add randomization to avoid conflicts
+RandomizedDelaySec=600
+# Ensure the timer persists across reboots
 Persistent=true
 
 [Install]

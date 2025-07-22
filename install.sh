@@ -913,8 +913,8 @@ if [[ $DO_GENERAL_SERVER_SETTINGS =~ [YyMm]$ ]]; then
     # Check if the entire security suite is already complete
     if is_module_installed "Secure_Shared_Memory" &&
         is_module_installed "Maldet_Installation" &&
-        is_module_installed "RKHunter_Installation" &&
         is_module_installed "ClamAV_Installation" &&
+        is_module_installed "RKHunter_Installation" &&
         is_module_installed "Fail2Ban_Installation" &&
         is_module_installed "Postfix_Installation"; then
         log_info "All security hardening modules already installed successfully, skipping..."
@@ -922,11 +922,13 @@ if [[ $DO_GENERAL_SERVER_SETTINGS =~ [YyMm]$ ]]; then
     else
         execute_module "Secure_Shared_Memory" "$BASEDIR/subscripts/secure_shared_memory_install.sh" "Y"
         printf "\n--------------------\n"
+        # Install Maldet BEFORE ClamAV to ensure proper signature integration
         execute_module "Maldet_Installation" "$BASEDIR/subscripts/maldet_install.sh" "Y"
         printf "\n--------------------\n"
-        execute_module "RKHunter_Installation" "$BASEDIR/subscripts/rkhunter_install.sh" "Y"
-        printf "\n--------------------\n"
+        # Install ClamAV AFTER Maldet so signature integration works properly
         execute_module "ClamAV_Installation" "$BASEDIR/subscripts/clamav_install.sh" "Y"
+        printf "\n--------------------\n"
+        execute_module "RKHunter_Installation" "$BASEDIR/subscripts/rkhunter_install.sh" "Y"
         printf "\n--------------------\n"
         execute_module "Fail2Ban_Installation" "$BASEDIR/subscripts/fail2ban_install.sh" "Y"
         printf "\n--------------------\n"
@@ -935,8 +937,8 @@ if [[ $DO_GENERAL_SERVER_SETTINGS =~ [YyMm]$ ]]; then
 else
     mark_module_skipped "Secure_Shared_Memory"
     mark_module_skipped "Maldet_Installation"
-    mark_module_skipped "RKHunter_Installation"
     mark_module_skipped "ClamAV_Installation"
+    mark_module_skipped "RKHunter_Installation"
     mark_module_skipped "Fail2Ban_Installation"
     mark_module_skipped "Postfix_Installation"
     log_info "Security hardening tools skipped by user choice"

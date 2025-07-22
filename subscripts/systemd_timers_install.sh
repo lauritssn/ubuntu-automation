@@ -41,6 +41,25 @@ mkdir -p /etc/systemd/system
 
 show_yellow "Installing ClamAV systemd timer."
 
+# Verify ClamAV daemon is working before setting up timers
+if systemctl is-active --quiet clamav-daemon.service; then
+    show_yellow "ClamAV daemon is running - systemd timers can be configured."
+else
+    show_warn "ClamAV daemon is not running. Attempting to start..."
+    if systemctl start clamav-daemon.service >>$LOGDIR/$LOGFILE 2>&1; then
+        show_yellow "ClamAV daemon started successfully."
+    else
+        show_err "ClamAV daemon failed to start. Please check 'systemctl status clamav-daemon' for details."
+        exit 1
+    fi
+fi
+
+# Ensure Maldet signature links are up to date before starting timers
+if [ -x "/usr/local/bin/update-maldet-clamav-links.sh" ]; then
+    show_yellow "Updating Maldet-ClamAV signature links before configuring timers..."
+    /usr/local/bin/update-maldet-clamav-links.sh update >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Maldet signature link update reported issues - continuing with timer setup"
+fi
+
 # Copy ClamAV service and timer files
 cp $BASEDIR/configs/systemd/clamav-scan.service /etc/systemd/system/
 cp $BASEDIR/configs/systemd/clamav-scan.timer /etc/systemd/system/
