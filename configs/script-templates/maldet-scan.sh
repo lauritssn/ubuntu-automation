@@ -96,7 +96,12 @@ SCAN_EXIT_CODE=$?
 
 # Parse scan results
 INFECTED_FILES=$(grep -i "malware detected\|hits.*:" "$LOG_FILE" | tail -20)
-INFECTED_COUNT=$(grep -c -i "malware detected\|infected.*:" "$LOG_FILE" || echo "0")
+INFECTED_COUNT=$(grep -c -i "malware detected\|infected.*:" "$LOG_FILE" 2>/dev/null | head -1)
+
+# Ensure INFECTED_COUNT is a valid integer, default to 0 if empty or invalid
+if ! [[ "$INFECTED_COUNT" =~ ^[0-9]+$ ]]; then
+    INFECTED_COUNT=0
+fi
 
 echo "Maldet scan completed at $(date)" | tee -a "$LOG_FILE"
 echo "Scan exit code: $SCAN_EXIT_CODE" | tee -a "$LOG_FILE"
@@ -143,4 +148,4 @@ if [ $SCAN_EXIT_CODE -ne 0 ] && [ $SCAN_EXIT_CODE -ne 1 ]; then
     exit $SCAN_EXIT_CODE
 fi
 
-echo "Maldet scan completed at $(date)" 
+echo "Maldet scan completed at $(date)"

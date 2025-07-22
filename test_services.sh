@@ -237,7 +237,7 @@ main() {
         print_status "Basic ClamAV signature update may take a while to complete..." "INFO"
         run_service "clamav-update-basic" \
             "Basic ClamAV signature update (timeout: 30m)" \
-            "timeout 1800 freshclam --verbose"
+            "timeout 1800 bash -c 'chown -R clamav:clamav /var/lib/clamav 2>/dev/null || true; freshclam --verbose 2>&1; EXIT_CODE=\$?; if [ \$EXIT_CODE -eq 0 ] || [ \$EXIT_CODE -eq 1 ]; then echo \"Update completed successfully (exit code: \$EXIT_CODE)\"; exit 0; else echo \"Update failed with exit code: \$EXIT_CODE\"; exit \$EXIT_CODE; fi'"
     else
         print_status "ClamAV not installed, skipping signature update" "WARNING"
         log_message "ClamAV not installed, skipping signature update" "WARNING"
