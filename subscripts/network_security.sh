@@ -41,7 +41,7 @@ if [ -a $CONF_ORG ]; then
 fi
 
 # Create comprehensive network security configuration
-cat > /etc/sysctl.d/99-network-security.conf << 'EOF'
+cat >/etc/sysctl.d/99-network-security.conf <<'EOF'
 # Network Security Configuration for Ubuntu 24.04
 # Comprehensive security hardening for network stack
 
@@ -210,7 +210,7 @@ show_yellow "Network security sysctl configuration applied successfully."
 show_yellow "Configuring network interface security."
 
 # Create network interface security script
-cat > /etc/network/if-pre-up.d/network-security << 'EOF'
+cat >/etc/network/if-pre-up.d/network-security <<'EOF'
 #!/bin/bash
 
 # Network interface security configuration
@@ -251,7 +251,7 @@ show_yellow "Configuring DNS security settings."
 # Create systemd-resolved security configuration
 mkdir -p /etc/systemd/resolved.conf.d/
 
-cat > /etc/systemd/resolved.conf.d/security.conf << 'EOF'
+cat >/etc/systemd/resolved.conf.d/security.conf <<'EOF'
 [Resolve]
 # DNS Security Configuration
 
@@ -281,7 +281,7 @@ show_yellow "DNS security configuration applied."
 show_yellow "Creating network monitoring utilities."
 
 # Create script to show network security status
-cat > $SCRIPTSDIR/show_network_security.sh << 'EOF'
+cat >$SCRIPTSDIR/show_network_security.sh <<'EOF'
 #!/bin/bash
 
 # Show current network security configuration
@@ -322,7 +322,7 @@ EOF
 chmod +x $SCRIPTSDIR/show_network_security.sh
 
 # Create script to test network security
-cat > $SCRIPTSDIR/test_network_security.sh << 'EOF'
+cat >$SCRIPTSDIR/test_network_security.sh <<'EOF'
 #!/bin/bash
 
 # Test network security configuration
@@ -378,7 +378,7 @@ EOF
 chmod +x $SCRIPTSDIR/test_network_security.sh
 
 # Create script to temporarily enable IP forwarding (for VPN services)
-cat > $SCRIPTSDIR/enable_ip_forwarding.sh << 'EOF'
+cat >$SCRIPTSDIR/enable_ip_forwarding.sh <<'EOF'
 #!/bin/bash
 
 # Temporarily enable IP forwarding for VPN services
@@ -466,4 +466,4 @@ show_info "• Enable IP forwarding: $SCRIPTSDIR/enable_ip_forwarding.sh (for VP
 ## Done
 ##########################################################################################
 
-show_info "$SUBSCRIPT done." 
+show_info "$SUBSCRIPT done."

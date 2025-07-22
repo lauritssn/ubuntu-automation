@@ -84,13 +84,13 @@ EXISTING_SWAP=$(swapon --show --noheadings | awk '{print $1}')
 
 if [ -n "$EXISTING_SWAP" ]; then
     show_info "Found existing swap: $EXISTING_SWAP"
-    
+
     # Turn off existing swap
     for swap_device in $EXISTING_SWAP; do
         if [[ "$swap_device" == "/var/tmp/swapfile" || "$swap_device" == "/swapfile" ]]; then
             show_yellow "Disabling existing swap file: $swap_device"
             swapoff "$swap_device" >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Failed to disable $swap_device"
-            
+
             # Remove old swap file if it exists
             if [ -f "$swap_device" ]; then
                 rm -f "$swap_device"
@@ -167,7 +167,7 @@ sed -i '\|/var/tmp/swapfile|d' $CONF_ORG
 sed -i '\|/swapfile|d' $CONF_ORG
 
 # Add new swap entry
-echo "$FSTAB_ENTRY" >> $CONF_ORG
+echo "$FSTAB_ENTRY" >>$CONF_ORG
 show_yellow "Added swap entry to fstab: $FSTAB_ENTRY"
 
 ##########################################################################################
@@ -188,7 +188,7 @@ fi
 sed -i '/vm.swappiness/d' $SYSCTL_CONF
 
 # Configure optimal settings for servers with ZRAM + traditional swap
-cat >> $SYSCTL_CONF << 'EOF'
+cat >>$SYSCTL_CONF <<'EOF'
 
 # Ubuntu 24.04 Server Memory Management Optimization
 # Swappiness: Balance between ZRAM and traditional swap
@@ -228,106 +228,23 @@ show_yellow "=== Memory + Swap Overview ==="
 free -h
 
 ##########################################################################################
+## Load script template helper functions
+##########################################################################################
+
+# Source helper functions for script template management
+source "$BASEDIR/configs/script-templates/script_helper_functions.sh"
+
+##########################################################################################
 ## Setup swap monitoring
 ##########################################################################################
 
 show_yellow "Setting up swap usage monitoring."
 
-# Create swap monitoring script (to be scheduled via systemd timers)
-cat > $SCRIPTSDIR/check_swap_usage.sh << 'EOF'
-#!/bin/bash
+# Create swap monitoring script using template
+copy_and_configure_script "check_swap_usage.sh" "$SCRIPTSDIR/check_swap_usage.sh" "Swap Usage Monitor Script"
 
-# Swap Usage Monitor for Ubuntu 24.04
-# Enhanced with Slack notifications and comprehensive monitoring
-
-# Configuration
-SLACK_WEBHOOK_URL="SLACK_WEBHOOK_PLACEHOLDER"
-HOSTNAME=$(hostname)
-START_TIME=$(date)
-SCRIPT_NAME="Swap Usage Monitor"
-
-SWAP_WARN_THRESHOLD=25  # Warning at 25% swap usage
-SWAP_CRIT_THRESHOLD=50  # Critical at 50% swap usage
-
-# Common Slack notification function
-send_slack_notification() {
-    local message="$1"
-    local status="$2"  # start, success, warning, error
-    local channel="#monitoring"
-    
-    # Only send Slack message if webhook URL is configured
-    if [ "$SLACK_WEBHOOK_URL" != "SLACK_WEBHOOK_PLACEHOLDER" ] && [ -n "$SLACK_WEBHOOK_URL" ]; then
-        # Set appropriate emoji and username based on status
-        case "$status" in
-            "start")
-                emoji=":hourglass_flowing_sand:"
-                username="System Monitor"
-                ;;
-            "success")
-                emoji=":white_check_mark:"
-                username="System Monitor"
-                ;;
-            "warning")
-                emoji=":warning:"
-                username="System Alert"
-                ;;
-            "error")
-                emoji=":rotating_light:"
-                username="System Alert"
-                ;;
-            *)
-                emoji=":information_source:"
-                username="System Monitor"
-                ;;
-        esac
-        
-        # Send notification
-        curl -X POST -H 'Content-type: application/json' --data "{
-            \"channel\": \"$channel\",
-            \"text\": \"$message\",
-            \"username\": \"$username\",
-            \"icon_emoji\": \"$emoji\"
-        }" "$SLACK_WEBHOOK_URL" 2>/dev/null || echo "Failed to send Slack notification"
-    fi
-}
-
-# Send start notification
-send_slack_notification "💾 $SCRIPT_NAME started on $HOSTNAME" "start"
-
-# Get current swap usage percentage
-SWAP_TOTAL=$(free | grep Swap | awk '{print $2}')
-SWAP_USED=$(free | grep Swap | awk '{print $3}')
-
-if [ "$SWAP_TOTAL" -gt 0 ]; then
-    SWAP_PERCENT=$((SWAP_USED * 100 / SWAP_TOTAL))
-    SWAP_USED_MB=$((SWAP_USED / 1024))
-    SWAP_TOTAL_MB=$((SWAP_TOTAL / 1024))
-    
-    if [ "$SWAP_PERCENT" -ge "$SWAP_CRIT_THRESHOLD" ]; then
-        send_slack_notification "🚨 CRITICAL: Swap usage on $HOSTNAME at ${SWAP_PERCENT}% (${SWAP_USED_MB}MB/${SWAP_TOTAL_MB}MB) - Consider adding more RAM" "error"
-        echo "CRITICAL: Swap usage at ${SWAP_PERCENT}% - Consider adding more RAM"
-        logger -p user.crit "High swap usage: ${SWAP_PERCENT}%"
-    elif [ "$SWAP_PERCENT" -ge "$SWAP_WARN_THRESHOLD" ]; then
-        send_slack_notification "⚠️ WARNING: Swap usage on $HOSTNAME at ${SWAP_PERCENT}% (${SWAP_USED_MB}MB/${SWAP_TOTAL_MB}MB) - Monitor memory usage" "warning"
-        echo "WARNING: Swap usage at ${SWAP_PERCENT}% - Monitor memory usage"
-        logger -p user.warn "Elevated swap usage: ${SWAP_PERCENT}%"
-    else
-        echo "Swap usage normal: ${SWAP_PERCENT}% (${SWAP_USED_MB}MB/${SWAP_TOTAL_MB}MB)"
-    fi
-    
-    # Send success notification for normal operation
-    if [ "$SWAP_PERCENT" -lt "$SWAP_WARN_THRESHOLD" ]; then
-        END_TIME=$(date)
-        DURATION=$(($(date +%s) - $(date -d "$START_TIME" +%s)))
-        send_slack_notification "✅ $SCRIPT_NAME completed on $HOSTNAME - Swap usage normal at ${SWAP_PERCENT}% (Duration: ${DURATION}s)" "success"
-    fi
-else
-    send_slack_notification "⚠️ WARNING: No swap configured on $HOSTNAME" "warning"
-    echo "No swap configured or available"
-fi
-EOF
-
-chmod +x $SCRIPTSDIR/check_swap_usage.sh
+# Verify script template variables
+verify_script_template "$SCRIPTSDIR/check_swap_usage.sh" "Swap Usage Monitor"
 show_yellow "Swap monitoring script created at $SCRIPTSDIR/check_swap_usage.sh"
 
 ##########################################################################################

@@ -38,9 +38,9 @@ apt-get --yes install libpam-pwquality >>$LOGDIR/$LOGFILE 2>&1 || (show_warn "Fa
 if [ -f /etc/security/pwquality.conf ]; then
     # Backup original configuration
     cp /etc/security/pwquality.conf $BACKUPDIR/pwquality.conf_$DATE
-    
+
     # Configure strong password requirements
-    cat > /etc/security/pwquality.conf << 'EOF'
+    cat >/etc/security/pwquality.conf <<'EOF'
 # Password quality requirements for Ubuntu 24.04
 # Minimum password length
 minlen = 12
@@ -69,7 +69,7 @@ dictcheck = 1
 # Enforce password quality for root
 enforce_for_root
 EOF
-    
+
     show_yellow "Password quality policies configured."
 else
     show_warn "Password quality configuration file not found, skipping password policies."
@@ -84,7 +84,7 @@ show_yellow "Configuring account lockout policies."
 # Ubuntu 24.04+ uses faillock instead of pam_tally2
 # Configure faillock configuration file
 mkdir -p /etc/security
-cat > /etc/security/faillock.conf << 'EOF'
+cat >/etc/security/faillock.conf <<'EOF'
 # Ubuntu 24.04 faillock configuration
 # Account lockout after 5 failed attempts, 10 minute lockout
 
@@ -108,7 +108,7 @@ EOF
 if [ -f /etc/pam.d/common-auth ]; then
     # Backup original PAM auth configuration
     cp /etc/pam.d/common-auth $BACKUPDIR/common-auth_$DATE
-    
+
     # Add account lockout after failed attempts using faillock (Ubuntu 24.04+)
     if ! grep -q "pam_faillock.so" /etc/pam.d/common-auth; then
         # Add faillock preauth before pam_unix
@@ -126,10 +126,10 @@ fi
 if [ -f /etc/pam.d/common-account ]; then
     # Backup original PAM account configuration
     cp /etc/pam.d/common-account $BACKUPDIR/common-account_$DATE
-    
+
     if ! grep -q "pam_faillock.so" /etc/pam.d/common-account; then
         # Add account checking using faillock
-        echo "account\trequired\t\t\tpam_faillock.so" >> /etc/pam.d/common-account
+        echo "account\trequired\t\t\tpam_faillock.so" >>/etc/pam.d/common-account
         show_yellow "Account module configured for lockout checking."
     fi
 fi
@@ -144,7 +144,7 @@ show_yellow "Configuring sudo security policies."
 cp /etc/sudoers $BACKUPDIR/sudoers_$DATE
 
 # Create custom sudoers configuration for enhanced security
-cat > /etc/sudoers.d/security-policies << 'EOF'
+cat >/etc/sudoers.d/security-policies <<'EOF'
 # Enhanced sudo security policies for Ubuntu 24.04
 
 # Password is required by default (this is the standard behavior)
@@ -229,24 +229,24 @@ show_yellow "Configuring system-wide account security settings."
 if [ -f /etc/login.defs ]; then
     # Backup original configuration
     cp /etc/login.defs $BACKUPDIR/login.defs_$DATE
-    
+
     # Set password aging policies
     sed -i 's/^PASS_MAX_DAYS.*/PASS_MAX_DAYS\t90/' /etc/login.defs
     sed -i 's/^PASS_MIN_DAYS.*/PASS_MIN_DAYS\t1/' /etc/login.defs
     sed -i 's/^PASS_WARN_AGE.*/PASS_WARN_AGE\t7/' /etc/login.defs
-    
+
     # Set secure umask
     sed -i 's/^UMASK.*/UMASK\t\t027/' /etc/login.defs
-    
+
     # Configure encryption method - SHA512 is still secure for password hashing
     # but modern systems should prefer stronger methods like yescrypt
     if ! grep -q "ENCRYPT_METHOD" /etc/login.defs; then
         # Use yescrypt if available (Ubuntu 22.04+), fallback to SHA512
         if grep -q "yescrypt" /etc/login.defs 2>/dev/null || command -v mkpasswd >/dev/null 2>&1 && mkpasswd --method=help 2>/dev/null | grep -q "yescrypt"; then
-            echo "ENCRYPT_METHOD yescrypt" >> /etc/login.defs
+            echo "ENCRYPT_METHOD yescrypt" >>/etc/login.defs
             show_yellow "Password encryption set to yescrypt (recommended)."
         else
-            echo "ENCRYPT_METHOD SHA512" >> /etc/login.defs
+            echo "ENCRYPT_METHOD SHA512" >>/etc/login.defs
             show_yellow "Password encryption set to SHA512 (fallback)."
         fi
     fi
@@ -257,11 +257,11 @@ fi
 if [ -f /etc/default/useradd ]; then
     # Backup original configuration
     cp /etc/default/useradd $BACKUPDIR/useradd_$DATE
-    
+
     # Set secure defaults for new users
     sed -i 's/^SHELL=.*/SHELL=\/bin\/bash/' /etc/default/useradd
     sed -i 's/^INACTIVE=.*/INACTIVE=30/' /etc/default/useradd
-    
+
     show_yellow "User creation defaults configured."
 fi
 
@@ -272,7 +272,7 @@ fi
 show_yellow "Configuring session security."
 
 # Configure automatic logout for idle sessions
-cat > /etc/profile.d/session-timeout.sh << 'EOF'
+cat >/etc/profile.d/session-timeout.sh <<'EOF'
 #!/bin/bash
 # Automatic logout for idle sessions (30 minutes)
 TMOUT=1800
@@ -286,9 +286,9 @@ chmod 644 /etc/profile.d/session-timeout.sh
 if [ -f /etc/security/limits.conf ]; then
     # Backup original configuration
     cp /etc/security/limits.conf $BACKUPDIR/limits.conf_$DATE
-    
+
     # Add security limits
-    cat >> /etc/security/limits.conf << 'EOF'
+    cat >>/etc/security/limits.conf <<'EOF'
 
 # Security limits for user processes
 * soft core 0
@@ -298,7 +298,7 @@ if [ -f /etc/security/limits.conf ]; then
 * soft nofile 1024
 * hard nofile 2048
 EOF
-    
+
     show_yellow "Process limits configured for security."
 fi
 
@@ -309,7 +309,7 @@ fi
 show_yellow "Creating account management utilities."
 
 # Create script to show account lockout status
-cat > $SCRIPTSDIR/show_locked_accounts.sh << 'EOF'
+cat >$SCRIPTSDIR/show_locked_accounts.sh <<'EOF'
 #!/bin/bash
 
 # Show locked accounts and failed login attempts
@@ -341,7 +341,7 @@ EOF
 chmod +x $SCRIPTSDIR/show_locked_accounts.sh
 
 # Create script to reset account lockouts
-cat > $SCRIPTSDIR/unlock_account.sh << 'EOF'
+cat >$SCRIPTSDIR/unlock_account.sh <<'EOF'
 #!/bin/bash
 
 # Reset account lockout for a specific user
@@ -375,7 +375,7 @@ EOF
 chmod +x $SCRIPTSDIR/unlock_account.sh
 
 # Create script to show sudo usage
-cat > $SCRIPTSDIR/show_sudo_usage.sh << 'EOF'
+cat >$SCRIPTSDIR/show_sudo_usage.sh <<'EOF'
 #!/bin/bash
 
 # Show recent sudo usage for auditing
@@ -470,4 +470,4 @@ show_info "• Show sudo usage: $SCRIPTSDIR/show_sudo_usage.sh"
 ## Done
 ##########################################################################################
 
-show_info "$SUBSCRIPT done." 
+show_info "$SUBSCRIPT done."

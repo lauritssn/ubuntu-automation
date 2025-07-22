@@ -13,34 +13,35 @@ LOG_FILE="/var/log/rkhunter.log"
 # Common Slack notification function
 send_slack_notification() {
     local message="$1"
-    local status="$2"  # start, success, warning, error
+    local status="$2" # start, success, warning, error
     local channel="#monitoring"
-    
+
     # Only send Slack message if webhook URL is configured
-    if [ -n "$SLACK_WEBHOOK_URL" ]; then        # Set appropriate emoji and username based on status
+    if [ -n "$SLACK_WEBHOOK_URL" ]; then
+        # Set appropriate emoji and username based on status
         case "$status" in
-            "start")
-                emoji=":hourglass_flowing_sand:"
-                username="System Monitor"
-                ;;
-            "success")
-                emoji=":white_check_mark:"
-                username="System Monitor"
-                ;;
-            "warning")
-                emoji=":warning:"
-                username="System Alert"
-                ;;
-            "error")
-                emoji=":rotating_light:"
-                username="System Alert"
-                ;;
-            *)
-                emoji=":information_source:"
-                username="System Monitor"
-                ;;
+        "start")
+            emoji=":hourglass_flowing_sand:"
+            username="System Monitor"
+            ;;
+        "success")
+            emoji=":white_check_mark:"
+            username="System Monitor"
+            ;;
+        "warning")
+            emoji=":warning:"
+            username="System Alert"
+            ;;
+        "error")
+            emoji=":rotating_light:"
+            username="System Alert"
+            ;;
+        *)
+            emoji=":information_source:"
+            username="System Monitor"
+            ;;
         esac
-        
+
         # Send notification
         curl -X POST -H 'Content-type: application/json' --data "{
             \"channel\": \"$channel\",
@@ -48,6 +49,8 @@ send_slack_notification() {
             \"username\": \"$username\",
             \"icon_emoji\": \"$emoji\"
         }" "$SLACK_WEBHOOK_URL" 2>/dev/null || echo "Failed to send Slack notification"
+    else
+        echo "Slack webhook not configured, skipping Slack notification"
     fi
 }
 
@@ -77,4 +80,4 @@ else
     echo "RKHunter scan failed with exit code: $SCAN_EXIT_CODE"
 fi
 
-echo "RKHunter scan completed at $(date)" 
+echo "RKHunter scan completed at $(date)"

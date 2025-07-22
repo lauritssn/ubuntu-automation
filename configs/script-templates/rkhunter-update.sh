@@ -12,34 +12,34 @@ SCRIPT_NAME="RKHunter Database Update"
 # Common Slack notification function
 send_slack_notification() {
     local message="$1"
-    local status="$2"  # start, success, warning, error
+    local status="$2" # start, success, warning, error
     local channel="#monitoring"
-    
+
     # Only send Slack message if webhook URL is configured
     if [ -n "$SLACK_WEBHOOK_URL" ]; then
         case "$status" in
-            "start")
-                emoji=":hourglass_flowing_sand:"
-                username="System Monitor"
-                ;;
-            "success")
-                emoji=":white_check_mark:"
-                username="System Monitor"
-                ;;
-            "warning")
-                emoji=":warning:"
-                username="System Alert"
-                ;;
-            "error")
-                emoji=":rotating_light:"
-                username="System Alert"
-                ;;
-            *)
-                emoji=":information_source:"
-                username="System Monitor"
-                ;;
+        "start")
+            emoji=":hourglass_flowing_sand:"
+            username="System Monitor"
+            ;;
+        "success")
+            emoji=":white_check_mark:"
+            username="System Monitor"
+            ;;
+        "warning")
+            emoji=":warning:"
+            username="System Alert"
+            ;;
+        "error")
+            emoji=":rotating_light:"
+            username="System Alert"
+            ;;
+        *)
+            emoji=":information_source:"
+            username="System Monitor"
+            ;;
         esac
-        
+
         # Send notification
         curl -X POST -H 'Content-type: application/json' --data "{
             \"channel\": \"$channel\",
@@ -47,6 +47,8 @@ send_slack_notification() {
             \"username\": \"$username\",
             \"icon_emoji\": \"$emoji\"
         }" "$SLACK_WEBHOOK_URL" 2>/dev/null || echo "Failed to send Slack notification"
+    else
+        echo "Slack webhook not configured, skipping Slack notification"
     fi
 }
 
@@ -68,4 +70,4 @@ else
     echo "RKHunter update failed with exit code: $UPDATE_EXIT_CODE"
 fi
 
-echo "RKHunter update completed at $(date)" 
+echo "RKHunter update completed at $(date)"

@@ -45,7 +45,7 @@ if [[ "$GPG_FINGERPRINT" == "$EXPECTED_FINGERPRINT" ]]; then
 else
     show_warn "Docker GPG key fingerprint verification failed, but continuing..."
 fi
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list >/dev/null
 apt-get update >>$LOGDIR/$LOGFILE 2>&1
 show_yellow "Installing Docker from official repository."
 apt-get --yes install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of Docker failed. Please check logfile and fix error manually.")
@@ -55,14 +55,14 @@ systemctl stop docker
 
 if [[ $DOCKER_ROOTLESS =~ [Yy]$ ]]; then
     show_yellow "Setting up Docker rootless mode."
-    
+
     # Install rootless extras
     apt-get --yes install uidmap dbus-user-session >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of rootless dependencies failed. Please check logfile and fix error manually.")
-    
+
     # Setup rootless Docker for current user (assuming non-root user will run this)
     show_yellow "Docker rootless setup will be completed after reboot by the user."
     show_yellow "Run: dockerd-rootless-setuptool.sh install"
-    
+
 else
     ##########################################################################################
     # General Docker configuration
@@ -93,7 +93,7 @@ else
         mkdir -p $DOCKER_DATA_ROOT
         chown root:root $DOCKER_DATA_ROOT
         chmod 755 $DOCKER_DATA_ROOT
-        
+
         # Add data-root to daemon.json
         sed -i 's|{|{\n  "data-root": "'$DOCKER_DATA_ROOT'",|' $CONF_ORG
     fi

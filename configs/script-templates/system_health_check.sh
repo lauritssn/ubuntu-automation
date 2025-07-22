@@ -13,35 +13,35 @@ HEALTH_ISSUES=0
 # Common Slack notification function
 send_slack_notification() {
     local message="$1"
-    local status="$2"  # start, success, warning, error
+    local status="$2" # start, success, warning, error
     local channel="#monitoring"
-    
+
     # Only send Slack message if webhook URL is configured
     if [ -n "$SLACK_WEBHOOK_URL" ]; then
         # Set appropriate emoji and username based on status
         case "$status" in
-            "start")
-                emoji=":hourglass_flowing_sand:"
-                username="System Monitor"
-                ;;
-            "success")
-                emoji=":white_check_mark:"
-                username="System Monitor"
-                ;;
-            "warning")
-                emoji=":warning:"
-                username="System Alert"
-                ;;
-            "error")
-                emoji=":rotating_light:"
-                username="System Alert"
-                ;;
-            *)
-                emoji=":information_source:"
-                username="System Monitor"
-                ;;
+        "start")
+            emoji=":hourglass_flowing_sand:"
+            username="System Monitor"
+            ;;
+        "success")
+            emoji=":white_check_mark:"
+            username="System Monitor"
+            ;;
+        "warning")
+            emoji=":warning:"
+            username="System Alert"
+            ;;
+        "error")
+            emoji=":rotating_light:"
+            username="System Alert"
+            ;;
+        *)
+            emoji=":information_source:"
+            username="System Monitor"
+            ;;
         esac
-        
+
         # Send notification
         curl -X POST -H 'Content-type: application/json' --data "{
             \"channel\": \"$channel\",
@@ -49,6 +49,8 @@ send_slack_notification() {
             \"username\": \"$username\",
             \"icon_emoji\": \"$emoji\"
         }" "$SLACK_WEBHOOK_URL" 2>/dev/null || echo "Failed to send Slack notification"
+    else
+        echo "Slack webhook not configured, skipping Slack notification"
     fi
 }
 
@@ -61,7 +63,7 @@ check_health_metric() {
     local warning_condition="$2"
     local critical_condition="$3"
     local current_value="$4"
-    
+
     if [ "$critical_condition" = "true" ]; then
         send_slack_notification "🚨 CRITICAL: $metric_name on $HOSTNAME - $current_value" "error"
         HEALTH_ISSUES=$((HEALTH_ISSUES + 1))
@@ -220,4 +222,4 @@ if [ "$HEALTH_ISSUES" -eq 0 ]; then
     send_slack_notification "✅ $SCRIPT_NAME completed on $HOSTNAME - All systems healthy (Duration: ${DURATION}s)" "success"
 else
     send_slack_notification "⚠️ $SCRIPT_NAME completed on $HOSTNAME - $HEALTH_ISSUES issues detected (Duration: ${DURATION}s)" "warning"
-fi 
+fi

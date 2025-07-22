@@ -72,7 +72,7 @@ show_yellow "UFW configured for Ubuntu 24.04 with IPv6 support and logging enabl
 show_yellow "Generating UFW rules based on selected services."
 
 # Create UFW rules script with security-first approach
-cat > $SCRIPTSDIR/ufw.sh << 'EOF'
+cat >$SCRIPTSDIR/ufw.sh <<'EOF'
 #!/bin/bash
 
 # UFW Security Rules for Ubuntu 24.04
@@ -94,7 +94,7 @@ EOF
 
 # Add HTTP/HTTPS rules if Dokku is installed
 if [[ "$DO_DOKKU_INSTALL" =~ [Yy]$ ]]; then
-    cat >> $SCRIPTSDIR/ufw.sh << 'EOF'
+    cat >>$SCRIPTSDIR/ufw.sh <<'EOF'
 
 ##########################################################################################
 ## Web Server Rules (Dokku)
@@ -110,7 +110,7 @@ EOF
 fi
 
 # Add SSH rules with security considerations
-cat >> $SCRIPTSDIR/ufw.sh << 'EOF'
+cat >>$SCRIPTSDIR/ufw.sh <<'EOF'
 
 ##########################################################################################
 ## SSH Security Rules
@@ -120,7 +120,7 @@ EOF
 
 # Check if SECURE_SUBNET is defined and valid
 if [ -n "$SECURE_SUBNET" ] && [ "$SECURE_SUBNET" != "0.0.0.0/0" ]; then
-    cat >> $SCRIPTSDIR/ufw.sh << EOF
+    cat >>$SCRIPTSDIR/ufw.sh <<EOF
 
 # Allow SSH only from secure subnet with rate limiting for enhanced security
 ufw limit proto tcp from $SECURE_SUBNET to any port 22 comment '$SECURE_SUBNET_DESC to SSH (rate limited)'
@@ -129,7 +129,7 @@ show_info "SSH access restricted to secure subnet: $SECURE_SUBNET with rate limi
 
 EOF
 else
-    cat >> $SCRIPTSDIR/ufw.sh << 'EOF'
+    cat >>$SCRIPTSDIR/ufw.sh <<'EOF'
 
 # Rate limiting for SSH (prevent brute force attacks) - no secure subnet defined
 ufw limit ssh comment 'Rate limit SSH connections'
@@ -141,7 +141,7 @@ fi
 
 # Add WireGuard rules if being installed
 if [[ "$DO_WIREGUARD_INSTALL" =~ [Yy]$ ]]; then
-    cat >> $SCRIPTSDIR/ufw.sh << EOF
+    cat >>$SCRIPTSDIR/ufw.sh <<EOF
 
 ##########################################################################################
 ## WireGuard VPN Rules
@@ -166,7 +166,7 @@ fi
 # No additional firewall rules needed for Netdata
 
 # Add final script content
-cat >> $SCRIPTSDIR/ufw.sh << 'EOF'
+cat >>$SCRIPTSDIR/ufw.sh <<'EOF'
 
 ##########################################################################################
 ## Additional Security Rules

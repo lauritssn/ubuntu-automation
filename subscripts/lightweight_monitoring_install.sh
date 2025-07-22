@@ -68,9 +68,9 @@ verify_script_template "$SCRIPTSDIR/check_disk_space.sh" "Disk Space Monitor"
 
 show_yellow "Configuring disk space monitoring script with Slack integration."
 
-# Configure disk space monitoring script with Slack webhook if enabled
+# Note: Slack webhook configuration is now handled automatically by the
+# copy_and_configure_script function using script templates
 if [[ "$ENABLE_SLACK_MONITORING" =~ [Yy]$ ]] && [ -n "$SLACK_WEBHOOK_URL" ]; then
-    sed -i 's|{{SLACK_WEBHOOK_URL}}|'${SLACK_WEBHOOK_URL}'|g' $SCRIPTSDIR/check_disk_space.sh
     show_yellow "Disk space monitoring script configured with Slack notifications enabled"
 else
     show_yellow "Disk space monitoring script configured (Slack notifications disabled)"
@@ -83,7 +83,7 @@ fi
 show_yellow "Creating monitoring aliases."
 
 # Create .bash_aliases file for monitoring shortcuts
-cat > /etc/skel/.bash_aliases << 'EOF'
+cat >/etc/skel/.bash_aliases <<'EOF'
 # System monitoring aliases for Ubuntu 24.04
 alias sysstatus='systemctl status'
 alias syslog='journalctl -f'

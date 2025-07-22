@@ -32,34 +32,35 @@ mkdir -p /var/log/clamav
 # Common Slack notification function
 send_slack_notification() {
     local message="$1"
-    local status="$2"  # start, success, warning, error
+    local status="$2" # start, success, warning, error
     local channel="#monitoring"
-    
+
     # Only send Slack message if webhook URL is configured
-    if [ -n "$SLACK_WEBHOOK_URL" ]; then        # Set appropriate emoji and username based on status
+    if [ -n "$SLACK_WEBHOOK_URL" ]; then
+        # Set appropriate emoji and username based on status
         case "$status" in
-            "start")
-                emoji=":hourglass_flowing_sand:"
-                username="System Monitor"
-                ;;
-            "success")
-                emoji=":white_check_mark:"
-                username="System Monitor"
-                ;;
-            "warning")
-                emoji=":warning:"
-                username="System Alert"
-                ;;
-            "error")
-                emoji=":rotating_light:"
-                username="System Alert"
-                ;;
-            *)
-                emoji=":information_source:"
-                username="System Monitor"
-                ;;
+        "start")
+            emoji=":hourglass_flowing_sand:"
+            username="System Monitor"
+            ;;
+        "success")
+            emoji=":white_check_mark:"
+            username="System Monitor"
+            ;;
+        "warning")
+            emoji=":warning:"
+            username="System Alert"
+            ;;
+        "error")
+            emoji=":rotating_light:"
+            username="System Alert"
+            ;;
+        *)
+            emoji=":information_source:"
+            username="System Monitor"
+            ;;
         esac
-        
+
         # Send notification
         curl -X POST -H 'Content-type: application/json' --data "{
             \"channel\": \"$channel\",
@@ -67,6 +68,8 @@ send_slack_notification() {
             \"username\": \"$username\",
             \"icon_emoji\": \"$emoji\"
         }" "$SLACK_WEBHOOK_URL" 2>/dev/null || echo "Failed to send Slack notification"
+    else
+        echo "Slack webhook not configured, skipping Slack notification"
     fi
 }
 
@@ -104,10 +107,10 @@ if [ "$INFECTED_COUNT" -gt 0 ]; then
     echo "INFECTED FILES DETECTED!" | tee -a "$LOG_FILE"
     echo "Infected files:" | tee -a "$LOG_FILE"
     echo "$INFECTED_FILES" | tee -a "$LOG_FILE"
-    
+
     # Send critical alert
     send_slack_notification "🚨 CRITICAL: $SCRIPT_NAME found $INFECTED_COUNT infected files on $HOSTNAME! Check logs immediately." "error"
-    
+
     # Send email alert if configured
     if command -v mail >/dev/null 2>&1 && [ -n "$EMAIL" ]; then
         echo "Sending email alert to $EMAIL"
@@ -123,10 +126,10 @@ if [ "$INFECTED_COUNT" -gt 0 ]; then
             echo "Please investigate immediately."
         } | mail -s "$SUBJECT" "$EMAIL"
     fi
-    
+
     # Log to systemd journal
     echo "CRITICAL: ClamAV found $INFECTED_COUNT infected files" | logger -p user.crit -t clamav-scan
-    
+
 else
     # No infections found
     END_TIME=$(date)
@@ -140,4 +143,4 @@ if [ $SCAN_EXIT_CODE -ne 0 ] && [ $SCAN_EXIT_CODE -ne 1 ]; then
     exit $SCAN_EXIT_CODE
 fi
 
-echo "ClamAV scan completed at $(date)" 
+echo "ClamAV scan completed at $(date)"

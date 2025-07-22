@@ -28,8 +28,8 @@ show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFIL
 show_yellow "Installing Postfix..."
 
 # Install Postfix non-interactively
-debconf-set-selections <<< "postfix postfix/mailname string $(hostname -f)"
-debconf-set-selections <<< "postfix postfix/main_mailer_type string 'Internet Site'"
+debconf-set-selections <<<"postfix postfix/mailname string $(hostname -f)"
+debconf-set-selections <<<"postfix postfix/main_mailer_type string 'Internet Site'"
 
 apt-get --yes install postfix mailutils >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of Postfix failed. Please check logfile and fix error manually.")
 
@@ -81,7 +81,7 @@ show_yellow "Configuring mail aliases..."
 
 # Ensure root mail goes to the info email
 if ! grep -q "root:" /etc/aliases; then
-    echo "root: $INFO_EMAIL" >> /etc/aliases
+    echo "root: $INFO_EMAIL" >>/etc/aliases
 else
     sed -i "s/^root:.*/root: $INFO_EMAIL/" /etc/aliases
 fi

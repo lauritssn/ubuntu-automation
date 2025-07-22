@@ -36,12 +36,12 @@ log_install() {
     local level="$1"
     local message="$2"
     local step="$3"
-    
+
     # Log to systemd journal with structured data (if systemd-cat is available)
     if command -v systemd-cat >/dev/null 2>&1; then
         echo "$message" | systemd-cat -t "$JOURNAL_TAG" -p "$level"
     fi
-    
+
     # Also display to user
     echo "$message"
 }
@@ -80,10 +80,10 @@ init_install_status_log() {
     if [ ! -d "/srv/apps/scripts" ]; then
         mkdir -p "/srv/apps/scripts"
     fi
-    
+
     # Create the status log if it doesn't exist
     if [ ! -f "$INSTALL_STATUS_LOG" ]; then
-        cat > "$INSTALL_STATUS_LOG" << EOF
+        cat >"$INSTALL_STATUS_LOG" <<EOF
 # Ubuntu Automation Installation Status Log
 # Format: MODULE_NAME=STATUS
 # STATUS: SUCCESS, FAILED, SKIPPED
@@ -103,26 +103,26 @@ is_module_installed() {
         grep -q "^${module_name}=SUCCESS$" "$INSTALL_STATUS_LOG" 2>/dev/null
         return $?
     fi
-    return 1  # Not installed
+    return 1 # Not installed
 }
 
 # Mark a module as successfully installed
 mark_module_success() {
     local module_name="$1"
     local temp_file=$(mktemp)
-    
+
     # Remove any existing entry for this module
     if [ -f "$INSTALL_STATUS_LOG" ]; then
-        grep -v "^${module_name}=" "$INSTALL_STATUS_LOG" > "$temp_file" 2>/dev/null || touch "$temp_file"
+        grep -v "^${module_name}=" "$INSTALL_STATUS_LOG" >"$temp_file" 2>/dev/null || touch "$temp_file"
     else
         touch "$temp_file"
     fi
-    
+
     # Add new success entry
-    echo "${module_name}=SUCCESS" >> "$temp_file"
+    echo "${module_name}=SUCCESS" >>"$temp_file"
     mv "$temp_file" "$INSTALL_STATUS_LOG"
     chmod 600 "$INSTALL_STATUS_LOG"
-    
+
     log_info "Module '$module_name' marked as successfully installed"
 }
 
@@ -130,19 +130,19 @@ mark_module_success() {
 mark_module_failed() {
     local module_name="$1"
     local temp_file=$(mktemp)
-    
+
     # Remove any existing entry for this module
     if [ -f "$INSTALL_STATUS_LOG" ]; then
-        grep -v "^${module_name}=" "$INSTALL_STATUS_LOG" > "$temp_file" 2>/dev/null || touch "$temp_file"
+        grep -v "^${module_name}=" "$INSTALL_STATUS_LOG" >"$temp_file" 2>/dev/null || touch "$temp_file"
     else
         touch "$temp_file"
     fi
-    
+
     # Add new failed entry
-    echo "${module_name}=FAILED" >> "$temp_file"
+    echo "${module_name}=FAILED" >>"$temp_file"
     mv "$temp_file" "$INSTALL_STATUS_LOG"
     chmod 600 "$INSTALL_STATUS_LOG"
-    
+
     log_error "Module '$module_name' marked as failed"
 }
 
@@ -150,19 +150,19 @@ mark_module_failed() {
 mark_module_skipped() {
     local module_name="$1"
     local temp_file=$(mktemp)
-    
+
     # Remove any existing entry for this module
     if [ -f "$INSTALL_STATUS_LOG" ]; then
-        grep -v "^${module_name}=" "$INSTALL_STATUS_LOG" > "$temp_file" 2>/dev/null || touch "$temp_file"
+        grep -v "^${module_name}=" "$INSTALL_STATUS_LOG" >"$temp_file" 2>/dev/null || touch "$temp_file"
     else
         touch "$temp_file"
     fi
-    
+
     # Add new skipped entry
-    echo "${module_name}=SKIPPED" >> "$temp_file"
+    echo "${module_name}=SKIPPED" >>"$temp_file"
     mv "$temp_file" "$INSTALL_STATUS_LOG"
     chmod 600 "$INSTALL_STATUS_LOG"
-    
+
     log_info "Module '$module_name' marked as skipped"
 }
 
@@ -171,7 +171,7 @@ execute_module() {
     local module_name="$1"
     local module_script="$2"
     local user_choice="$3"
-    
+
     # Check if user chose to install this module (Y=Yes, M=Mandatory)
     if [[ ! $user_choice =~ [YyMm]$ ]]; then
         mark_module_skipped "$module_name"
@@ -179,31 +179,31 @@ execute_module() {
         show_warn "$module_name will not be installed"
         return 0
     fi
-    
+
     # Show different messages for mandatory vs optional installations
     if [[ $user_choice =~ [Mm]$ ]]; then
         log_info "$module_name is MANDATORY and will be installed automatically"
     fi
-    
+
     # Check if module is already successfully installed
     if is_module_installed "$module_name"; then
         log_info "$module_name is already successfully installed, skipping..."
         show_warn "$module_name already installed successfully, skipping..."
         return 0
     fi
-    
+
     # Execute the module
     log_start "$module_name"
-    
+
     # Create a temporary error trap for this module
-    set +e  # Temporarily disable exit on error
+    set +e # Temporarily disable exit on error
     (
-        set -e  # Re-enable exit on error in subshell
+        set -e # Re-enable exit on error in subshell
         . "$module_script"
     )
     local exit_code=$?
-    set -e  # Re-enable exit on error
-    
+    set -e # Re-enable exit on error
+
     if [ $exit_code -eq 0 ]; then
         mark_module_success "$module_name"
         log_success "$module_name"
@@ -214,24 +214,24 @@ execute_module() {
         show_err "$module_name installation failed. Check logs for details."
         echo "❌ $module_name failed. You can retry by running the script again."
         echo "   Only failed/new modules will be reinstalled."
-        
+
         # Ask user if they want to continue or exit
         while true; do
             read -p "Do you want to continue with other modules (Y/N)? " yn
             case $yn in
-                [Yy]*)
-                    log_info "User chose to continue after $module_name failure"
-                    return 0  # Return success to continue with next modules
-                    ;;
-                [Nn]*)
-                    log_info "User chose to exit after $module_name failure"
-                    exit 1
-                    ;;
-                *) echo "Please answer yes or no." ;;
+            [Yy]*)
+                log_info "User chose to continue after $module_name failure"
+                return 0 # Return success to continue with next modules
+                ;;
+            [Nn]*)
+                log_info "User chose to exit after $module_name failure"
+                exit 1
+                ;;
+            *) echo "Please answer yes or no." ;;
             esac
         done
     fi
-    
+
     return $exit_code
 }
 
@@ -241,40 +241,40 @@ show_install_status() {
         echo "No installation status log found."
         return
     fi
-    
+
     echo ""
     echo "📋 INSTALLATION STATUS SUMMARY:"
     echo "=================================="
-    
+
     local success_count=0
     local failed_count=0
     local skipped_count=0
-    
+
     while IFS='=' read -r module status; do
         # Skip comments and empty lines
         if [[ "$module" =~ ^#.*$ ]] || [[ -z "$module" ]]; then
             continue
         fi
-        
+
         case "$status" in
-            "SUCCESS")
-                echo "✅ $module: Successfully installed"
-                ((success_count++))
-                ;;
-            "FAILED")
-                echo "❌ $module: Installation failed"
-                ((failed_count++))
-                ;;
-            "SKIPPED")
-                echo "⏭️  $module: Skipped by user"
-                ((skipped_count++))
-                ;;
+        "SUCCESS")
+            echo "✅ $module: Successfully installed"
+            ((success_count++))
+            ;;
+        "FAILED")
+            echo "❌ $module: Installation failed"
+            ((failed_count++))
+            ;;
+        "SKIPPED")
+            echo "⏭️  $module: Skipped by user"
+            ((skipped_count++))
+            ;;
         esac
-    done < "$INSTALL_STATUS_LOG"
-    
+    done <"$INSTALL_STATUS_LOG"
+
     echo "=================================="
     echo "📊 SUMMARY: $success_count successful, $failed_count failed, $skipped_count skipped"
-    
+
     if [ $failed_count -gt 0 ]; then
         echo ""
         echo "⚠️  Some modules failed. You can re-run this script to retry failed modules."
@@ -288,7 +288,7 @@ USER_CHOICES_FILE="/srv/apps/scripts/user_choices.conf"
 
 # Save user choices to file
 save_user_choices() {
-    cat > "$USER_CHOICES_FILE" << EOF
+    cat >"$USER_CHOICES_FILE" <<EOF
 # Ubuntu Automation User Choices
 # Generated on: $(date)
 DO_SET_TIMEZONE=$DO_SET_TIMEZONE
@@ -355,16 +355,16 @@ export DATE=$(date +%Y-%m-%d_%H%M)
 export DEBIAN_FRONTEND=noninteractive # Make apt-get install non-interactive
 
 export DO_CHANGE_TIMEZONE=N
-export DO_SYSTEM_UPDATE=M     # MANDATORY
-export DO_SWAPFILE_INSTALL=M  # MANDATORY
-export DO_EXTRAS_INSTALL=M    # MANDATORY
-export DO_GENERAL_SERVER_SETTINGS=M  # MANDATORY
-export DO_LIGHTWEIGHT_MONITORING=M   # MANDATORY
+export DO_SYSTEM_UPDATE=M           # MANDATORY
+export DO_SWAPFILE_INSTALL=M        # MANDATORY
+export DO_EXTRAS_INSTALL=M          # MANDATORY
+export DO_GENERAL_SERVER_SETTINGS=M # MANDATORY
+export DO_LIGHTWEIGHT_MONITORING=M  # MANDATORY
 export DO_NETDATA_INSTALL=N
-export DO_SYSTEMD_TIMERS=M    # MANDATORY
+export DO_SYSTEMD_TIMERS=M # MANDATORY
 export DO_DOCKER_INSTALL=N
 export DO_UFW_INSTALL=M  # MANDATORY
-export DO_SWAP_INSTALL=M  # MANDATORY
+export DO_SWAP_INSTALL=M # MANDATORY
 export DO_DOKKU_INSTALL=N
 export DO_WIREGUARD_INSTALL=N
 
@@ -594,7 +594,7 @@ if is_resuming && load_user_choices; then
     echo "🔄 RESUMING INSTALLATION with previous choices:"
     echo "=================================="
     echo "• DO_SYSTEM_UPDATE: $DO_SYSTEM_UPDATE (Mandatory)"
-    echo "• DO_GENERAL_SERVER_SETTINGS: $DO_GENERAL_SERVER_SETTINGS (Mandatory)" 
+    echo "• DO_GENERAL_SERVER_SETTINGS: $DO_GENERAL_SERVER_SETTINGS (Mandatory)"
     echo "• DO_SSH_2FA: $DO_SSH_2FA"
     echo "• DO_SWAP_INSTALL: $DO_SWAP_INSTALL (Mandatory)"
     echo "• DO_LIGHTWEIGHT_MONITORING: $DO_LIGHTWEIGHT_MONITORING (Mandatory)"
@@ -619,7 +619,7 @@ if is_resuming && load_user_choices; then
 else
     echo "📋 Configuration Status:"
     echo "• DO_SYSTEM_UPDATE: $DO_SYSTEM_UPDATE (Mandatory)"
-    echo "• DO_GENERAL_SERVER_SETTINGS: $DO_GENERAL_SERVER_SETTINGS (Mandatory)" 
+    echo "• DO_GENERAL_SERVER_SETTINGS: $DO_GENERAL_SERVER_SETTINGS (Mandatory)"
     echo "• DO_SWAP_INSTALL: $DO_SWAP_INSTALL (Mandatory)"
     echo "• DO_LIGHTWEIGHT_MONITORING: $DO_LIGHTWEIGHT_MONITORING (Mandatory)"
     echo "• DO_SYSTEMD_TIMERS: $DO_SYSTEMD_TIMERS (Mandatory)"
@@ -630,184 +630,184 @@ else
 
     # SSH 2FA with Google Authenticator
     if [[ $DO_GENERAL_SERVER_SETTINGS =~ [YyMm]$ ]]; then
-    while true; do
-        read -p "Do You want to enable SSH 2FA with Google Authenticator (Y/N)? " yn
-        case $yn in
-        [Yy]*)
-            DO_SSH_2FA=Y
-            break
-            ;;
-        [Nn]*)
-            DO_SSH_2FA=N
-            break
-            ;;
-        *) echo "Please answer yes or no." ;;
-        esac
-    done
-else
-    DO_SSH_2FA=N
-fi
-
-echo "DO_SSH_2FA: "$DO_SSH_2FA
-
-# Note: User creation is now handled by separate add_user.sh script
-# This keeps the installation focused on system setup
-
-# Swap install and Lightweight monitoring are MANDATORY (M) - no user prompts needed
-
-# Slack webhook for disk monitoring
-if [[ $DO_LIGHTWEIGHT_MONITORING =~ [YyMm]$ ]]; then
-    while true; do
-        read -p "Do You want to enable Slack notifications for disk space monitoring (Y/N)? " yn
-        case $yn in
-        [Yy]*)
-            ENABLE_SLACK_MONITORING=Y
-            read -p "Enter Slack webhook URL for notifications: " SLACK_WEBHOOK_URL
-            break
-            ;;
-        [Nn]*)
-            ENABLE_SLACK_MONITORING=N
-            break
-            ;;
-        *) echo "Please answer yes or no." ;;
-        esac
-    done
-    
-    echo "ENABLE_SLACK_MONITORING: "$ENABLE_SLACK_MONITORING
-    if [[ $ENABLE_SLACK_MONITORING =~ [Yy]$ ]]; then
-        echo "SLACK_WEBHOOK_URL: "$SLACK_WEBHOOK_URL
+        while true; do
+            read -p "Do You want to enable SSH 2FA with Google Authenticator (Y/N)? " yn
+            case $yn in
+            [Yy]*)
+                DO_SSH_2FA=Y
+                break
+                ;;
+            [Nn]*)
+                DO_SSH_2FA=N
+                break
+                ;;
+            *) echo "Please answer yes or no." ;;
+            esac
+        done
+    else
+        DO_SSH_2FA=N
     fi
-fi
 
-# Netdata install
-while true; do
-    read -p "Do You want to install Netdata (Y/N)? " yn
-    case $yn in
-    [Yy]*)
-        DO_NETDATA_INSTALL=Y
-        break
-        ;;
-    [Nn]*)
-        DO_NETDATA_INSTALL=N
-        break
-        ;;
-    *) echo "Please answer yes or no." ;;
-    esac
-done
+    echo "DO_SSH_2FA: "$DO_SSH_2FA
 
-echo "DO_NETDATA_INSTALL: "$DO_NETDATA_INSTALL
+    # Note: User creation is now handled by separate add_user.sh script
+    # This keeps the installation focused on system setup
 
-# Systemd timers install is MANDATORY (M) - no user prompts needed
+    # Swap install and Lightweight monitoring are MANDATORY (M) - no user prompts needed
 
-# Docker install
-while true; do
-    read -p "Do You want to install Docker (Y/N)? " yn
-    case $yn in
-    [Yy]*)
-        DO_DOCKER_INSTALL=Y
-        break
-        ;;
-    [Nn]*)
-        DO_DOCKER_INSTALL=N
-        break
-        ;;
-    *) echo "Please answer yes or no." ;;
-    esac
-done
+    # Slack webhook for disk monitoring
+    if [[ $DO_LIGHTWEIGHT_MONITORING =~ [YyMm]$ ]]; then
+        while true; do
+            read -p "Do You want to enable Slack notifications for disk space monitoring (Y/N)? " yn
+            case $yn in
+            [Yy]*)
+                ENABLE_SLACK_MONITORING=Y
+                read -p "Enter Slack webhook URL for notifications: " SLACK_WEBHOOK_URL
+                break
+                ;;
+            [Nn]*)
+                ENABLE_SLACK_MONITORING=N
+                break
+                ;;
+            *) echo "Please answer yes or no." ;;
+            esac
+        done
 
-if [[ $DO_DOCKER_INSTALL =~ [Yy]$ ]]; then
-    # Docker rootless mode
+        echo "ENABLE_SLACK_MONITORING: "$ENABLE_SLACK_MONITORING
+        if [[ $ENABLE_SLACK_MONITORING =~ [Yy]$ ]]; then
+            echo "SLACK_WEBHOOK_URL: "$SLACK_WEBHOOK_URL
+        fi
+    fi
+
+    # Netdata install
     while true; do
-        read -p "Do You want to install Docker in rootless mode (Y/N)? " yn
+        read -p "Do You want to install Netdata (Y/N)? " yn
         case $yn in
         [Yy]*)
-            DOCKER_ROOTLESS=Y
+            DO_NETDATA_INSTALL=Y
             break
             ;;
         [Nn]*)
-            DOCKER_ROOTLESS=N
+            DO_NETDATA_INSTALL=N
             break
             ;;
         *) echo "Please answer yes or no." ;;
         esac
     done
 
-    # Docker data directory
+    echo "DO_NETDATA_INSTALL: "$DO_NETDATA_INSTALL
+
+    # Systemd timers install is MANDATORY (M) - no user prompts needed
+
+    # Docker install
     while true; do
-        read -p "Do You want to change Docker data directory (default: $DOCKER_DATA_ROOT) (Y/N)? " yn
+        read -p "Do You want to install Docker (Y/N)? " yn
         case $yn in
         [Yy]*)
-            read -p "Enter Docker data directory (e.g., '/mnt/docker'): " DOCKER_DATA_ROOT
+            DO_DOCKER_INSTALL=Y
             break
             ;;
         [Nn]*)
+            DO_DOCKER_INSTALL=N
             break
             ;;
         *) echo "Please answer yes or no." ;;
         esac
     done
-    
-    echo "DOCKER_ROOTLESS: "$DOCKER_ROOTLESS
-    echo "DOCKER_DATA_ROOT: "$DOCKER_DATA_ROOT
-fi
 
-echo "DO_DOCKER_INSTALL: "$DO_DOCKER_INSTALL
+    if [[ $DO_DOCKER_INSTALL =~ [Yy]$ ]]; then
+        # Docker rootless mode
+        while true; do
+            read -p "Do You want to install Docker in rootless mode (Y/N)? " yn
+            case $yn in
+            [Yy]*)
+                DOCKER_ROOTLESS=Y
+                break
+                ;;
+            [Nn]*)
+                DOCKER_ROOTLESS=N
+                break
+                ;;
+            *) echo "Please answer yes or no." ;;
+            esac
+        done
 
-# UFW install is MANDATORY (M) - no user prompts needed
+        # Docker data directory
+        while true; do
+            read -p "Do You want to change Docker data directory (default: $DOCKER_DATA_ROOT) (Y/N)? " yn
+            case $yn in
+            [Yy]*)
+                read -p "Enter Docker data directory (e.g., '/mnt/docker'): " DOCKER_DATA_ROOT
+                break
+                ;;
+            [Nn]*)
+                break
+                ;;
+            *) echo "Please answer yes or no." ;;
+            esac
+        done
 
-# Dokku install
-while true; do
-    read -p "Do You want to install Dokku (Y/N)? " yn
-    case $yn in
-    [Yy]*)
-        DO_DOKKU_INSTALL=Y
-        break
-        ;;
-    [Nn]*)
-        DO_DOKKU_INSTALL=N
-        break
-        ;;
-    *) echo "Please answer yes or no." ;;
-    esac
-done
+        echo "DOCKER_ROOTLESS: "$DOCKER_ROOTLESS
+        echo "DOCKER_DATA_ROOT: "$DOCKER_DATA_ROOT
+    fi
 
-# Wireguard install
-while true; do
-    read -p "Do You want to install Wireguard VPN (Y/N)? " yn
-    case $yn in
-    [Yy]*)
-        DO_WIREGUARD_INSTALL=Y
-        break
-        ;;
-    [Nn]*)
-        DO_WIREGUARD_INSTALL=N
-        break
-        ;;
-    *) echo "Please answer yes or no." ;;
-    esac
-done
+    echo "DO_DOCKER_INSTALL: "$DO_DOCKER_INSTALL
 
-if [[ $DO_WIREGUARD_INSTALL =~ [Yy]$ ]]; then
-    # Wireguard subnet configuration
+    # UFW install is MANDATORY (M) - no user prompts needed
+
+    # Dokku install
     while true; do
-        read -p "Do You want to change Wireguard VPN subnet (default: $WIREGUARD_SUBNET) (Y/N)? " yn
+        read -p "Do You want to install Dokku (Y/N)? " yn
         case $yn in
         [Yy]*)
-            read -p "Enter Wireguard VPN subnet (e.g., '10.66.66.0/24'): " WIREGUARD_SUBNET
+            DO_DOKKU_INSTALL=Y
             break
             ;;
         [Nn]*)
+            DO_DOKKU_INSTALL=N
             break
             ;;
         *) echo "Please answer yes or no." ;;
         esac
     done
-    
-    echo "WIREGUARD_SUBNET: "$WIREGUARD_SUBNET
-fi
 
-echo "DO_UFW_INSTALL: "$DO_UFW_INSTALL
-echo "DO_WIREGUARD_INSTALL: "$DO_WIREGUARD_INSTALL
+    # Wireguard install
+    while true; do
+        read -p "Do You want to install Wireguard VPN (Y/N)? " yn
+        case $yn in
+        [Yy]*)
+            DO_WIREGUARD_INSTALL=Y
+            break
+            ;;
+        [Nn]*)
+            DO_WIREGUARD_INSTALL=N
+            break
+            ;;
+        *) echo "Please answer yes or no." ;;
+        esac
+    done
+
+    if [[ $DO_WIREGUARD_INSTALL =~ [Yy]$ ]]; then
+        # Wireguard subnet configuration
+        while true; do
+            read -p "Do You want to change Wireguard VPN subnet (default: $WIREGUARD_SUBNET) (Y/N)? " yn
+            case $yn in
+            [Yy]*)
+                read -p "Enter Wireguard VPN subnet (e.g., '10.66.66.0/24'): " WIREGUARD_SUBNET
+                break
+                ;;
+            [Nn]*)
+                break
+                ;;
+            *) echo "Please answer yes or no." ;;
+            esac
+        done
+
+        echo "WIREGUARD_SUBNET: "$WIREGUARD_SUBNET
+    fi
+
+    echo "DO_UFW_INSTALL: "$DO_UFW_INSTALL
+    echo "DO_WIREGUARD_INSTALL: "$DO_WIREGUARD_INSTALL
 
     # Save user choices for potential resume scenarios
     save_user_choices
@@ -911,12 +911,12 @@ printf "\n--------------------\n"
 # Security and system hardening tools
 if [[ $DO_GENERAL_SERVER_SETTINGS =~ [YyMm]$ ]]; then
     # Check if the entire security suite is already complete
-    if is_module_installed "Secure_Shared_Memory" && \
-       is_module_installed "Maldet_Installation" && \
-       is_module_installed "RKHunter_Installation" && \
-       is_module_installed "ClamAV_Installation" && \
-       is_module_installed "Fail2Ban_Installation" && \
-       is_module_installed "Postfix_Installation"; then
+    if is_module_installed "Secure_Shared_Memory" &&
+        is_module_installed "Maldet_Installation" &&
+        is_module_installed "RKHunter_Installation" &&
+        is_module_installed "ClamAV_Installation" &&
+        is_module_installed "Fail2Ban_Installation" &&
+        is_module_installed "Postfix_Installation"; then
         log_info "All security hardening modules already installed successfully, skipping..."
         show_warn "All security hardening modules already installed successfully, skipping..."
     else

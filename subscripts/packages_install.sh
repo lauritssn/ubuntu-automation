@@ -137,11 +137,11 @@ fi
 # Postfix mail server (if general server settings selected)
 if [[ "$DO_GENERAL_SERVER_SETTINGS" =~ [Yy]$ ]]; then
     show_yellow "Installing mail server packages."
-    
+
     # Pre-configure postfix to avoid interactive prompts
     echo "postfix postfix/mailname string $(hostname -f)" | debconf-set-selections
     echo "postfix postfix/main_mailer_type string 'Internet Site'" | debconf-set-selections
-    
+
     if ! apt-get --yes install postfix mailutils >>$LOGDIR/$LOGFILE 2>&1; then
         show_err "Installation of mail packages failed. Please check logfile and fix error manually."
         exit 1
@@ -159,7 +159,7 @@ show_yellow "Verifying critical package installations."
 check_package() {
     local package="$1"
     local description="$2"
-    
+
     if dpkg-query -W -f='${Status}' "$package" 2>/dev/null | grep -q "install ok installed"; then
         show_yellow "$description ($package) is installed."
         return 0
@@ -236,4 +236,4 @@ show_info "Individual service configuration will be handled by their respective 
 ## Done
 ##########################################################################################
 
-show_info "$SUBSCRIPT done." 
+show_info "$SUBSCRIPT done."

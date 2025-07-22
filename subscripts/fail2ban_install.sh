@@ -43,10 +43,10 @@ show_yellow "Installation of fail2ban done."
 ##########################################################################################
 
 if [ -a $CONF1_ORG ]; then
-   cp -p $CONF1_ORG $CONF1_BACK && show_yellow "Fail2Ban file $CONF1_ORG backed up to $CONF1_BACK."
-   cp $CONF1_GIT $CONF1_ORG && show_yellow "Default Fail2Ban configuration deployed."
+    cp -p $CONF1_ORG $CONF1_BACK && show_yellow "Fail2Ban file $CONF1_ORG backed up to $CONF1_BACK."
+    cp $CONF1_GIT $CONF1_ORG && show_yellow "Default Fail2Ban configuration deployed."
 else
-   cp $CONF1_GIT $CONF1_ORG && show_yellow "Default Fail2Ban configuration deployed."
+    cp $CONF1_GIT $CONF1_ORG && show_yellow "Default Fail2Ban configuration deployed."
 fi
 
 ##########################################################################################

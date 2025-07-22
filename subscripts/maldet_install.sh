@@ -79,7 +79,7 @@ show_yellow "Maldet configured to work with ClamAV as backend engine."
 CLAMAV_CONF="/etc/clamav/clamd.conf"
 if [ -f "$CLAMAV_CONF" ]; then
     if ! grep -q "/usr/local/maldetect/sigs" "$CLAMAV_CONF"; then
-        echo "DatabaseDirectory /usr/local/maldetect/sigs" >> "$CLAMAV_CONF"
+        echo "DatabaseDirectory /usr/local/maldetect/sigs" >>"$CLAMAV_CONF"
         show_yellow "Added Maldet signatures to ClamAV configuration."
     fi
 fi

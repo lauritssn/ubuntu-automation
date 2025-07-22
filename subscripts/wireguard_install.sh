@@ -67,7 +67,7 @@ chmod 700 /etc/wireguard
 
 # Generate server private and public keys
 cd /etc/wireguard
-wg genkey | tee server_private_key | wg pubkey > server_public_key
+wg genkey | tee server_private_key | wg pubkey >server_public_key
 chmod 600 server_private_key
 chmod 644 server_public_key
 
@@ -91,7 +91,7 @@ WG_SERVER_IP="${WG_NETWORK%.*}.1"
 DEFAULT_INTERFACE=$(ip route | grep default | awk '{print $5}' | head -n1)
 
 # Create server configuration
-cat > /etc/wireguard/wg0.conf << EOF
+cat >/etc/wireguard/wg0.conf <<EOF
 [Interface]
 PrivateKey = $SERVER_PRIVATE_KEY
 Address = $WG_SERVER_IP/$WG_CIDR
@@ -113,8 +113,8 @@ show_yellow "Server configuration created."
 show_yellow "Enabling IP forwarding."
 
 # Enable IP forwarding permanently
-echo 'net.ipv4.ip_forward = 1' >> /etc/sysctl.conf
-echo 'net.ipv6.conf.all.forwarding = 1' >> /etc/sysctl.conf
+echo 'net.ipv4.ip_forward = 1' >>/etc/sysctl.conf
+echo 'net.ipv6.conf.all.forwarding = 1' >>/etc/sysctl.conf
 
 # Apply immediately
 sysctl -p >>$LOGDIR/$LOGFILE 2>&1
@@ -128,7 +128,7 @@ show_yellow "IP forwarding enabled."
 show_yellow "Creating client management utilities."
 
 # Create client generation script
-cat > /etc/wireguard/add_client.sh << 'EOF'
+cat >/etc/wireguard/add_client.sh <<'EOF'
 #!/bin/bash
 
 if [ $# -ne 1 ]; then
@@ -208,7 +208,7 @@ show_yellow "Wireguard service started successfully."
 show_yellow "Creating global WireGuard management scripts."
 
 # Create global add-wg-client script
-cat > /usr/local/bin/add-wg-client << 'EOF'
+cat >/usr/local/bin/add-wg-client <<'EOF'
 #!/bin/bash
 
 # Global WireGuard client management script
@@ -233,7 +233,7 @@ EOF
 chmod +x /usr/local/bin/add-wg-client
 
 # Create global remove-wg-client script
-cat > /usr/local/bin/remove-wg-client << 'EOF'
+cat >/usr/local/bin/remove-wg-client <<'EOF'
 #!/bin/bash
 
 # Global WireGuard client removal script

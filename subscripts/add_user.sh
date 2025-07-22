@@ -30,7 +30,7 @@ SCRIPTSDIR=${SCRIPTSDIR:-"/srv/apps/scripts"}
 show_yellow() {
     echo $(tput bold)$(tput setaf 4) $@ $(tput sgr 0)
 }
-# White  
+# White
 show_norm() {
     echo $(tput bold)$(tput setaf 9) $@ $(tput sgr 0)
 }
@@ -62,25 +62,25 @@ fi
 
 validate_username() {
     local username="$1"
-    
+
     # Check if username is provided
     if [ -z "$username" ]; then
         show_err "Username cannot be empty."
         return 1
     fi
-    
+
     # Check username format (alphanumeric, dashes, underscores, 3-32 chars)
     if ! [[ "$username" =~ ^[a-zA-Z0-9_-]{3,32}$ ]]; then
         show_err "Username must be 3-32 characters and contain only letters, numbers, dashes, and underscores."
         return 1
     fi
-    
+
     # Check if user already exists
     if id "$username" &>/dev/null; then
         show_err "User '$username' already exists."
         return 1
     fi
-    
+
     return 0
 }
 
@@ -102,12 +102,12 @@ check_2fa_available() {
         show_warn "Google Authenticator is not installed. 2FA setup will be skipped."
         return 1
     fi
-    
+
     if ! grep -q "pam_google_authenticator.so" /etc/pam.d/sshd 2>/dev/null; then
         show_warn "SSH 2FA is not configured on this system. 2FA setup will be skipped."
         return 1
     fi
-    
+
     return 0
 }
 
@@ -120,12 +120,12 @@ check_wireguard_available() {
         show_warn "WireGuard is not installed. VPN setup will be skipped."
         return 1
     fi
-    
+
     if [ ! -f /etc/wireguard/wg0.conf ]; then
         show_warn "WireGuard server configuration not found. VPN setup will be skipped."
         return 1
     fi
-    
+
     return 0
 }
 
@@ -135,10 +135,10 @@ check_wireguard_available() {
 
 create_global_wg_scripts() {
     show_yellow "Creating global WireGuard management scripts."
-    
+
     # Create add-wg-client script
     if [ ! -f /usr/local/bin/add-wg-client ]; then
-        cat > /usr/local/bin/add-wg-client << 'EOF'
+        cat >/usr/local/bin/add-wg-client <<'EOF'
 #!/bin/bash
 
 # Global WireGuard client management script
@@ -162,10 +162,10 @@ EOF
         chmod +x /usr/local/bin/add-wg-client
         show_yellow "Created /usr/local/bin/add-wg-client"
     fi
-    
+
     # Create remove-wg-client script
     if [ ! -f /usr/local/bin/remove-wg-client ]; then
-        cat > /usr/local/bin/remove-wg-client << 'EOF'
+        cat >/usr/local/bin/remove-wg-client <<'EOF'
 #!/bin/bash
 
 # Global WireGuard client removal script
@@ -221,51 +221,51 @@ create_user() {
     local password="$2"
     local setup_2fa="$3"
     local setup_wireguard="$4"
-    
+
     show_yellow "Creating user: $username"
-    
+
     # Create the user with home directory
     useradd -m -s /bin/bash "$username" >>$LOGDIR/$LOGFILE 2>&1
     if [ $? -ne 0 ]; then
         show_err "Failed to create user $username. Check logfile: $LOGDIR/$LOGFILE"
         return 1
     fi
-    
+
     show_yellow "User $username created successfully."
-    
+
     # Set password
     echo "$username:$password" | chpasswd
     if [ $? -ne 0 ]; then
         show_err "Failed to set password for user $username."
         return 1
     fi
-    
+
     show_yellow "Password set for user $username."
-    
+
     # Add user to sudo group
     usermod -aG sudo "$username" >>$LOGDIR/$LOGFILE 2>&1
     if [ $? -ne 0 ]; then
         show_err "Failed to add user $username to sudo group."
         return 1
     fi
-    
+
     show_yellow "User $username added to sudo group."
-    
+
     # Create .ssh directory and set proper permissions
     USER_HOME="/home/$username"
     USER_SSH_DIR="$USER_HOME/.ssh"
-    
+
     mkdir -p "$USER_SSH_DIR"
     chown "$username:$username" "$USER_SSH_DIR"
     chmod 700 "$USER_SSH_DIR"
-    
+
     # Create authorized_keys file
     touch "$USER_SSH_DIR/authorized_keys"
     chown "$username:$username" "$USER_SSH_DIR/authorized_keys"
     chmod 600 "$USER_SSH_DIR/authorized_keys"
-    
+
     show_yellow "SSH directory created for user $username."
-    
+
     return 0
 }
 
@@ -275,15 +275,15 @@ create_user() {
 
 setup_user_2fa() {
     local username="$1"
-    
+
     show_yellow "Setting up 2FA for user: $username"
-    
+
     # Check if 2FA setup script exists
     if [ ! -f "$SCRIPTSDIR/setup_user_2fa.sh" ]; then
         show_err "2FA setup script not found at $SCRIPTSDIR/setup_user_2fa.sh"
         return 1
     fi
-    
+
     # Run the 2FA setup script
     "$SCRIPTSDIR/setup_user_2fa.sh" "$username"
     if [ $? -eq 0 ]; then
@@ -301,12 +301,12 @@ setup_user_2fa() {
 
 setup_user_wireguard() {
     local username="$1"
-    
+
     show_yellow "Setting up WireGuard VPN for user: $username"
-    
+
     # Create global WireGuard scripts if they don't exist
     create_global_wg_scripts
-    
+
     # Add WireGuard client
     if [ -f /etc/wireguard/add_client.sh ]; then
         /etc/wireguard/add_client.sh "$username" >>$LOGDIR/$LOGFILE 2>&1
@@ -354,7 +354,7 @@ show_usage() {
 interactive_mode() {
     show_info "=== Interactive User Creation ==="
     echo ""
-    
+
     # Get username
     while true; do
         read -p "Enter username for the new user: " NEW_USERNAME
@@ -363,7 +363,7 @@ interactive_mode() {
         fi
         echo "Please try again."
     done
-    
+
     # Get password option
     while true; do
         read -p "Do you want to set a custom password? (Y/N) [N]: " yn
@@ -390,7 +390,7 @@ interactive_mode() {
         *) echo "Please answer yes or no." ;;
         esac
     done
-    
+
     # Check 2FA availability and ask
     SETUP_2FA="N"
     if check_2fa_available; then
@@ -409,7 +409,7 @@ interactive_mode() {
             esac
         done
     fi
-    
+
     # Check WireGuard availability and ask
     SETUP_WIREGUARD="N"
     if check_wireguard_available; then
@@ -428,7 +428,7 @@ interactive_mode() {
             esac
         done
     fi
-    
+
     # Summary
     echo ""
     show_info "=== Summary ==="
@@ -437,7 +437,7 @@ interactive_mode() {
     echo "2FA Setup: $SETUP_2FA"
     echo "WireGuard VPN: $SETUP_WIREGUARD"
     echo ""
-    
+
     while true; do
         read -p "Continue with user creation? (Y/N): " yn
         case $yn in
@@ -469,35 +469,35 @@ INTERACTIVE=false
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
-        -u|--username)
-            NEW_USERNAME="$2"
-            shift 2
-            ;;
-        -p|--password)
-            NEW_PASSWORD="$2"
-            shift 2
-            ;;
-        --no-2fa)
-            SETUP_2FA="N"
-            shift
-            ;;
-        --no-wireguard)
-            SETUP_WIREGUARD="N"
-            shift
-            ;;
-        --interactive)
-            INTERACTIVE=true
-            shift
-            ;;
-        -h|--help)
-            show_usage
-            exit 0
-            ;;
-        *)
-            show_err "Unknown option: $1"
-            show_usage
-            exit 1
-            ;;
+    -u | --username)
+        NEW_USERNAME="$2"
+        shift 2
+        ;;
+    -p | --password)
+        NEW_PASSWORD="$2"
+        shift 2
+        ;;
+    --no-2fa)
+        SETUP_2FA="N"
+        shift
+        ;;
+    --no-wireguard)
+        SETUP_WIREGUARD="N"
+        shift
+        ;;
+    --interactive)
+        INTERACTIVE=true
+        shift
+        ;;
+    -h | --help)
+        show_usage
+        exit 0
+        ;;
+    *)
+        show_err "Unknown option: $1"
+        show_usage
+        exit 1
+        ;;
     esac
 done
 
@@ -597,4 +597,4 @@ if [ "$SETUP_WIREGUARD" = "Y" ]; then
 fi
 echo ""
 
-show_info "$SUBSCRIPT completed successfully." 
+show_info "$SUBSCRIPT completed successfully."

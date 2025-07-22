@@ -6,8 +6,8 @@
 #########################################################################
 
 ### Constants
-THRESHOLD_WARNING=20     # In percent
-THRESHOLD_CRITICAL=10    # In percent
+THRESHOLD_WARNING=20  # In percent
+THRESHOLD_CRITICAL=10 # In percent
 
 SLACK_WEBHOOK_URL="{{SLACK_WEBHOOK_URL}}"
 MONITOR_URL="http://localhost:3001"
@@ -24,29 +24,29 @@ warning_disks=()
 ### Read the command line parameters
 while getopts ":w:c:d:k:" option; do
     case ${option} in
-        w)
-            THRESHOLD_WARNING=${OPTARG}
-            ;;
-        c)
-            THRESHOLD_CRITICAL=${OPTARG}
-            ;;
-        d)
-            disks+=("${OPTARG}")
-            ;;
-        k)
-            key=${OPTARG}
-            ;;
-        *)
-            echo "Invalid option: -${OPTARG}" >&2
-            exit 1
-            ;;
+    w)
+        THRESHOLD_WARNING=${OPTARG}
+        ;;
+    c)
+        THRESHOLD_CRITICAL=${OPTARG}
+        ;;
+    d)
+        disks+=("${OPTARG}")
+        ;;
+    k)
+        key=${OPTARG}
+        ;;
+    *)
+        echo "Invalid option: -${OPTARG}" >&2
+        exit 1
+        ;;
     esac
 done
 
 # Function to send a Slack message
 send_slack_message() {
     local message="$1"
-    local channel="#monitoring"  # Replace with your desired Slack channel
+    local channel="#monitoring" # Replace with your desired Slack channel
 
     # Only send Slack message if webhook URL is configured
     if [ -n "$SLACK_WEBHOOK_URL" ]; then
@@ -73,15 +73,15 @@ check_disk_space() {
     fi
 
     local used_space_percent=${total_used_space%?}
-    local free_space_percent=$(( 100 - used_space_percent ))
+    local free_space_percent=$((100 - used_space_percent))
 
     # Convert available space to MB if it is not already in MB
     local available_space_mb
     case ${available_space: -1} in
-        G) available_space_mb=$(echo "${available_space%?} * 1024" | bc 2>/dev/null || echo "0") ;;
-        M) available_space_mb=${available_space%?} ;;
-        K) available_space_mb=$(echo "${available_space%?} / 1024" | bc 2>/dev/null || echo "0") ;;
-        *) available_space_mb=$available_space ;;
+    G) available_space_mb=$(echo "${available_space%?} * 1024" | bc 2>/dev/null || echo "0") ;;
+    M) available_space_mb=${available_space%?} ;;
+    K) available_space_mb=$(echo "${available_space%?} / 1024" | bc 2>/dev/null || echo "0") ;;
+    *) available_space_mb=$available_space ;;
     esac
 
     # Echo the values of the disk being checked
@@ -92,11 +92,11 @@ check_disk_space() {
     echo "Available space: $available_space"
     echo "Available space in MB: $available_space_mb MB"
 
-    if (( free_space_percent <= THRESHOLD_CRITICAL )); then
+    if ((free_space_percent <= THRESHOLD_CRITICAL)); then
         echo "  => Disk \"${mount_point}\" is CRITICAL (${free_space_percent}% free)"
         critical_disks+=("${mount_point}: ${free_space_percent}% free")
         CRITICAL=1
-    elif (( free_space_percent <= THRESHOLD_WARNING )); then
+    elif ((free_space_percent <= THRESHOLD_WARNING)); then
         echo "  => Disk \"${mount_point}\" is WARNING (${free_space_percent}% free)"
         warning_disks+=("${mount_point}: ${free_space_percent}% free")
         WARNING=1
@@ -111,7 +111,7 @@ if [ ${#disks[@]} -eq 0 ]; then
     while IFS= read -r line; do
         mount_point=$(echo "$line" | awk '{print $6}')
         filesystem=$(echo "$line" | awk '{print $1}')
-        
+
         # Skip pseudo filesystems and system mounts
         if [[ "$filesystem" =~ ^/dev/(sd|hd|vd|nvme|md|mapper) ]] && [[ "$mount_point" =~ ^(/|/home|/var|/tmp|/srv|/opt|/usr) ]]; then
             disks+=("$mount_point")
@@ -147,38 +147,38 @@ if [ ${CRITICAL_ALERT} -ne 0 ]; then
     if [ -n "$key" ]; then
         curl -f -s --max-time 10 "${MONITOR_URL}/api/push/${key}?status=down&msg=CRITICAL&ping=" >/dev/null 2>&1 || echo "Failed to send monitor ping"
     fi
-    
+
     message="CRITICAL: Disk space is critically low on $(hostname):\n"
     for disk in "${critical_disks[@]}"; do
         message+="  - $disk\n"
     done
     send_slack_message "$message"
-    
+
     # Log to systemd journal
     echo "CRITICAL: Disk space critically low on disks: ${critical_disks[*]}" | logger -p user.crit -t disk-space-monitor
-    
+
 elif [ ${WARNING_ALERT} -ne 0 ]; then
     # Send monitor ping if key is provided
     if [ -n "$key" ]; then
         curl -f -s --max-time 10 "${MONITOR_URL}/api/push/${key}?status=down&msg=WARNING&ping=" >/dev/null 2>&1 || echo "Failed to send monitor ping"
     fi
-    
+
     message="WARNING: Disk space is low on $(hostname):\n"
     for disk in "${warning_disks[@]}"; do
         message+="  - $disk\n"
     done
     send_slack_message "$message"
-    
+
     # Log to systemd journal
     echo "WARNING: Disk space low on disks: ${warning_disks[*]}" | logger -p user.warn -t disk-space-monitor
-    
+
 else
     # Send healthy monitor ping if key is provided
     if [ -n "$key" ]; then
         curl -f -s --max-time 10 "${MONITOR_URL}/api/push/${key}?status=up&msg=OK&ping=" >/dev/null 2>&1 || echo "Failed to send monitor ping"
     fi
-    
+
     echo "All disks have sufficient space available"
 fi
 
-exit 0 
+exit 0

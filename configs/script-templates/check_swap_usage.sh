@@ -9,41 +9,41 @@ HOSTNAME=$(hostname)
 START_TIME=$(date)
 SCRIPT_NAME="Swap Usage Monitor"
 
-SWAP_WARN_THRESHOLD=25  # Warning at 25% swap usage
-SWAP_CRIT_THRESHOLD=50  # Critical at 50% swap usage
+SWAP_WARN_THRESHOLD=25 # Warning at 25% swap usage
+SWAP_CRIT_THRESHOLD=50 # Critical at 50% swap usage
 
 # Common Slack notification function
 send_slack_notification() {
     local message="$1"
-    local status="$2"  # start, success, warning, error
+    local status="$2" # start, success, warning, error
     local channel="#monitoring"
-    
+
     # Only send Slack message if webhook URL is configured
     if [ -n "$SLACK_WEBHOOK_URL" ]; then
         # Set appropriate emoji and username based on status
         case "$status" in
-            "start")
-                emoji=":hourglass_flowing_sand:"
-                username="System Monitor"
-                ;;
-            "success")
-                emoji=":white_check_mark:"
-                username="System Monitor"
-                ;;
-            "warning")
-                emoji=":warning:"
-                username="System Alert"
-                ;;
-            "error")
-                emoji=":rotating_light:"
-                username="System Alert"
-                ;;
-            *)
-                emoji=":information_source:"
-                username="System Monitor"
-                ;;
+        "start")
+            emoji=":hourglass_flowing_sand:"
+            username="System Monitor"
+            ;;
+        "success")
+            emoji=":white_check_mark:"
+            username="System Monitor"
+            ;;
+        "warning")
+            emoji=":warning:"
+            username="System Alert"
+            ;;
+        "error")
+            emoji=":rotating_light:"
+            username="System Alert"
+            ;;
+        *)
+            emoji=":information_source:"
+            username="System Monitor"
+            ;;
         esac
-        
+
         # Send notification
         curl -X POST -H 'Content-type: application/json' --data "{
             \"channel\": \"$channel\",
@@ -51,6 +51,8 @@ send_slack_notification() {
             \"username\": \"$username\",
             \"icon_emoji\": \"$emoji\"
         }" "$SLACK_WEBHOOK_URL" 2>/dev/null || echo "Failed to send Slack notification"
+    else
+        echo "Slack webhook not configured, skipping Slack notification"
     fi
 }
 
@@ -73,8 +75,8 @@ SWAP_USAGE_PERCENT_INT=$(echo "$SWAP_USAGE_PERCENT" | cut -d. -f1)
 
 # Display current swap status
 echo "=== Swap Usage Report - $(date) ==="
-echo "Total Swap: $(( SWAP_TOTAL / 1024 )) MB"
-echo "Used Swap: $(( SWAP_USED / 1024 )) MB"
+echo "Total Swap: $((SWAP_TOTAL / 1024)) MB"
+echo "Used Swap: $((SWAP_USED / 1024)) MB"
 echo "Swap Usage: ${SWAP_USAGE_PERCENT}%"
 echo ""
 
@@ -89,34 +91,34 @@ echo ""
 # Check thresholds and send alerts
 if [ "$SWAP_USAGE_PERCENT_INT" -ge "$SWAP_CRIT_THRESHOLD" ]; then
     echo "CRITICAL: Swap usage is critically high (${SWAP_USAGE_PERCENT}%)"
-    
+
     # Show top memory-consuming processes
     echo "Top memory-consuming processes:"
     ps aux --sort=-%mem | head -10
-    
+
     send_slack_notification "🚨 CRITICAL: Swap usage critically high on $HOSTNAME - ${SWAP_USAGE_PERCENT}% used (Memory: ${MEMORY_USAGE_PERCENT}%)" "error"
-    
+
     # Log to systemd journal
     echo "CRITICAL: Swap usage critically high: ${SWAP_USAGE_PERCENT}%" | logger -p user.crit -t swap-monitor
-    
+
 elif [ "$SWAP_USAGE_PERCENT_INT" -ge "$SWAP_WARN_THRESHOLD" ]; then
     echo "WARNING: Swap usage is elevated (${SWAP_USAGE_PERCENT}%)"
-    
+
     # Show top memory-consuming processes
     echo "Top memory-consuming processes:"
     ps aux --sort=-%mem | head -5
-    
+
     send_slack_notification "⚠️ WARNING: Elevated swap usage on $HOSTNAME - ${SWAP_USAGE_PERCENT}% used (Memory: ${MEMORY_USAGE_PERCENT}%)" "warning"
-    
+
     # Log to systemd journal
     echo "WARNING: Elevated swap usage: ${SWAP_USAGE_PERCENT}%" | logger -p user.warn -t swap-monitor
-    
+
 else
     echo "OK: Swap usage is normal (${SWAP_USAGE_PERCENT}%)"
-    
+
     END_TIME=$(date)
     DURATION=$(($(date +%s) - $(date -d "$START_TIME" +%s)))
     send_slack_notification "✅ $SCRIPT_NAME completed on $HOSTNAME - Swap usage normal: ${SWAP_USAGE_PERCENT}% (Duration: ${DURATION}s)" "success"
 fi
 
-echo "=== Swap monitoring completed at $(date) ===" 
+echo "=== Swap monitoring completed at $(date) ==="

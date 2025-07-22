@@ -47,7 +47,7 @@ if [ -a $CONF_SSH_ORG ]; then
 fi
 
 # Create comprehensive SSH security configuration
-cat > /etc/ssh/sshd_config << 'EOF'
+cat >/etc/ssh/sshd_config <<'EOF'
 # SSH Security Configuration for Ubuntu 24.04
 # Comprehensive security hardening
 
@@ -203,8 +203,8 @@ if [[ "$DO_SSH_2FA" =~ [Yy]$ ]]; then
     # Add Authenticator to PAM configuration
     if ! grep -q "auth required pam_google_authenticator.so" $CONF_PAM_SSH_ORG; then
         # Add Authenticator as required authentication
-        echo "# Authenticator 2FA" >> $CONF_PAM_SSH_ORG
-        echo "auth required pam_google_authenticator.so" >> $CONF_PAM_SSH_ORG
+        echo "# Authenticator 2FA" >>$CONF_PAM_SSH_ORG
+        echo "auth required pam_google_authenticator.so" >>$CONF_PAM_SSH_ORG
         show_yellow "Authenticator added to PAM SSH configuration."
     else
         show_warn "Authenticator already configured in PAM SSH."
@@ -217,7 +217,7 @@ if [[ "$DO_SSH_2FA" =~ [Yy]$ ]]; then
     show_yellow "Creating 2FA setup script for users."
 
     # Create setup script for generating 2FA codes
-    cat > $SCRIPTSDIR/setup_user_2fa.sh << 'EOF'
+    cat >$SCRIPTSDIR/setup_user_2fa.sh <<'EOF'
 #!/bin/bash
 
 # Authenticator 2FA Setup Script
@@ -314,7 +314,7 @@ EOF
     show_yellow "Creating 2FA management scripts."
 
     # Create script to display QR code for existing users
-    cat > $SCRIPTSDIR/show_2fa_qr.sh << 'EOF'
+    cat >$SCRIPTSDIR/show_2fa_qr.sh <<'EOF'
 #!/bin/bash
 
 # Show QR code for existing 2FA setup
@@ -356,7 +356,7 @@ EOF
     show_yellow "2FA QR display script created at $SCRIPTSDIR/show_2fa_qr.sh"
 
     # Create script to disable 2FA for a user
-    cat > $SCRIPTSDIR/disable_user_2fa.sh << 'EOF'
+    cat >$SCRIPTSDIR/disable_user_2fa.sh <<'EOF'
 #!/bin/bash
 
 # Disable 2FA for a specific user
@@ -401,7 +401,7 @@ fi
 show_yellow "Creating SSH security monitoring utilities."
 
 # Create script to show SSH security status
-cat > $SCRIPTSDIR/show_ssh_security.sh << 'EOF'
+cat >$SCRIPTSDIR/show_ssh_security.sh <<'EOF'
 #!/bin/bash
 
 # Show SSH security configuration status
@@ -432,7 +432,7 @@ EOF
 chmod +x $SCRIPTSDIR/show_ssh_security.sh
 
 # Create script to test SSH configuration
-cat > $SCRIPTSDIR/test_ssh_security.sh << 'EOF'
+cat >$SCRIPTSDIR/test_ssh_security.sh <<'EOF'
 #!/bin/bash
 
 # Test SSH security configuration
@@ -502,7 +502,7 @@ EOF
 chmod +x $SCRIPTSDIR/test_ssh_security.sh
 
 # Create script to show failed SSH attempts
-cat > $SCRIPTSDIR/show_ssh_attacks.sh << 'EOF'
+cat >$SCRIPTSDIR/show_ssh_attacks.sh <<'EOF'
 #!/bin/bash
 
 # Show recent SSH attack attempts and failed logins
@@ -639,4 +639,4 @@ fi
 ## Done
 ##########################################################################################
 
-show_info "$SUBSCRIPT done." 
+show_info "$SUBSCRIPT done."
