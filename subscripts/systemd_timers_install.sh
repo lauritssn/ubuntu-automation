@@ -63,6 +63,8 @@ fi
 # Copy ClamAV service and timer files
 cp $BASEDIR/configs/systemd/clamav-scan.service /etc/systemd/system/
 cp $BASEDIR/configs/systemd/clamav-scan.timer /etc/systemd/system/
+cp $BASEDIR/configs/systemd/clamav-update.service /etc/systemd/system/
+cp $BASEDIR/configs/systemd/clamav-update.timer /etc/systemd/system/
 
 # Create ClamAV scan script using template
 copy_and_configure_script "clamav-scan.sh" "/usr/local/bin/clamav-scan.sh" "ClamAV Scan Script"
@@ -70,7 +72,13 @@ copy_and_configure_script "clamav-scan.sh" "/usr/local/bin/clamav-scan.sh" "Clam
 # Verify script template variables
 verify_script_template "/usr/local/bin/clamav-scan.sh" "ClamAV Scan"
 
-show_yellow "ClamAV systemd timer installed with false positive reduction enabled."
+# Create ClamAV update script using template
+copy_and_configure_script "clamav-update.sh" "/usr/local/bin/clamav-update.sh" "ClamAV Update Script"
+
+# Verify script template variables
+verify_script_template "/usr/local/bin/clamav-update.sh" "ClamAV Update"
+
+show_yellow "ClamAV systemd timers installed with Slack notifications enabled."
 
 ##########################################################################################
 ## Install RKHunter systemd timers
@@ -197,9 +205,12 @@ show_yellow "Enabling and starting systemd timers."
 # Reload systemd daemon to recognize new units
 systemctl daemon-reload >>$LOGDIR/$LOGFILE 2>&1
 
-# Enable and start ClamAV timer
-systemctl enable clamav-scan.timer >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Failed to enable ClamAV timer."
-systemctl start clamav-scan.timer >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Failed to start ClamAV timer."
+# Enable and start ClamAV timers
+systemctl enable clamav-scan.timer >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Failed to enable ClamAV scan timer."
+systemctl start clamav-scan.timer >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Failed to start ClamAV scan timer."
+
+systemctl enable clamav-update.timer >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Failed to enable ClamAV update timer."
+systemctl start clamav-update.timer >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Failed to start ClamAV update timer."
 
 # Enable and start RKHunter timers
 systemctl enable rkhunter-scan.timer >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Failed to enable RKHunter scan timer."
@@ -236,6 +247,17 @@ show_yellow "All systemd timers enabled and started."
 
 show_yellow "Systemd timer status:"
 systemctl list-timers --no-pager | grep -E "(clamav|rkhunter|system-health|swap-monitor|disk-space-monitor|maldet)" || true
+
+show_yellow "Slack-enabled monitoring scripts installed:"
+echo "  ✅ /srv/apps/scripts/check_disk_space.sh"
+echo "  ✅ /srv/apps/scripts/check_swap_usage.sh"
+echo "  ✅ /srv/apps/scripts/system_health_check.sh"
+echo "  ✅ /usr/local/bin/clamav-scan.sh"
+echo "  ✅ /usr/local/bin/clamav-update.sh"
+echo "  ✅ /usr/local/bin/rkhunter-scan.sh"
+echo "  ✅ /usr/local/bin/rkhunter-update.sh"
+echo "  ✅ /usr/local/bin/maldet-scan.sh"
+echo "  ✅ /usr/local/bin/maldet-update.sh"
 
 ##########################################################################################
 ## Done

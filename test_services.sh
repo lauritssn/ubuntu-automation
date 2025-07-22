@@ -205,10 +205,16 @@ main() {
         "/srv/apps/scripts/system_health_check.sh"
 
     # 4. RKHunter Scan (if available) - Allow up to 3 hours
-    if command -v rkhunter >/dev/null 2>&1; then
+    if [ -f "/usr/local/bin/rkhunter-scan.sh" ]; then
         print_status "RKHunter scan may take up to 3 hours to complete..." "INFO"
         run_service "rkhunter-scan" \
             "Security scan with RKHunter (timeout: 3h)" \
+            "timeout 10800 /usr/local/bin/rkhunter-scan.sh"
+    elif command -v rkhunter >/dev/null 2>&1; then
+        # Fallback to basic rkhunter if script not available (no Slack notifications)
+        print_status "RKHunter script not found, using basic scan (no Slack notifications)..." "INFO"
+        run_service "rkhunter-scan-basic" \
+            "Basic RKHunter scan (timeout: 3h)" \
             "timeout 10800 bash -c 'rkhunter --cronjob --check --sk || (grep -q \"Possible rootkits: 0\" /var/log/rkhunter.log && exit 0 || exit 1)'"
     else
         print_status "RKHunter not installed, skipping scan" "WARNING"
@@ -216,10 +222,16 @@ main() {
     fi
 
     # 5. RKHunter Update (if available) - Allow up to 1 hour
-    if command -v rkhunter >/dev/null 2>&1; then
+    if [ -f "/usr/local/bin/rkhunter-update.sh" ]; then
         print_status "RKHunter update may take up to 1 hour to complete..." "INFO"
         run_service "rkhunter-update" \
             "Update RKHunter database and properties (timeout: 1h)" \
+            "timeout 3600 /usr/local/bin/rkhunter-update.sh"
+    elif command -v rkhunter >/dev/null 2>&1; then
+        # Fallback to basic rkhunter if script not available (no Slack notifications)
+        print_status "RKHunter update script not found, using basic update (no Slack notifications)..." "INFO"
+        run_service "rkhunter-update-basic" \
+            "Basic RKHunter update (timeout: 1h)" \
             "timeout 3600 bash -c 'rkhunter --cronjob --update --sk; UPDATE_EXIT=\$?; echo \"Update exit code: \$UPDATE_EXIT\"; rkhunter --cronjob --propupd --sk; PROPUPD_EXIT=\$?; echo \"Propupd exit code: \$PROPUPD_EXIT\"; if [ \$UPDATE_EXIT -eq 0 ] && [ \$PROPUPD_EXIT -eq 0 ]; then exit 0; elif [ \$PROPUPD_EXIT -eq 0 ]; then exit 0; else exit \$PROPUPD_EXIT; fi'"
     else
         print_status "RKHunter not installed, skipping update" "WARNING"
@@ -233,8 +245,8 @@ main() {
             "Update ClamAV virus signatures (timeout: 30m)" \
             "timeout 1800 /usr/local/bin/clamav-update.sh"
     elif command -v freshclam >/dev/null 2>&1; then
-        # Fallback to basic freshclam if script not available
-        print_status "Basic ClamAV signature update may take a while to complete..." "INFO"
+        # Fallback to basic freshclam if script not available (no Slack notifications)
+        print_status "ClamAV update script not found, using basic update (no Slack notifications)..." "INFO"
         run_service "clamav-update-basic" \
             "Basic ClamAV signature update (timeout: 30m)" \
             "timeout 1800 bash -c 'chown -R clamav:clamav /var/lib/clamav 2>/dev/null || true; TEMP_LOG=\"/tmp/freshclam-test-\$(date +%s).log\"; freshclam --verbose --log=\"\$TEMP_LOG\" 2>&1; EXIT_CODE=\$?; echo \"Freshclam log output:\"; cat \"\$TEMP_LOG\" 2>/dev/null || echo \"No log file created\"; rm -f \"\$TEMP_LOG\"; if [ \$EXIT_CODE -eq 0 ] || [ \$EXIT_CODE -eq 1 ]; then echo \"Update completed successfully (exit code: \$EXIT_CODE)\"; exit 0; else echo \"Update failed with exit code: \$EXIT_CODE\"; exit \$EXIT_CODE; fi'"
@@ -244,10 +256,16 @@ main() {
     fi
 
     # 5.6. Maldet Signature Update (if available) - Allow up to 30 minutes
-    if command -v maldet >/dev/null 2>&1; then
+    if [ -f "/usr/local/bin/maldet-update.sh" ]; then
         print_status "Maldet signature update may take up to 30 minutes to complete..." "INFO"
         run_service "maldet-update" \
             "Update Maldet signatures (timeout: 30m)" \
+            "timeout 1800 /usr/local/bin/maldet-update.sh"
+    elif command -v maldet >/dev/null 2>&1; then
+        # Fallback to basic maldet if script not available (no Slack notifications)
+        print_status "Maldet update script not found, using basic update (no Slack notifications)..." "INFO"
+        run_service "maldet-update-basic" \
+            "Basic Maldet signature update (timeout: 30m)" \
             "timeout 1800 maldet --update-sigs"
     else
         print_status "Maldet not installed, skipping signature update" "WARNING"
@@ -309,15 +327,15 @@ if [[ "$1" == "--help" || "$1" == "-h" ]]; then
     echo "Manual test script for all monitoring and security services"
     echo ""
     echo "Services tested:"
-    echo "  - disk-space-monitor (check disk usage)"
-    echo "  - swap-monitor (check swap usage)"
-    echo "  - system-health-check (comprehensive health check)"
-    echo "  - rkhunter-scan (security rootkit scan)"
-    echo "  - rkhunter-update (update security database)"
-    echo "  - clamav-update (update ClamAV virus signatures)"
-    echo "  - maldet-update (update maldet signatures)"
-    echo "  - maldet-scan (malware detection scan)"
-    echo "  - clamav-scan (antivirus scan)"
+    echo "  - disk-space-monitor (check disk usage) [Slack enabled]"
+    echo "  - swap-monitor (check swap usage) [Slack enabled]"
+    echo "  - system-health-check (comprehensive health check) [Slack enabled]"
+    echo "  - rkhunter-scan (security rootkit scan) [Slack enabled if wrapper script available]"
+    echo "  - rkhunter-update (update security database) [Slack enabled if wrapper script available]"
+    echo "  - clamav-update (update ClamAV virus signatures) [Slack enabled if wrapper script available]"
+    echo "  - maldet-update (update maldet signatures) [Slack enabled if wrapper script available]"
+    echo "  - maldet-scan (malware detection scan) [Slack enabled]"
+    echo "  - clamav-scan (antivirus scan) [Slack enabled]"
     echo ""
     echo "Options:"
     echo "  -h, --help    Show this help message"
