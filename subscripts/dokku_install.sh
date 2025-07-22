@@ -22,9 +22,10 @@ show_info "Fixing GPG key permissions for Dokku repository..."
 sudo mkdir -p /etc/apt/trusted.gpg.d
 sudo chmod 755 /etc/apt/trusted.gpg.d
 
-# Add the GPG key properly
+# Add the GPG key properly with correct filename and permissions
 curl -fsSL https://packagecloud.io/dokku/dokku/gpgkey | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/dokku.gpg
 sudo chmod 644 /etc/apt/trusted.gpg.d/dokku.gpg
+sudo chown root:root /etc/apt/trusted.gpg.d/dokku.gpg
 
 # Add the repository
 echo "deb https://packagecloud.io/dokku/dokku/ubuntu/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/dokku.list
@@ -32,13 +33,22 @@ echo "deb https://packagecloud.io/dokku/dokku/ubuntu/ $(lsb_release -cs) main" |
 # Update package list
 sudo apt-get update
 
-# Install Dokku with specific version
-show_info "Installing Dokku version v0.35.20..."
-sudo apt-get install -y dokku=0.35.20-1
+# Check available Dokku versions
+show_info "Checking available Dokku versions..."
+available_versions=$(apt-cache policy dokku | grep -E "Candidate:|Version:" | head -10)
+show_info "Available versions: $available_versions"
+
+# Install latest available Dokku version
+show_info "Installing latest available Dokku version..."
+sudo apt-get install -y dokku
 
 # Check if installation was successful
 if [ $? -eq 0 ]; then
     show_warn "Dokku installation completed successfully"
+
+    # Get installed version
+    installed_version=$(dokku version 2>/dev/null || echo "unknown")
+    show_info "Installed Dokku version: $installed_version"
 
     # Configure server domain if EMAIL_DOMAIN is available
     if [ -n "$EMAIL_DOMAIN" ]; then
