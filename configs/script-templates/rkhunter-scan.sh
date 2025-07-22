@@ -64,7 +64,18 @@ SCAN_EXIT_CODE=$?
 
 # Check scan results
 # First, check if any rootkits were actually found (the important metric)
-ROOTKITS_FOUND=$(grep "Possible rootkits:" "$LOG_FILE" | tail -1 | awk '{print $3}' || echo "0")
+# Look for the summary line that shows rootkit count
+ROOTKITS_FOUND=$(grep "Possible rootkits:" "$LOG_FILE" | tail -1 | awk '{print $3}' 2>/dev/null || echo "0")
+
+# Fallback: if we can't parse the count, check for any rootkit warnings in the log
+if [ "$ROOTKITS_FOUND" = "0" ] || [ -z "$ROOTKITS_FOUND" ]; then
+    # Check if there are any actual rootkit detections (not just warnings)
+    if grep -q "INFECTION" "$LOG_FILE" 2>/dev/null; then
+        ROOTKITS_FOUND="1"
+    else
+        ROOTKITS_FOUND="0"
+    fi
+fi
 
 if [ "$ROOTKITS_FOUND" = "0" ]; then
     # No rootkits found - this is good
