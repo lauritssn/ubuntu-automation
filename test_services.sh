@@ -226,7 +226,24 @@ main() {
         log_message "RKHunter not installed, skipping update" "WARNING"
     fi
 
-    # 5.5. Maldet Signature Update (if available) - Allow up to 30 minutes
+    # 5.5. ClamAV Signature Update (if available) - Allow up to 30 minutes
+    if [ -f "/usr/local/bin/clamav-update.sh" ]; then
+        print_status "ClamAV signature update may take up to 30 minutes to complete..." "INFO"
+        run_service "clamav-update" \
+            "Update ClamAV virus signatures (timeout: 30m)" \
+            "timeout 1800 /usr/local/bin/clamav-update.sh"
+    elif command -v freshclam >/dev/null 2>&1; then
+        # Fallback to basic freshclam if script not available
+        print_status "Basic ClamAV signature update may take a while to complete..." "INFO"
+        run_service "clamav-update-basic" \
+            "Basic ClamAV signature update (timeout: 30m)" \
+            "timeout 1800 freshclam --verbose"
+    else
+        print_status "ClamAV not installed, skipping signature update" "WARNING"
+        log_message "ClamAV not installed, skipping signature update" "WARNING"
+    fi
+
+    # 5.6. Maldet Signature Update (if available) - Allow up to 30 minutes
     if command -v maldet >/dev/null 2>&1; then
         print_status "Maldet signature update may take up to 30 minutes to complete..." "INFO"
         run_service "maldet-update" \
@@ -297,6 +314,7 @@ if [[ "$1" == "--help" || "$1" == "-h" ]]; then
     echo "  - system-health-check (comprehensive health check)"
     echo "  - rkhunter-scan (security rootkit scan)"
     echo "  - rkhunter-update (update security database)"
+    echo "  - clamav-update (update ClamAV virus signatures)"
     echo "  - maldet-update (update maldet signatures)"
     echo "  - maldet-scan (malware detection scan)"
     echo "  - clamav-scan (antivirus scan)"
