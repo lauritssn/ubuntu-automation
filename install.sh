@@ -658,7 +658,7 @@ else
     # Slack webhook for disk monitoring
     if [[ $DO_LIGHTWEIGHT_MONITORING =~ [YyMm]$ ]]; then
         while true; do
-            read -p "Do You want to enable Slack notifications for disk space monitoring (Y/N)? " yn
+            read -p "Do You want to enable Slack notifications for monitoring scripts (Y/N)? " yn
             case $yn in
             [Yy]*)
                 ENABLE_SLACK_MONITORING=Y

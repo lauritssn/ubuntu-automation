@@ -112,10 +112,10 @@ if [ -f /etc/pam.d/common-auth ]; then
     # Add account lockout after failed attempts using faillock (Ubuntu 24.04+)
     if ! grep -q "pam_faillock.so" /etc/pam.d/common-auth; then
         # Add faillock preauth before pam_unix
-        sed -i '/auth.*pam_unix/i auth\t\trequired\t\t\tpam_faillock.so preauth' /etc/pam.d/common-auth
+        sed -i $'/auth.*pam_unix/i auth\t\trequired\t\t\tpam_faillock.so preauth' /etc/pam.d/common-auth
         # Add faillock authfail and authsucc after pam_unix
-        sed -i '/auth.*pam_unix/a auth\t\t[default=die]\t\tpam_faillock.so authfail' /etc/pam.d/common-auth
-        sed -i '/auth.*pam_unix/a auth\t\tsufficient\t\tpam_faillock.so authsucc' /etc/pam.d/common-auth
+        sed -i $'/auth.*pam_unix/a auth\t\t[default=die]\t\tpam_faillock.so authfail' /etc/pam.d/common-auth
+        sed -i $'/auth.*pam_unix/a auth\t\tsufficient\t\tpam_faillock.so authsucc' /etc/pam.d/common-auth
         show_yellow "Account lockout policy configured (5 attempts, 10 minute lockout)."
     else
         show_warn "Account lockout already configured."
@@ -129,7 +129,7 @@ if [ -f /etc/pam.d/common-account ]; then
 
     if ! grep -q "pam_faillock.so" /etc/pam.d/common-account; then
         # Add account checking using faillock
-        echo "account\trequired\t\t\tpam_faillock.so" >>/etc/pam.d/common-account
+        echo -e "account\trequired\t\t\tpam_faillock.so" >>/etc/pam.d/common-account
         show_yellow "Account module configured for lockout checking."
     fi
 fi
@@ -231,12 +231,12 @@ if [ -f /etc/login.defs ]; then
     cp /etc/login.defs $BACKUPDIR/login.defs_$DATE
 
     # Set password aging policies
-    sed -i 's/^PASS_MAX_DAYS.*/PASS_MAX_DAYS\t90/' /etc/login.defs
-    sed -i 's/^PASS_MIN_DAYS.*/PASS_MIN_DAYS\t1/' /etc/login.defs
-    sed -i 's/^PASS_WARN_AGE.*/PASS_WARN_AGE\t7/' /etc/login.defs
+    sed -i $'s/^PASS_MAX_DAYS.*/PASS_MAX_DAYS\t90/' /etc/login.defs
+    sed -i $'s/^PASS_MIN_DAYS.*/PASS_MIN_DAYS\t1/' /etc/login.defs
+    sed -i $'s/^PASS_WARN_AGE.*/PASS_WARN_AGE\t7/' /etc/login.defs
 
     # Set secure umask
-    sed -i 's/^UMASK.*/UMASK\t\t027/' /etc/login.defs
+    sed -i $'s/^UMASK.*/UMASK\t\t027/' /etc/login.defs
 
     # Configure encryption method - SHA512 is still secure for password hashing
     # but modern systems should prefer stronger methods like yescrypt

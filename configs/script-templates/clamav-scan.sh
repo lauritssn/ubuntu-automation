@@ -80,7 +80,19 @@ send_slack_notification "🦠 $SCRIPT_NAME started on $HOSTNAME" "start"
 # Update virus definitions before scanning (use different log to avoid conflicts)
 echo "Updating ClamAV virus definitions..."
 # Use --log option to specify a different log file to avoid lock conflicts with daemon
-freshclam --quiet --log=/var/log/clamav/freshclam_manual.log || echo "Warning: ClamAV signature update failed or already running"
+if ! freshclam --quiet --log=/var/log/clamav/freshclam_manual.log; then
+    FRESHCLAM_EXIT_CODE=$?
+    if [ $FRESHCLAM_EXIT_CODE -eq 1 ]; then
+        # Exit code 1 usually means "already up to date" which is fine
+        echo "ClamAV signatures are already up to date"
+    else
+        # Other exit codes indicate actual failures
+        send_slack_notification "⚠️ ClamAV signature update failed on $HOSTNAME (exit code: $FRESHCLAM_EXIT_CODE) - proceeding with scan using existing signatures" "warning"
+        echo "Warning: ClamAV signature update failed with exit code $FRESHCLAM_EXIT_CODE - proceeding with existing signatures"
+    fi
+else
+    echo "ClamAV signatures updated successfully"
+fi
 
 # Record scan start time
 echo "Starting ClamAV scan at $(date)" | tee -a "$LOG_FILE"
