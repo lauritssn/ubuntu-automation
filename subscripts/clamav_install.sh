@@ -117,16 +117,19 @@ show_yellow "ClamAV signature databases downloaded successfully."
 # Clean up any problematic Maldet integration before starting daemon
 show_yellow "Cleaning up ClamAV database directory..."
 
-# Remove any broken Maldet signature links
-# These will be recreated properly when Maldet is installed and configured
-show_yellow "Removing any broken Maldet signature links..."
-find /var/lib/clamav -name "maldet_*" -type l ! -e -delete 2>/dev/null || true
+# Remove all Maldet signature links during ClamAV installation
+# This ensures clean ClamAV startup - Maldet integration will be handled separately
+show_yellow "Removing any Maldet signature links to ensure clean ClamAV startup..."
+find /var/lib/clamav -name "maldet_*" -type l -delete 2>/dev/null || true
 
 # Also remove any signature files that ended up directly in clamav directory with wrong ownership
 # These should come from Maldet via symbolic links only, never be copied directly
 find /var/lib/clamav -name "rfxn.*" -user root -delete 2>/dev/null || true
 find /var/lib/clamav -name "*.hdb" -user root -delete 2>/dev/null || true
 find /var/lib/clamav -name "*.ndb" -user root -delete 2>/dev/null || true
+
+# Remove any Maldet-related files that might cause conflicts
+find /var/lib/clamav -name "*maldet*" -not -path "*/main.cvd" -not -path "*/daily.cvd" -not -path "*/bytecode.cvd" -delete 2>/dev/null || true
 
 # Ensure all files in ClamAV directory are owned by clamav user
 chown -R clamav:clamav /var/lib/clamav/ 2>/dev/null || true
@@ -146,28 +149,51 @@ sleep 5
 # Verify ClamAV daemon can start with current database files
 show_yellow "Starting ClamAV daemon..."
 if ! systemctl start clamav-daemon.service >>$LOGDIR/$LOGFILE 2>&1; then
-    show_err "ClamAV daemon failed to start. Checking for issues..."
+    show_warn "ClamAV daemon failed to start on first attempt. Attempting additional cleanup..."
 
     # Capture detailed error information
-    echo "=== ClamAV Daemon Diagnostics ===" >>$LOGDIR/$LOGFILE
+    echo "=== ClamAV Daemon First Startup Failure ===" >>$LOGDIR/$LOGFILE
     echo "systemctl status clamav-daemon.service:" >>$LOGDIR/$LOGFILE
     systemctl status clamav-daemon.service >>$LOGDIR/$LOGFILE 2>&1 || true
 
-    echo "journalctl -u clamav-daemon.service --no-pager -n 20:" >>$LOGDIR/$LOGFILE
-    journalctl -u clamav-daemon.service --no-pager -n 20 >>$LOGDIR/$LOGFILE 2>&1 || true
+    echo "journalctl -u clamav-daemon.service --no-pager -n 10:" >>$LOGDIR/$LOGFILE
+    journalctl -u clamav-daemon.service --no-pager -n 10 >>$LOGDIR/$LOGFILE 2>&1 || true
 
-    echo "Contents of /var/lib/clamav/:" >>$LOGDIR/$LOGFILE
-    ls -la /var/lib/clamav/ >>$LOGDIR/$LOGFILE 2>&1 || true
+    # Additional cleanup - remove any remaining problematic links or files
+    show_yellow "Performing additional database cleanup..."
+    
+    # Stop daemon to ensure clean state
+    systemctl stop clamav-daemon.service >>$LOGDIR/$LOGFILE 2>&1 || true
+    
+    # Remove ALL symbolic links in the ClamAV directory (they can be recreated later)
+    find /var/lib/clamav -type l -delete 2>/dev/null || true
+    
+    # Remove any files that are not core ClamAV databases
+    find /var/lib/clamav -type f ! -name "*.cvd" ! -name "*.cld" ! -name "freshclam.dat" -delete 2>/dev/null || true
+    
+    # Ensure proper ownership
+    chown -R clamav:clamav /var/lib/clamav/
+    
+    # Attempt to start again
+    show_yellow "Attempting to start ClamAV daemon after cleanup..."
+    if ! systemctl start clamav-daemon.service >>$LOGDIR/$LOGFILE 2>&1; then
+        show_err "ClamAV daemon failed to start even after cleanup. Capturing diagnostics..."
 
-    echo "ClamAV configuration check:" >>$LOGDIR/$LOGFILE
-    grep -E "^(DatabaseDirectory|LocalSocket|User)" /etc/clamav/clamd.conf >>$LOGDIR/$LOGFILE 2>&1 || true
+        echo "=== ClamAV Daemon Second Startup Failure ===" >>$LOGDIR/$LOGFILE
+        echo "Contents of /var/lib/clamav/ after cleanup:" >>$LOGDIR/$LOGFILE
+        ls -la /var/lib/clamav/ >>$LOGDIR/$LOGFILE 2>&1 || true
 
-    # Check for broken symlinks
-    echo "Checking for broken symbolic links:" >>$LOGDIR/$LOGFILE
-    find /var/lib/clamav -type l ! -e -ls >>$LOGDIR/$LOGFILE 2>&1 || true
+        echo "ClamAV configuration check:" >>$LOGDIR/$LOGFILE
+        grep -E "^(DatabaseDirectory|LocalSocket|User)" /etc/clamav/clamd.conf >>$LOGDIR/$LOGFILE 2>&1 || true
 
-    show_err "ClamAV daemon failed to start. Check 'systemctl status clamav-daemon' and logfile for details."
-    exit 1
+        echo "Final error logs:" >>$LOGDIR/$LOGFILE
+        journalctl -u clamav-daemon.service --no-pager -n 10 >>$LOGDIR/$LOGFILE 2>&1 || true
+
+        show_err "ClamAV daemon failed to start after cleanup. Check 'systemctl status clamav-daemon' and logfile for details."
+        exit 1
+    fi
+    
+    show_yellow "ClamAV daemon started successfully after cleanup."
 fi
 
 # Verify daemon is actually running and functional
@@ -253,6 +279,22 @@ if systemctl is-active --quiet clamav-freshclam; then
     show_yellow "ClamAV freshclam service is running successfully."
 else
     show_warn "ClamAV freshclam service may not be running properly. Check 'systemctl status clamav-freshclam' for details."
+fi
+
+##########################################################################################
+## Integration Notes
+##########################################################################################
+
+if command -v maldet >/dev/null 2>&1; then
+    show_info "Maldet is detected on this system."
+    if [ -x "/usr/local/bin/update-maldet-clamav-links.sh" ]; then
+        show_info "To integrate Maldet signatures with ClamAV, run:"
+        show_info "  sudo /usr/local/bin/update-maldet-clamav-links.sh update"
+    else
+        show_info "Install systemd timers to enable proper Maldet-ClamAV integration."
+    fi
+else
+    show_info "Install Maldet for additional signature coverage."
 fi
 
 ##########################################################################################

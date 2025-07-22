@@ -711,3 +711,38 @@ For issues and questions:
 ---
 
 **Note:** This automation is specifically designed and tested for Ubuntu 24.04 LTS. While it may work on other versions, Ubuntu 24.04 is the supported platform for all features and optimizations.
+
+## Troubleshooting
+
+### ClamAV Issues
+
+ClamAV can sometimes cause startup problems, typically due to:
+
+1. **Maldet Integration Conflicts**: Symbolic links between ClamAV and Maldet with permission issues
+2. **Database File Ownership**: Mixed ownership of signature database files  
+3. **Incomplete Cleanup**: Leftover files from previous installations
+
+**Common Solutions:**
+
+```bash
+# Check ClamAV status
+sudo systemctl status clamav-daemon
+
+# Run ClamAV diagnostics
+sudo ./diagnose_clamav.sh
+
+# Clean reinstall ClamAV
+sudo ./run_subscript.sh clamav_install.sh
+
+# If Maldet is installed, update integration after ClamAV is working
+sudo /usr/local/bin/update-maldet-clamav-links.sh update
+```
+
+**Why ClamAV Causes Trouble:**
+
+- **Complex Integration**: ClamAV works with multiple signature sources (official ClamAV + Maldet)
+- **Permission Sensitivity**: The `clamav` user must have read access to all signature files
+- **Symbolic Link Fragility**: Broken links can prevent daemon startup
+- **Update Conflicts**: Concurrent updates can leave the system in an inconsistent state
+
+The installation script now includes robust cleanup and retry logic to handle these issues automatically.
