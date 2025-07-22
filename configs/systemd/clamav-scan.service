@@ -15,4 +15,4 @@ Nice=19
 PrivateTmp=true
 ProtectSystem=strict
 ReadWritePaths=/var/log/clamav /tmp
-TimeoutSec=3600
+TimeoutSec=21600

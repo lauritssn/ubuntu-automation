@@ -11,4 +11,4 @@ ExecStart=/usr/bin/rkhunter --cronjob --update --sk
 ExecStartPost=/usr/bin/rkhunter --cronjob --propupd --sk
 StandardOutput=journal
 StandardError=journal
-TimeoutSec=1800
+TimeoutSec=3600

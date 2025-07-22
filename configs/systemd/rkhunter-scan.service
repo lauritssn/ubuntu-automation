@@ -10,5 +10,5 @@ User=root
 ExecStart=/usr/bin/rkhunter --cronjob --check --sk
 StandardOutput=journal
 StandardError=journal
-TimeoutSec=3600
+TimeoutSec=10800
 Nice=19
