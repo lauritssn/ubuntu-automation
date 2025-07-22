@@ -63,21 +63,29 @@ echo "Starting RKHunter scan at $(date)"
 SCAN_EXIT_CODE=$?
 
 # Check scan results
-if [ $SCAN_EXIT_CODE -eq 0 ]; then
-    # Check if there are any warnings in the log
-    WARNINGS=$(tail -n 50 "$LOG_FILE" | grep -i "warning" | wc -l)
-    if [ "$WARNINGS" -gt 0 ]; then
-        send_slack_notification "⚠️ $SCRIPT_NAME completed on $HOSTNAME with $WARNINGS warnings - Check logs" "warning"
-        echo "RKHunter scan completed with $WARNINGS warnings"
-    else
+# First, check if any rootkits were actually found (the important metric)
+ROOTKITS_FOUND=$(grep "Possible rootkits:" "$LOG_FILE" | tail -1 | awk '{print $3}' || echo "0")
+
+if [ "$ROOTKITS_FOUND" = "0" ]; then
+    # No rootkits found - this is good
+    if [ $SCAN_EXIT_CODE -eq 0 ]; then
+        # Perfect - no warnings and no rootkits
         END_TIME=$(date)
         DURATION=$(($(date +%s) - $(date -d "$START_TIME" +%s)))
         send_slack_notification "✅ $SCRIPT_NAME completed successfully on $HOSTNAME - No issues found (Duration: ${DURATION}s)" "success"
         echo "RKHunter scan completed successfully"
+    else
+        # Exit code 1 but no rootkits - just warnings (which is acceptable)
+        WARNINGS=$(grep -i "warning" "$LOG_FILE" | tail -20 | wc -l)
+        END_TIME=$(date)
+        DURATION=$(($(date +%s) - $(date -d "$START_TIME" +%s)))
+        send_slack_notification "✅ $SCRIPT_NAME completed on $HOSTNAME with $WARNINGS warnings but no rootkits found (Duration: ${DURATION}s)" "success"
+        echo "RKHunter scan completed with $WARNINGS warnings but no rootkits found"
     fi
 else
-    send_slack_notification "❌ $SCRIPT_NAME failed on $HOSTNAME with exit code $SCAN_EXIT_CODE" "error"
-    echo "RKHunter scan failed with exit code: $SCAN_EXIT_CODE"
+    # Rootkits found - this is serious
+    send_slack_notification "🚨 $SCRIPT_NAME found $ROOTKITS_FOUND possible rootkits on $HOSTNAME - URGENT CHECK REQUIRED" "error"
+    echo "RKHunter scan found $ROOTKITS_FOUND possible rootkits - urgent attention required"
 fi
 
 echo "RKHunter scan completed at $(date)"

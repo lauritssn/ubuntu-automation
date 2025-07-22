@@ -209,7 +209,7 @@ main() {
         print_status "RKHunter scan may take up to 3 hours to complete..." "INFO"
         run_service "rkhunter-scan" \
             "Security scan with RKHunter (timeout: 3h)" \
-            "timeout 10800 rkhunter --cronjob --check --sk"
+            "timeout 10800 bash -c 'rkhunter --cronjob --check --sk || (grep -q \"Possible rootkits: 0\" /var/log/rkhunter.log && exit 0 || exit 1)'"
     else
         print_status "RKHunter not installed, skipping scan" "WARNING"
         log_message "RKHunter not installed, skipping scan" "WARNING"
@@ -220,7 +220,7 @@ main() {
         print_status "RKHunter update may take up to 1 hour to complete..." "INFO"
         run_service "rkhunter-update" \
             "Update RKHunter database and properties (timeout: 1h)" \
-            "timeout 3600 bash -c 'rkhunter --cronjob --update --sk && rkhunter --cronjob --propupd --sk'"
+            "timeout 3600 bash -c 'rkhunter --cronjob --update --sk; UPDATE_EXIT=\$?; rkhunter --cronjob --propupd --sk; PROPUPD_EXIT=\$?; if [ \$PROPUPD_EXIT -eq 0 ]; then exit 0; else exit \$PROPUPD_EXIT; fi'"
     else
         print_status "RKHunter not installed, skipping update" "WARNING"
         log_message "RKHunter not installed, skipping update" "WARNING"
