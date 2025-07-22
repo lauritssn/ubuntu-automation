@@ -4,7 +4,11 @@ After=multi-user.target
 
 [Service]
 Type=oneshot
+# Send service start notification
+ExecStartPre=/bin/bash -c 'logger -p user.info -t swap-monitor "Swap monitor service starting on $(hostname)"'
 ExecStart=/srv/apps/scripts/check_swap_usage.sh
+# Send service completion notification
+ExecStartPost=/bin/bash -c 'logger -p user.info -t swap-monitor "Swap monitor service completed on $(hostname)"'
 User=root
 StandardOutput=journal
 StandardError=journal

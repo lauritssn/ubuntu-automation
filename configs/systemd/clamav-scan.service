@@ -8,6 +8,8 @@ Requires=clamav-freshclam.service
 [Service]
 Type=oneshot
 User=root
+# Send service start notification
+ExecStartPre=/bin/bash -c 'logger -p user.info -t clamav-scan "ClamAV scan service starting on $(hostname)"'
 ExecStart=/usr/local/bin/clamav-scan.sh
 StandardOutput=journal
 StandardError=journal
@@ -17,5 +19,5 @@ PrivateTmp=true
 ProtectSystem=strict
 ReadWritePaths=/var/log/clamav /tmp /var/lib/clamav
 TimeoutSec=21600
-# Restart the daemon after scan to ensure it's still running
-ExecStartPost=/bin/bash -c 'systemctl is-active --quiet clamav-daemon.service || systemctl restart clamav-daemon.service'
+# Send service completion notification and restart daemon after scan
+ExecStartPost=/bin/bash -c 'logger -p user.info -t clamav-scan "ClamAV scan service completed on $(hostname)"; systemctl is-active --quiet clamav-daemon.service || systemctl restart clamav-daemon.service'

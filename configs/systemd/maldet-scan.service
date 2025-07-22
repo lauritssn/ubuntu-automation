@@ -7,7 +7,11 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 User=root
+# Send service start notification
+ExecStartPre=/bin/bash -c 'logger -p user.info -t maldet-scan "Maldet scan service starting on $(hostname)"'
 ExecStart=/usr/local/bin/maldet-scan.sh
+# Send service completion notification
+ExecStartPost=/bin/bash -c 'logger -p user.info -t maldet-scan "Maldet scan service completed on $(hostname)"'
 StandardOutput=journal
 StandardError=journal
 IOSchedulingClass=3

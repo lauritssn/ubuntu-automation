@@ -237,7 +237,24 @@ main() {
         log_message "Maldet not installed, skipping signature update" "WARNING"
     fi
 
-    # 6. ClamAV Scan (if available) - Allow up to 6 hours
+    # 6. Maldet Scan (if available) - Allow up to 3 hours
+    if [ -f "/usr/local/bin/maldet-scan.sh" ]; then
+        print_status "Maldet scan may take up to 3 hours to complete..." "INFO"
+        run_service "maldet-scan" \
+            "Malware detection scan with Maldet (timeout: 3h)" \
+            "timeout 10800 /usr/local/bin/maldet-scan.sh"
+    elif command -v maldet >/dev/null 2>&1; then
+        # Fallback to basic maldet scan if script not available
+        print_status "Basic Maldet scan may take a while to complete..." "INFO"
+        run_service "maldet-scan-basic" \
+            "Basic Maldet scan of /tmp (timeout: 2h)" \
+            "timeout 7200 maldet -a /tmp"
+    else
+        print_status "Maldet not installed, skipping scan" "WARNING"
+        log_message "Maldet not installed, skipping scan" "WARNING"
+    fi
+
+    # 7. ClamAV Scan (if available) - Allow up to 6 hours
     if [ -f "/usr/local/bin/clamav-scan.sh" ]; then
         print_status "ClamAV scan may take up to 6 hours to complete..." "INFO"
         run_service "clamav-scan" \
@@ -280,6 +297,8 @@ if [[ "$1" == "--help" || "$1" == "-h" ]]; then
     echo "  - system-health-check (comprehensive health check)"
     echo "  - rkhunter-scan (security rootkit scan)"
     echo "  - rkhunter-update (update security database)"
+    echo "  - maldet-update (update maldet signatures)"
+    echo "  - maldet-scan (malware detection scan)"
     echo "  - clamav-scan (antivirus scan)"
     echo ""
     echo "Options:"

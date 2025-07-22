@@ -1,10 +1,17 @@
 [Unit]
-Description=System Health Check and Report
+Description=System Health Check
 After=multi-user.target
 
 [Service]
 Type=oneshot
-User=root
+# Send service start notification
+ExecStartPre=/bin/bash -c 'logger -p user.info -t system-health-check "System health check service starting on $(hostname)"'
 ExecStart=/srv/apps/scripts/system_health_check.sh
+# Send service completion notification
+ExecStartPost=/bin/bash -c 'logger -p user.info -t system-health-check "System health check service completed on $(hostname)"'
+User=root
 StandardOutput=journal
 StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

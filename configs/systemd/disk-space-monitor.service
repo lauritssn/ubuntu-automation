@@ -4,7 +4,11 @@ After=multi-user.target
 
 [Service]
 Type=oneshot
+# Send service start notification
+ExecStartPre=/bin/bash -c 'logger -p user.info -t disk-space-monitor "Disk space monitor service starting on $(hostname)"'
 ExecStart=/srv/apps/scripts/check_disk_space.sh -w 20 -c 10
+# Send service completion notification
+ExecStartPost=/bin/bash -c 'logger -p user.info -t disk-space-monitor "Disk space monitor service completed on $(hostname)"'
 User=root
 StandardOutput=journal
 StandardError=journal

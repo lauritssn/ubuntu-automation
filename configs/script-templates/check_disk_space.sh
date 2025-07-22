@@ -3,6 +3,7 @@
 #########################################################################
 # Disk Space Monitoring Script for Ubuntu 24.04 Server Automation
 # Integrated with systemd timers and Slack notifications
+# Enhanced to send "running" notifications only once every 24 hours
 #########################################################################
 
 ### Constants
@@ -11,6 +12,11 @@ THRESHOLD_CRITICAL=10 # In percent
 
 SLACK_WEBHOOK_URL="{{SLACK_WEBHOOK_URL}}"
 MONITOR_URL="http://localhost:3001"
+HOSTNAME=$(hostname)
+SCRIPT_NAME="Disk Space Monitor"
+
+# File to track last "running" notification time
+LAST_NOTIFY_FILE="/var/log/disk-space-last-notify"
 
 ### Initializing variables
 WARNING=0
@@ -43,23 +49,78 @@ while getopts ":w:c:d:k:" option; do
     esac
 done
 
+# Function to check if we should send daily notification
+should_send_daily_notification() {
+    local current_time=$(date +%s)
+    local last_notify_time=0
+
+    # Read last notification time if file exists
+    if [ -f "$LAST_NOTIFY_FILE" ]; then
+        last_notify_time=$(cat "$LAST_NOTIFY_FILE" 2>/dev/null || echo "0")
+    fi
+
+    # Check if 24 hours (86400 seconds) have passed
+    local time_diff=$((current_time - last_notify_time))
+    if [ $time_diff -ge 86400 ]; then
+        echo "$current_time" >"$LAST_NOTIFY_FILE"
+        return 0 # Should send notification
+    else
+        return 1 # Should not send notification
+    fi
+}
+
 # Function to send a Slack message
 send_slack_message() {
     local message="$1"
+    local status="$2"
+    local force_send="$3"       # If true, always send regardless of daily limit
     local channel="#monitoring" # Replace with your desired Slack channel
 
     # Only send Slack message if webhook URL is configured
     if [ -n "$SLACK_WEBHOOK_URL" ]; then
-        curl -X POST -H 'Content-type: application/json' --data "{
-            \"channel\": \"$channel\",
-            \"text\": \"$message\",
-            \"username\": \"Disk Space Monitor\",
-            \"icon_emoji\": \":exclamation:\"
-        }" "$SLACK_WEBHOOK_URL" 2>/dev/null || echo "Failed to send Slack notification"
+        # For critical/warning alerts, always send immediately
+        # For routine status updates, check daily limit
+        if [ "$force_send" = "true" ] || [ "$status" = "critical" ] || [ "$status" = "warning" ] || should_send_daily_notification; then
+            # Set appropriate emoji and username based on status
+            case "$status" in
+            "start")
+                emoji=":hourglass_flowing_sand:"
+                username="System Monitor"
+                ;;
+            "success")
+                emoji=":white_check_mark:"
+                username="System Monitor"
+                ;;
+            "warning")
+                emoji=":warning:"
+                username="System Alert"
+                ;;
+            "critical")
+                emoji=":rotating_light:"
+                username="System Alert"
+                ;;
+            *)
+                emoji=":information_source:"
+                username="System Monitor"
+                ;;
+            esac
+
+            curl -X POST -H 'Content-type: application/json' --data "{
+                \"channel\": \"$channel\",
+                \"text\": \"$message\",
+                \"username\": \"$username\",
+                \"icon_emoji\": \"$emoji\"
+            }" "$SLACK_WEBHOOK_URL" 2>/dev/null || echo "Failed to send Slack notification"
+        else
+            echo "Skipping daily notification (sent within last 24 hours)"
+        fi
     else
         echo "Slack webhook not configured, skipping Slack notification"
     fi
 }
+
+# Send start notification (only once per 24 hours for routine checks)
+send_slack_message "💽 $SCRIPT_NAME started on $HOSTNAME" "start" "false"
 
 ### Function to check available space on a given disk
 check_disk_space() {
@@ -152,7 +213,7 @@ if [ ${CRITICAL_ALERT} -ne 0 ]; then
     for disk in "${critical_disks[@]}"; do
         message+="  - $disk\n"
     done
-    send_slack_message "$message"
+    send_slack_message "$message" "critical" "false"
 
     # Log to systemd journal
     echo "CRITICAL: Disk space critically low on disks: ${critical_disks[*]}" | logger -p user.crit -t disk-space-monitor
@@ -167,7 +228,7 @@ elif [ ${WARNING_ALERT} -ne 0 ]; then
     for disk in "${warning_disks[@]}"; do
         message+="  - $disk\n"
     done
-    send_slack_message "$message"
+    send_slack_message "$message" "warning" "false"
 
     # Log to systemd journal
     echo "WARNING: Disk space low on disks: ${warning_disks[*]}" | logger -p user.warn -t disk-space-monitor
@@ -179,6 +240,7 @@ else
     fi
 
     echo "All disks have sufficient space available"
+    send_slack_message "All disks have sufficient space available on $(hostname)" "success" "false"
 fi
 
 exit 0
