@@ -6,7 +6,8 @@
 echo "=== ClamAV Diagnostic Report ==="
 echo "Generated: $(date)"
 echo "Hostname: $(hostname)"
-echo "====================================="; echo
+echo "====================================="
+echo
 
 # 1. Service Status
 echo "1. SERVICE STATUS:"
@@ -68,14 +69,14 @@ echo "   ClamAV processes:"
 ps aux | grep -E "(clam|maldet)" | grep -v grep || echo "   No ClamAV processes running"
 echo
 
-# 8. Maldet Integration
-echo "8. MALDET INTEGRATION:"
+# 8. Maldet Status
+echo "8. MALDET STATUS:"
 if command -v maldet >/dev/null 2>&1; then
-    echo "   Maldet is installed"
+    echo "   Maldet is installed (independent scanning with optional ClamAV engine)"
     echo "   Maldet signature directory:"
     ls -la /usr/local/maldetect/sigs/ 2>/dev/null | head -5 || echo "   Cannot list Maldet signatures"
-    echo "   Maldet links in ClamAV directory:"
-    ls -la /var/lib/clamav/maldet_* 2>/dev/null || echo "   No Maldet links found"
+    sig_count=$(find /usr/local/maldetect/sigs -name "*.ndb" -o -name "*.hdb" -o -name "*.ldb" 2>/dev/null | wc -l)
+    echo "   Signature files: $sig_count"
 else
     echo "   Maldet is not installed"
 fi
@@ -83,20 +84,19 @@ echo
 
 echo "=== TROUBLESHOOTING STEPS ==="
 echo "If ClamAV daemon won't start:"
-echo "1. Check for broken symlinks: find /var/lib/clamav -type l ! -e -delete"
-echo "2. Ensure basic databases exist: ls -la /var/lib/clamav/*.cvd /var/lib/clamav/*.cld"
+echo "1. Ensure basic databases exist: ls -la /var/lib/clamav/*.cvd /var/lib/clamav/*.cld"
+echo "2. Check file ownership: chown -R clamav:clamav /var/lib/clamav"
 echo "3. Run freshclam manually: freshclam --log=/tmp/freshclam.log"
-echo "4. Check permissions: chown -R clamav:clamav /var/lib/clamav"
-echo "5. Try starting manually: systemctl start clamav-daemon.service"
-echo "6. View detailed logs: journalctl -u clamav-daemon.service -f"
+echo "4. Try starting manually: systemctl start clamav-daemon.service"
+echo "5. View detailed logs: journalctl -u clamav-daemon.service -f"
 echo
 
 echo "=== Quick Fix Commands ==="
-echo "# Remove broken Maldet links and restart:"
-echo "sudo find /var/lib/clamav -name 'maldet_*' -type l ! -e -delete"
+echo "# Fix ownership and restart:"
+echo "sudo chown -R clamav:clamav /var/lib/clamav"
 echo "sudo systemctl restart clamav-daemon.service"
 echo
 echo "# Download fresh ClamAV databases:"
 echo "sudo systemctl stop clamav-daemon.service"
 echo "sudo freshclam"
-echo "sudo systemctl start clamav-daemon.service" 
+echo "sudo systemctl start clamav-daemon.service"

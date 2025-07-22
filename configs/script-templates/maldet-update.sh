@@ -181,11 +181,7 @@ if update_signatures; then
         send_slack_notification "✅ $SCRIPT_NAME completed successfully on $HOSTNAME (Duration: ${DURATION}s)" "success"
         show_info "$SCRIPT_NAME completed successfully"
 
-        # Update ClamAV links if the script exists
-        if [ -f "/usr/local/bin/update-maldet-clamav-links.sh" ]; then
-            show_info "Updating Maldet-ClamAV signature links..."
-            /usr/local/bin/update-maldet-clamav-links.sh update >>"$LOGDIR/$LOGFILE" 2>&1 || show_warn "Failed to update signature links"
-        fi
+        show_info "Maldet signatures are now available for independent scanning"
 
         exit_code=0
     else

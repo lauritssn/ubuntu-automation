@@ -8,7 +8,7 @@ The automation script installs and configures:
 - **Security hardening** with modern Ubuntu 24.04 practices and mandatory SSH 2FA (root login disabled)
 - **Multi-factor authentication** with Authenticator integration for SSH
 - **User management** with comprehensive user addition script (sudo + 2FA + VPN)
-- **Antivirus protection** with ClamAV and Maldet integration
+- **Antivirus protection** with ClamAV and Maldet (independent scanning with optional engine sharing)
 - **Intrusion detection** with RKHunter and Fail2Ban
 - **Firewall protection** with UFW (IPv6 enabled)
 - **System monitoring** with comprehensive Slack notifications and optional Netdata
@@ -109,12 +109,12 @@ The automation suite is modular, allowing you to choose which components to inst
 **Recommended:** ✅ Yes - Essential for any production server (2FA highly recommended for enhanced security)
 
 ### 🦠 Antivirus & Malware Protection
-**Components:** ClamAV, Maldet (integrated with ClamAV backend)
+**Components:** ClamAV, Maldet (independent scanners with optional engine sharing)
 
 **What it does:**
 - **ClamAV:** Real-time antivirus scanning with automatic signature updates
-- **Maldet:** Linux malware detection using ClamAV as scanning engine
-- **Integration:** Maldet signatures enhance ClamAV detection capabilities
+- **Maldet:** Independent Linux malware detection that can optionally use ClamAV engine
+- **Architecture:** Both tools maintain separate signature databases and run independently
 - **Scheduling:** Weekly system scans via systemd timers
 - **Alerting:** Email notifications for detected threats
 
@@ -718,7 +718,7 @@ For issues and questions:
 
 ClamAV can sometimes cause startup problems, typically due to:
 
-1. **Maldet Integration Conflicts**: Symbolic links between ClamAV and Maldet with permission issues
+1. **ClamAV Database Issues**: Ownership or missing signature files
 2. **Database File Ownership**: Mixed ownership of signature database files  
 3. **Incomplete Cleanup**: Leftover files from previous installations
 
@@ -734,15 +734,15 @@ sudo ./diagnose_clamav.sh
 # Clean reinstall ClamAV
 sudo ./run_subscript.sh clamav_install.sh
 
-# If Maldet is installed, update integration after ClamAV is working
-sudo /usr/local/bin/update-maldet-clamav-links.sh update
+# If Maldet is installed, update signatures after ClamAV is working
+sudo maldet --update-sigs
 ```
 
 **Why ClamAV Causes Trouble:**
 
-- **Complex Integration**: ClamAV works with multiple signature sources (official ClamAV + Maldet)
 - **Permission Sensitivity**: The `clamav` user must have read access to all signature files
-- **Symbolic Link Fragility**: Broken links can prevent daemon startup
+- **Database Integrity**: Missing or corrupted signature files can prevent daemon startup
 - **Update Conflicts**: Concurrent updates can leave the system in an inconsistent state
+- **Configuration Issues**: Incorrect paths or settings in daemon configuration
 
 The installation script now includes robust cleanup and retry logic to handle these issues automatically.

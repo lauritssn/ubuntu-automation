@@ -54,10 +54,10 @@ else
     fi
 fi
 
-# Ensure Maldet signature links are up to date before starting timers
-if [ -x "/usr/local/bin/update-maldet-clamav-links.sh" ]; then
-    show_yellow "Updating Maldet-ClamAV signature links before configuring timers..."
-    /usr/local/bin/update-maldet-clamav-links.sh update >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Maldet signature link update reported issues - continuing with timer setup"
+# Ensure ClamAV database directory has proper ownership before starting timers
+if [ -d "/var/lib/clamav" ]; then
+    show_yellow "Ensuring proper ClamAV database ownership before configuring timers..."
+    chown -R clamav:clamav /var/lib/clamav 2>/dev/null || true
 fi
 
 # Copy ClamAV service and timer files
@@ -115,6 +115,24 @@ cp $BASEDIR/configs/systemd/maldet-update.service /etc/systemd/system/
 cp $BASEDIR/configs/systemd/maldet-update.timer /etc/systemd/system/
 
 show_yellow "Maldet Update systemd timer installed with Slack notifications."
+
+##########################################################################################
+## Install Maldet Scan timer
+##########################################################################################
+
+show_yellow "Installing Maldet Scan systemd timer."
+
+# Create Maldet scan script using template
+copy_and_configure_script "maldet-scan.sh" "/usr/local/bin/maldet-scan.sh" "Maldet Scan Script"
+
+# Verify script template variables
+verify_script_template "/usr/local/bin/maldet-scan.sh" "Maldet Scan"
+
+# Copy Maldet scan service and timer files
+cp $BASEDIR/configs/systemd/maldet-scan.service /etc/systemd/system/
+cp $BASEDIR/configs/systemd/maldet-scan.timer /etc/systemd/system/
+
+show_yellow "Maldet Scan systemd timer installed with independent scanning."
 
 ##########################################################################################
 ## Install System Health Check timer
@@ -193,6 +211,10 @@ systemctl start rkhunter-update.timer >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Fail
 # Enable and start Maldet update timer
 systemctl enable maldet-update.timer >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Failed to enable Maldet update timer."
 systemctl start maldet-update.timer >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Failed to start Maldet update timer."
+
+# Enable and start Maldet scan timer
+systemctl enable maldet-scan.timer >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Failed to enable Maldet scan timer."
+systemctl start maldet-scan.timer >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Failed to start Maldet scan timer."
 
 # Enable and start System Health Check timer
 systemctl enable system-health-check.timer >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Failed to enable System Health Check timer."

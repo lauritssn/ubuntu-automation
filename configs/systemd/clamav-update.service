@@ -7,8 +7,6 @@ Wants=network-online.target
 Type=oneshot
 User=root
 ExecStart=/usr/local/bin/clamav-update.sh
-# Update Maldet signature links after ClamAV signatures are updated (optional - don't fail if missing)
-ExecStartPost=-/bin/bash -c 'if [ -x "/usr/local/bin/update-maldet-clamav-links.sh" ]; then /usr/local/bin/update-maldet-clamav-links.sh update; fi'
 StandardOutput=journal
 StandardError=journal
 

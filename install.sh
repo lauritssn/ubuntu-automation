@@ -922,10 +922,10 @@ if [[ $DO_GENERAL_SERVER_SETTINGS =~ [YyMm]$ ]]; then
     else
         execute_module "Secure_Shared_Memory" "$BASEDIR/subscripts/secure_shared_memory_install.sh" "Y"
         printf "\n--------------------\n"
-        # Install Maldet BEFORE ClamAV to ensure proper signature integration
+        # Install Maldet first (independent malware scanner)
         execute_module "Maldet_Installation" "$BASEDIR/subscripts/maldet_install.sh" "Y"
         printf "\n--------------------\n"
-        # Install ClamAV AFTER Maldet so signature integration works properly
+        # Install ClamAV (real-time antivirus scanner)
         execute_module "ClamAV_Installation" "$BASEDIR/subscripts/clamav_install.sh" "Y"
         printf "\n--------------------\n"
         execute_module "RKHunter_Installation" "$BASEDIR/subscripts/rkhunter_install.sh" "Y"
@@ -1034,7 +1034,7 @@ show_info "   • Use 'sudo su -' to become root after logging in as a regular u
 show_info ""
 if [[ $DO_GENERAL_SERVER_SETTINGS =~ [Yy]$ ]]; then
     show_info "🛡️ SECURITY SCANNING INFORMATION:"
-    show_info "   • ClamAV/Maldet: Configured with false positive reduction"
+    show_info "   • ClamAV/Maldet: Independent scanners with false positive reduction"
     show_info "   • Exclusions: Applied for common system files and applications"
     show_info "   • Helper script: Run 'clamav-exclude-helper.sh' to optimize for your software stack"
     show_info "   • Scan logs: Available in /var/log/clamav/manual_clamscan.log"

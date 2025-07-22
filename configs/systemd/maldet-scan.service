@@ -1,0 +1,21 @@
+[Unit]
+Description=Maldet Security Scan
+Documentation=man:maldet(8)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/local/bin/maldet-scan.sh
+StandardOutput=journal
+StandardError=journal
+IOSchedulingClass=3
+Nice=19
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/log/maldet /tmp /usr/local/maldetect
+TimeoutSec=21600
+
+[Install]
+WantedBy=multi-user.target 

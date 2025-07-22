@@ -55,7 +55,7 @@ show_yellow "Maldet installation directory cleaned up from /tmp."
 cp -p $CONF_ORG $CONF_BACK && show_yellow "Config file $CONF_ORG backed up to $CONF_BACK."
 
 ##########################################################################################
-# Change Maldet configuration for ClamAV integration
+# Configure Maldet to optionally use ClamAV engine
 ##########################################################################################
 
 sed -i 's/email_alert=.*/email_alert=1/ig' $CONF_ORG
@@ -66,22 +66,22 @@ sed -i 's/quar_clean=.*/quar_clean=1/ig' $CONF_ORG
 sed -i 's/quar_susp=.*/quar_susp=0/ig' $CONF_ORG
 sed -i 's/quar_susp_minuid=.*/quar_susp_minuid=500/ig' $CONF_ORG
 
-# Configure Maldet to use ClamAV as scanning engine
+# Configure Maldet to optionally use ClamAV engine while keeping Maldet's own scanner active
 sed -i 's/scan_clamscan=.*/scan_clamscan=1/ig' $CONF_ORG
 sed -i 's/scan_clamscan_engine=.*/scan_clamscan_engine=1/ig' $CONF_ORG
 
-# Ensure ClamAV daemon is used for scanning (more efficient than clamscan binary)
+# Use ClamAV daemon for efficiency but keep Maldet's internal scanner as backup
 sed -i 's/scan_clamscan_daemon=.*/scan_clamscan_daemon=1/ig' $CONF_ORG
 
-# Disable Maldet's internal scanner to avoid duplication
-sed -i 's/scan_hex_only=.*/scan_hex_only=0/ig' $CONF_ORG
-sed -i 's/scan_hexdepth=.*/scan_hexdepth=0/ig' $CONF_ORG
+# Keep Maldet's internal scanner enabled for comprehensive coverage
+sed -i 's/scan_hex_only=.*/scan_hex_only=1/ig' $CONF_ORG
+sed -i 's/scan_hexdepth=.*/scan_hexdepth=3/ig' $CONF_ORG
 
 # Ensure automatic updates are enabled for Maldet signatures
 sed -i 's/autoupdate_signatures=.*/autoupdate_signatures=1/ig' $CONF_ORG
 sed -i 's/autoupdate_version=.*/autoupdate_version=1/ig' $CONF_ORG
 
-show_yellow "Maldet configured to use ClamAV daemon as primary scanning engine with auto-updates enabled."
+show_yellow "Maldet configured to optionally use ClamAV engine while maintaining independent scanning capability."
 
 ##########################################################################################
 # Download Maldet signatures with robust error handling
@@ -148,111 +148,14 @@ if [ "$SIG_COUNT" -eq 0 ]; then
     # Create a minimal placeholder signature file to prevent integration failures
     touch "$MALDET_SIG_DIR/custom.hex.dat"
     echo "# Minimal placeholder signature file created during installation" >"$MALDET_SIG_DIR/README.txt"
-    echo "# Run 'maldet --update-sigs' or '/usr/local/bin/update-maldet-clamav-links.sh update' to download actual signatures" >>"$MALDET_SIG_DIR/README.txt"
+    echo "# Run 'maldet --update-sigs' to download actual signatures" >>"$MALDET_SIG_DIR/README.txt"
 
     show_yellow "Created placeholder files. Signatures can be downloaded later with: maldet --update-sigs"
 else
     show_yellow "Maldet signature download completed. Found $SIG_COUNT signature files."
 fi
 
-##########################################################################################
-# Configure ClamAV integration (only if signature files exist)
-##########################################################################################
-
-CLAMAV_DB_DIR="/var/lib/clamav"
-
-if [ -d "$CLAMAV_DB_DIR" ] && [ -d "$MALDET_SIG_DIR" ]; then
-    show_yellow "Setting up Maldet-ClamAV integration..."
-
-    # Always remove any existing broken Maldet links first
-    show_yellow "Cleaning up any existing Maldet signature links..."
-    rm -f "$CLAMAV_DB_DIR"/maldet_* 2>/dev/null || true
-
-    # Only create links if we have actual signature files (not just placeholders)
-    ACTUAL_SIG_COUNT=$(find "$MALDET_SIG_DIR" -name "*.hdb" -o -name "*.ndb" -o -name "*.ldb" | grep -v "custom.hex.dat" | wc -l)
-
-    if [ "$ACTUAL_SIG_COUNT" -gt 0 ]; then
-        show_yellow "Creating symbolic links for $ACTUAL_SIG_COUNT Maldet signature files..."
-
-        LINKED_SIGNATURES=0
-        for sig_type in hdb ndb ldb; do
-            if ls "$MALDET_SIG_DIR"/*.$sig_type >/dev/null 2>&1; then
-                for sig_file in "$MALDET_SIG_DIR"/*.$sig_type; do
-                    # Skip placeholder files
-                    if [[ "$(basename "$sig_file")" == "custom.hex.dat" ]]; then
-                        continue
-                    fi
-
-                    if [ -f "$sig_file" ] && [ -s "$sig_file" ]; then
-                        sig_basename=$(basename "$sig_file")
-                        link_target="$CLAMAV_DB_DIR/maldet_$sig_basename"
-
-                        # Create link with maldet prefix to avoid naming conflicts
-                        if ln -sf "$sig_file" "$link_target" 2>/dev/null; then
-                            # Ensure the link is owned by clamav user
-                            chown -h clamav:clamav "$link_target" 2>/dev/null || true
-                            LINKED_SIGNATURES=$((LINKED_SIGNATURES + 1))
-                            show_yellow "Linked: maldet_$sig_basename -> $sig_file"
-                        else
-                            show_warn "Failed to create link: maldet_$sig_basename"
-                        fi
-                    else
-                        show_warn "Skipping empty or missing signature file: $sig_file"
-                    fi
-                done
-            fi
-        done
-
-        if [ $LINKED_SIGNATURES -gt 0 ]; then
-            show_yellow "Successfully linked $LINKED_SIGNATURES Maldet signature files to ClamAV."
-
-            # Only reload ClamAV daemon if it's running and we actually linked signatures
-            if systemctl is-active --quiet clamav-daemon.service; then
-                show_yellow "Reloading ClamAV daemon to recognize new Maldet signatures..."
-                systemctl reload clamav-daemon.service >>$LOGDIR/$LOGFILE 2>&1 || show_warn "ClamAV daemon reload failed - restart may be needed"
-            fi
-        else
-            show_warn "No signature files were successfully linked."
-        fi
-    else
-        show_yellow "No downloadable Maldet signature files found - skipping symbolic link creation."
-        show_yellow "ClamAV will work with standard signatures only until Maldet signatures are downloaded."
-        show_yellow "To download signatures later, run: maldet --update-sigs && /usr/local/bin/update-maldet-clamav-links.sh update"
-    fi
-
-else
-    if [ ! -d "$CLAMAV_DB_DIR" ]; then
-        show_warn "ClamAV database directory ($CLAMAV_DB_DIR) not found. Install ClamAV first."
-    fi
-    if [ ! -d "$MALDET_SIG_DIR" ]; then
-        show_warn "Maldet signature directory ($MALDET_SIG_DIR) not found. Maldet may not be properly installed."
-    fi
-fi
-
-# Deploy the separate Maldet signature link update script
-SCRIPT_TEMPLATE_DIR="$BASEDIR/configs/script-templates"
-MALDET_LINK_SCRIPT="/usr/local/bin/update-maldet-clamav-links.sh"
-
-if [ -f "$SCRIPT_TEMPLATE_DIR/update-maldet-clamav-links.sh" ]; then
-    cp "$SCRIPT_TEMPLATE_DIR/update-maldet-clamav-links.sh" "$MALDET_LINK_SCRIPT" >>$LOGDIR/$LOGFILE 2>&1
-    chmod +x "$MALDET_LINK_SCRIPT" >>$LOGDIR/$LOGFILE 2>&1
-    show_yellow "Deployed Maldet signature link update script to $MALDET_LINK_SCRIPT"
-
-    # Only run the initial signature link update if we have actual signatures
-    ACTUAL_SIG_COUNT=$(find "$MALDET_SIG_DIR" -name "*.hdb" -o -name "*.ndb" -o -name "*.ldb" | grep -v "custom.hex.dat" | wc -l)
-
-    if [ "$ACTUAL_SIG_COUNT" -gt 0 ]; then
-        show_yellow "Running initial signature link update..."
-        "$MALDET_LINK_SCRIPT" update >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Initial signature link update reported issues. Check log for details."
-    else
-        show_yellow "Skipping initial signature link update - no signatures available yet."
-        show_yellow "Run '$MALDET_LINK_SCRIPT update' after downloading signatures."
-    fi
-else
-    show_warn "Maldet signature link update script template not found at $SCRIPT_TEMPLATE_DIR/update-maldet-clamav-links.sh"
-fi
-
-show_yellow "Maldet configuration completed. ClamAV integration will work with or without additional signatures."
+show_yellow "Maldet configuration completed. Maldet will run independently with optional ClamAV engine support."
 
 # Configure scan paths for temporary directories to reduce false positives
 # Enable scanning of temporary paths but with reduced sensitivity for false positives
@@ -273,19 +176,16 @@ show_info "Maldet installation completed with the following status:"
 
 # Show final status
 FINAL_SIG_COUNT=$(find "$MALDET_SIG_DIR" -name "*.hdb" -o -name "*.ndb" -o -name "*.ldb" | grep -v "custom.hex.dat" | wc -l)
-FINAL_LINK_COUNT=$(ls "$CLAMAV_DB_DIR"/maldet_* 2>/dev/null | wc -l)
 
 echo "  - Maldet signature files: $FINAL_SIG_COUNT"
-echo "  - ClamAV signature links: $FINAL_LINK_COUNT"
+echo "  - Maldet scanning: Independent with optional ClamAV engine support"
 
 if [ "$FINAL_SIG_COUNT" -gt 0 ]; then
-    show_info "Maldet signatures successfully downloaded and integrated with ClamAV."
+    show_info "Maldet signatures successfully downloaded and ready for independent scanning."
 else
     show_warn "Maldet signatures not downloaded during installation."
     show_info "To download signatures later, run:"
-    show_info "  1. sudo maldet --update-sigs"
-    show_info "  2. sudo /usr/local/bin/update-maldet-clamav-links.sh update"
-    show_info "  3. sudo systemctl reload clamav-daemon.service"
+    show_info "  sudo maldet --update-sigs"
 fi
 
 ##########################################################################################
