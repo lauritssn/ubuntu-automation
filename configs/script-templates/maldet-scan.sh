@@ -70,6 +70,19 @@ send_slack_notification() {
 # Send start notification
 send_slack_notification "🔍 $SCRIPT_NAME started on $HOSTNAME" "start"
 
+# Ensure proper permissions for Maldet logging
+echo "Ensuring proper Maldet permissions..."
+mkdir -p "$(dirname "$LOG_FILE")" 2>/dev/null || true
+chown -R root:root "$(dirname "$LOG_FILE")" 2>/dev/null || true
+chmod 755 "$(dirname "$LOG_FILE")" 2>/dev/null || true
+
+# Create log file with proper ownership if it doesn't exist
+if [ ! -f "$LOG_FILE" ]; then
+    touch "$LOG_FILE" 2>/dev/null || true
+    chown root:root "$LOG_FILE" 2>/dev/null || true
+    chmod 644 "$LOG_FILE" 2>/dev/null || true
+fi
+
 # Check if maldet is installed
 if ! command -v maldet >/dev/null 2>&1; then
     send_slack_notification "❌ Maldet not found on $HOSTNAME - scan aborted" "error"

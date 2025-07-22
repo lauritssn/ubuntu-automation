@@ -55,6 +55,13 @@ send_slack_notification() {
 # Send start notification
 send_slack_notification "🔄 $SCRIPT_NAME started on $HOSTNAME" "start"
 
+# Ensure proper permissions for RKHunter operations
+echo "Ensuring RKHunter has proper permissions..."
+mkdir -p /var/log 2>/dev/null || true
+touch /var/log/rkhunter.log 2>/dev/null || true
+chown root:root /var/log/rkhunter.log 2>/dev/null || true
+chmod 644 /var/log/rkhunter.log 2>/dev/null || true
+
 # Update RKHunter database
 echo "Starting RKHunter update at $(date)"
 

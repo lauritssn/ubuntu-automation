@@ -66,12 +66,24 @@ else
 fi
 
 ##########################################################################################
-## Reconfigure E-mails
+## Reconfigure E-mails and WEB_CMD
 ##########################################################################################
 
 # Use the helper function to replace template variables properly
 replace_script_variables "$CONF1_ORG"
 replace_script_variables "$CONF2_ORG"
+
+# Ensure WEB_CMD is commented out to allow remote updates
+show_yellow "Ensuring WEB_CMD is disabled to allow remote database updates."
+sed -i 's/^WEB_CMD=/#WEB_CMD=/' "$CONF2_ORG" 2>/dev/null || true
+sed -i 's/^WEB_CMD="/.*/#&/' "$CONF2_ORG" 2>/dev/null || true
+
+# Verify WEB_CMD is properly commented
+if grep -q '^WEB_CMD=' "$CONF2_ORG" 2>/dev/null; then
+   show_warn "WEB_CMD is still uncommented in $CONF2_ORG - this will prevent remote updates"
+else
+   show_yellow "WEB_CMD properly commented out - remote updates enabled"
+fi
 
 # Verify that all placeholders were replaced correctly
 verify_script_template "$CONF1_ORG" "RKHunter Default Config"

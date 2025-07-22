@@ -62,7 +62,7 @@ send_slack_notification "🦠 $SCRIPT_NAME started on $HOSTNAME" "start"
 # Ensure proper permissions for ClamAV directories and files
 echo "Ensuring proper ClamAV permissions..."
 
-# Fix log directory permissions
+# Create and fix log directory permissions (more comprehensive)
 mkdir -p "$(dirname "$LOG_FILE")" 2>/dev/null || true
 chown -R clamav:clamav "$(dirname "$LOG_FILE")" 2>/dev/null || true
 chmod 755 "$(dirname "$LOG_FILE")" 2>/dev/null || true
@@ -71,7 +71,14 @@ chmod 755 "$(dirname "$LOG_FILE")" 2>/dev/null || true
 if [ -d "/var/lib/clamav" ]; then
     chown -R clamav:clamav /var/lib/clamav 2>/dev/null || true
     chmod 755 /var/lib/clamav 2>/dev/null || true
+    # Ensure database files have proper permissions
+    find /var/lib/clamav -type f -exec chmod 644 {} \; 2>/dev/null || true
 fi
+
+# Create and fix run directory for ClamAV
+mkdir -p /var/run/clamav 2>/dev/null || true
+chown clamav:clamav /var/run/clamav 2>/dev/null || true
+chmod 755 /var/run/clamav 2>/dev/null || true
 
 # Create log file with proper ownership if it doesn't exist
 if [ ! -f "$LOG_FILE" ]; then
@@ -79,6 +86,11 @@ if [ ! -f "$LOG_FILE" ]; then
     chown clamav:clamav "$LOG_FILE" 2>/dev/null || true
     chmod 644 "$LOG_FILE" 2>/dev/null || true
 fi
+
+# Create additional ClamAV log files that might be needed
+touch /var/log/clamav/freshclam.log 2>/dev/null || true
+chown clamav:clamav /var/log/clamav/freshclam.log 2>/dev/null || true
+chmod 644 /var/log/clamav/freshclam.log 2>/dev/null || true
 
 # Update ClamAV virus definitions
 echo "Starting ClamAV signature update at $(date)" | tee -a "$LOG_FILE"

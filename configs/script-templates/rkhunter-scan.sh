@@ -57,6 +57,13 @@ send_slack_notification() {
 # Send start notification
 send_slack_notification "🔍 $SCRIPT_NAME started on $HOSTNAME" "start"
 
+# Ensure RKHunter log file exists with proper permissions
+echo "Ensuring RKHunter log file permissions..."
+mkdir -p "$(dirname "$LOG_FILE")" 2>/dev/null || true
+touch "$LOG_FILE" 2>/dev/null || true
+chown root:root "$LOG_FILE" 2>/dev/null || true
+chmod 644 "$LOG_FILE" 2>/dev/null || true
+
 # Run RKHunter scan
 echo "Starting RKHunter scan at $(date)"
 /usr/bin/rkhunter --cronjob --check --sk 2>&1 | tee -a "$LOG_FILE"
