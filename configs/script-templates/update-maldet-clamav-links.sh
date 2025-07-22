@@ -65,11 +65,24 @@ update_signature_links() {
     show_info "Removing old Maldet signature links..."
     rm -f "$CLAMAV_DB_DIR"/maldet_* 2>/dev/null || true
 
+    # Also clean up any signature files that may have been incorrectly placed directly in ClamAV directory
+    find "$CLAMAV_DB_DIR" -name "rfxn.*" -user root -delete 2>/dev/null || true
+
     # Update Maldet signatures first if possible
     if command -v maldet >/dev/null 2>&1; then
         show_info "Updating Maldet signatures before linking..."
-        maldet --update-ver >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Maldet signature update reported issues - continuing with existing signatures"
+        maldet --update-ver >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Maldet version update reported issues - continuing with existing signatures"
+        maldet --update-sigs >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Maldet signature update reported issues - continuing with existing signatures"
     fi
+
+    # Check if we have signature files after update
+    local sig_count=$(find "$MALDET_SIG_DIR" -name "*.hdb" -o -name "*.ndb" -o -name "*.ldb" 2>/dev/null | wc -l)
+    if [ "$sig_count" -eq 0 ]; then
+        show_warn "No Maldet signature files found after update attempt. Integration skipped."
+        return 1
+    fi
+
+    show_info "Found $sig_count Maldet signature files to process."
 
     # Create new links for each signature type
     for sig_type in hdb ndb ldb; do
@@ -81,8 +94,10 @@ update_signature_links() {
                     link_target="$CLAMAV_DB_DIR/maldet_$sig_basename"
 
                     if ln -sf "$sig_file" "$link_target" 2>>$LOGDIR/$LOGFILE; then
+                        # Ensure proper ownership of the link
+                        chown -h clamav:clamav "$link_target" 2>>$LOGDIR/$LOGFILE || true
                         updated_count=$((updated_count + 1))
-                        show_info "Linked: $sig_basename"
+                        show_info "Linked: maldet_$sig_basename -> $sig_file"
                     else
                         show_warn "Failed to link: $sig_basename"
                     fi
@@ -95,14 +110,12 @@ update_signature_links() {
         fi
     done
 
-    # Fix permissions for all maldet links
+    # Fix permissions for ClamAV directory
+    chown -R clamav:clamav "$CLAMAV_DB_DIR" 2>>$LOGDIR/$LOGFILE || true
+
     if [ $updated_count -gt 0 ]; then
         show_info "Setting proper permissions for signature links..."
-        if chown -h clamav:clamav "$CLAMAV_DB_DIR"/maldet_* 2>>$LOGDIR/$LOGFILE; then
-            show_info "Permissions updated successfully."
-        else
-            show_warn "Some permission updates may have failed. Check log: $LOGDIR/$LOGFILE"
-        fi
+        show_info "Successfully linked $updated_count signature files."
 
         # Reload ClamAV daemon to pick up new signatures
         show_info "Reloading ClamAV daemon to apply new signatures..."

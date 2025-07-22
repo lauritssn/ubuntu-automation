@@ -119,12 +119,42 @@ show_yellow "ClamAV signature databases downloaded successfully."
 show_yellow "Cleaning up any broken Maldet signature links..."
 find /var/lib/clamav -name "maldet_*" -type l ! -e -delete 2>/dev/null || true
 
+# Also remove any signature files that ended up directly in clamav directory with wrong ownership
+# These should come from Maldet via symbolic links only
+find /var/lib/clamav -name "rfxn.*" -user root -delete 2>/dev/null || true
+
+# Ensure all files in ClamAV directory are owned by clamav user
+chown -R clamav:clamav /var/lib/clamav/ 2>/dev/null || true
+
+show_yellow "Database directory cleanup completed."
+
 # Start services in proper order
 systemctl start clamav-freshclam.service >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Starting freshclam service failed. Please check logfile and fix error manually.")
 sleep 5
 
 # Verify ClamAV daemon can start with current database files
+show_yellow "Starting ClamAV daemon..."
 if ! systemctl start clamav-daemon.service >>$LOGDIR/$LOGFILE 2>&1; then
+    show_err "ClamAV daemon failed to start. Checking for issues..."
+    
+    # Capture detailed error information
+    echo "=== ClamAV Daemon Diagnostics ===" >>$LOGDIR/$LOGFILE
+    echo "systemctl status clamav-daemon.service:" >>$LOGDIR/$LOGFILE
+    systemctl status clamav-daemon.service >>$LOGDIR/$LOGFILE 2>&1 || true
+    
+    echo "journalctl -u clamav-daemon.service --no-pager -n 20:" >>$LOGDIR/$LOGFILE
+    journalctl -u clamav-daemon.service --no-pager -n 20 >>$LOGDIR/$LOGFILE 2>&1 || true
+    
+    echo "Contents of /var/lib/clamav/:" >>$LOGDIR/$LOGFILE
+    ls -la /var/lib/clamav/ >>$LOGDIR/$LOGFILE 2>&1 || true
+    
+    echo "ClamAV configuration check:" >>$LOGDIR/$LOGFILE
+    grep -E "^(DatabaseDirectory|LocalSocket|User)" /etc/clamav/clamd.conf >>$LOGDIR/$LOGFILE 2>&1 || true
+    
+    # Check for broken symlinks
+    echo "Checking for broken symbolic links:" >>$LOGDIR/$LOGFILE
+    find /var/lib/clamav -type l ! -e -ls >>$LOGDIR/$LOGFILE 2>&1 || true
+    
     show_err "ClamAV daemon failed to start. Check 'systemctl status clamav-daemon' and logfile for details."
     exit 1
 fi
@@ -132,9 +162,18 @@ fi
 # Verify daemon is actually running and functional
 sleep 3
 if ! systemctl is-active --quiet clamav-daemon.service; then
-    show_err "ClamAV daemon is not running after startup attempt. Installation failed."
+    show_err "ClamAV daemon is not running after startup attempt."
+    
+    # Additional diagnostics
+    echo "=== Post-startup Daemon Status ===" >>$LOGDIR/$LOGFILE
+    systemctl status clamav-daemon.service >>$LOGDIR/$LOGFILE 2>&1 || true
+    journalctl -u clamav-daemon.service --no-pager -n 10 >>$LOGDIR/$LOGFILE 2>&1 || true
+    
+    show_err "Installation failed. Check logfile for detailed diagnostics."
     exit 1
 fi
+
+show_yellow "ClamAV daemon started successfully and is running."
 
 # Enable services to start at boot
 systemctl enable clamav-freshclam.service >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Enabling freshclam service failed. Please check logfile and fix error manually.")
