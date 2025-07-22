@@ -220,7 +220,7 @@ main() {
         print_status "RKHunter update may take up to 1 hour to complete..." "INFO"
         run_service "rkhunter-update" \
             "Update RKHunter database and properties (timeout: 1h)" \
-            "timeout 3600 bash -c 'rkhunter --cronjob --update --sk; UPDATE_EXIT=\$?; rkhunter --cronjob --propupd --sk; PROPUPD_EXIT=\$?; if [ \$PROPUPD_EXIT -eq 0 ]; then exit 0; else exit \$PROPUPD_EXIT; fi'"
+            "timeout 3600 bash -c 'rkhunter --cronjob --update --sk; UPDATE_EXIT=\$?; echo \"Update exit code: \$UPDATE_EXIT\"; rkhunter --cronjob --propupd --sk; PROPUPD_EXIT=\$?; echo \"Propupd exit code: \$PROPUPD_EXIT\"; if [ \$UPDATE_EXIT -eq 0 ] && [ \$PROPUPD_EXIT -eq 0 ]; then exit 0; elif [ \$PROPUPD_EXIT -eq 0 ]; then exit 0; else exit \$PROPUPD_EXIT; fi'"
     else
         print_status "RKHunter not installed, skipping update" "WARNING"
         log_message "RKHunter not installed, skipping update" "WARNING"

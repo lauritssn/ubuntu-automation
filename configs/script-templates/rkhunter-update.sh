@@ -74,6 +74,24 @@ echo "Updating RKHunter file properties at $(date)"
 /usr/bin/rkhunter --propupd --cronjob
 PROPUPD_EXIT_CODE=$?
 
+# Check if propupd failed due to warnings (common issue)
+if [ $PROPUPD_EXIT_CODE -ne 0 ]; then
+    echo "Property update failed. Checking for warnings in RKHunter log..."
+
+    # Check if this is just a warning issue, not a real failure
+    WARNING_COUNT=$(grep -c "Warning:" /var/log/rkhunter.log 2>/dev/null || echo "0")
+    ERROR_COUNT=$(grep -c "ERROR:" /var/log/rkhunter.log 2>/dev/null || echo "0")
+
+    if [ $WARNING_COUNT -gt 0 ] && [ $ERROR_COUNT -eq 0 ]; then
+        echo "Found $WARNING_COUNT warnings but no errors. This may be acceptable."
+        echo "Consider reviewing and whitelisting legitimate warnings."
+        send_slack_notification "⚠️ $SCRIPT_NAME on $HOSTNAME: Property update failed due to $WARNING_COUNT warnings (no errors)" "warning"
+
+        # Still exit with failure for manual review, but provide context
+        exit $PROPUPD_EXIT_CODE
+    fi
+fi
+
 # Determine overall result
 if [ $UPDATE_EXIT_CODE -eq 0 ] && [ $PROPUPD_EXIT_CODE -eq 0 ]; then
     END_TIME=$(date)

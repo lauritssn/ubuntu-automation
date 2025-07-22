@@ -194,7 +194,7 @@ show_yellow "All systemd timers enabled and started."
 ##########################################################################################
 
 show_yellow "Systemd timer status:"
-systemctl list-timers --no-pager | grep -E "(clamav|rkhunter|system-health|swap-monitor|disk-space-monitor)" || true
+systemctl list-timers --no-pager | grep -E "(clamav|rkhunter|system-health|swap-monitor|disk-space-monitor|maldet)" || true
 
 ##########################################################################################
 ## Done
