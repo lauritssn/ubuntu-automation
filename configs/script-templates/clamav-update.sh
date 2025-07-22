@@ -59,12 +59,40 @@ send_slack_notification() {
 # Send start notification
 send_slack_notification "🦠 $SCRIPT_NAME started on $HOSTNAME" "start"
 
+# Ensure proper permissions for ClamAV directories and files
+echo "Ensuring proper ClamAV permissions..."
+
+# Fix log directory permissions
+mkdir -p "$(dirname "$LOG_FILE")" 2>/dev/null || true
+chown -R clamav:clamav "$(dirname "$LOG_FILE")" 2>/dev/null || true
+chmod 755 "$(dirname "$LOG_FILE")" 2>/dev/null || true
+
+# Fix database directory permissions (critical for freshclam)
+if [ -d "/var/lib/clamav" ]; then
+    chown -R clamav:clamav /var/lib/clamav 2>/dev/null || true
+    chmod 755 /var/lib/clamav 2>/dev/null || true
+fi
+
+# Create log file with proper ownership if it doesn't exist
+if [ ! -f "$LOG_FILE" ]; then
+    touch "$LOG_FILE" 2>/dev/null || true
+    chown clamav:clamav "$LOG_FILE" 2>/dev/null || true
+    chmod 644 "$LOG_FILE" 2>/dev/null || true
+fi
+
 # Update ClamAV virus definitions
 echo "Starting ClamAV signature update at $(date)" | tee -a "$LOG_FILE"
 
 # Run freshclam to update virus signatures
-freshclam --log="$LOG_FILE" --verbose
-UPDATE_EXIT_CODE=$?
+# If the log file still has permission issues, run without specific log file
+if freshclam --log="$LOG_FILE" --verbose 2>/dev/null; then
+    UPDATE_EXIT_CODE=0
+else
+    # Fallback: run freshclam without custom log file (uses default logging)
+    echo "Warning: Custom log file failed, using default freshclam logging" | tee -a "$LOG_FILE" 2>/dev/null || echo "Warning: Custom log file failed, using default freshclam logging"
+    freshclam --verbose
+    UPDATE_EXIT_CODE=$?
+fi
 
 # Check the exit code and send appropriate notifications
 case $UPDATE_EXIT_CODE in

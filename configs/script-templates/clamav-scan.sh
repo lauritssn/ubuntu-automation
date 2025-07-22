@@ -77,10 +77,21 @@ send_slack_notification() {
 # Send start notification
 send_slack_notification "🦠 $SCRIPT_NAME started on $HOSTNAME" "start"
 
+# Ensure proper ClamAV permissions before scanning
+echo "Ensuring proper ClamAV permissions..."
+mkdir -p /var/log/clamav 2>/dev/null || true
+chown -R clamav:clamav /var/log/clamav 2>/dev/null || true
+chmod 755 /var/log/clamav 2>/dev/null || true
+
+if [ -d "/var/lib/clamav" ]; then
+    chown -R clamav:clamav /var/lib/clamav 2>/dev/null || true
+    chmod 755 /var/lib/clamav 2>/dev/null || true
+fi
+
 # Update virus definitions before scanning (use different log to avoid conflicts)
 echo "Updating ClamAV virus definitions..."
 # Use --log option to specify a different log file to avoid lock conflicts with daemon
-if ! freshclam --quiet --log=/var/log/clamav/freshclam_manual.log; then
+if ! freshclam --quiet --log=/var/log/clamav/freshclam_manual.log 2>/dev/null && ! freshclam --quiet; then
     FRESHCLAM_EXIT_CODE=$?
     if [ $FRESHCLAM_EXIT_CODE -eq 1 ]; then
         # Exit code 1 usually means "already up to date" which is fine
