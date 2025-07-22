@@ -1,0 +1,16 @@
+[Unit]
+Description=Maldet Signature Update
+Documentation=man:maldet(8)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/local/bin/maldet-update.sh
+ExecStartPost=/usr/local/bin/update-maldet-clamav-links.sh update
+StandardOutput=journal
+StandardError=journal
+TimeoutSec=1800
+IOSchedulingClass=3
+Nice=19 

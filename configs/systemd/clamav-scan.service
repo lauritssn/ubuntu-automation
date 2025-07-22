@@ -1,8 +1,9 @@
 [Unit]
 Description=ClamAV System Scan
 Documentation=man:clamscan(1)
-After=network-online.target clamav-daemon.service
+After=network-online.target clamav-daemon.service clamav-freshclam.service
 Wants=network-online.target
+Requires=clamav-freshclam.service
 
 [Service]
 Type=oneshot
@@ -14,5 +15,7 @@ IOSchedulingClass=3
 Nice=19
 PrivateTmp=true
 ProtectSystem=strict
-ReadWritePaths=/var/log/clamav /tmp
+ReadWritePaths=/var/log/clamav /tmp /var/lib/clamav
 TimeoutSec=21600
+# Restart the daemon after scan to ensure it's still running
+ExecStartPost=/bin/bash -c 'systemctl is-active --quiet clamav-daemon.service || systemctl restart clamav-daemon.service'

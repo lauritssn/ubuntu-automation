@@ -13,7 +13,8 @@ SCRIPT_NAME="ClamAV Antivirus Scan"
 SCAN_DIR="/home /tmp /var /srv"
 
 # Exclude common false positive locations and file types
-EXCLUDE_OPTS="--exclude-dir=/tmp/systemd-private* --exclude-dir=/var/lib/docker --exclude-dir=/var/cache --exclude=*.pid --exclude=*.lock --exclude=*.sock"
+# Enhanced exclusions to prevent scanning ClamAV's own files and logs
+EXCLUDE_OPTS="--exclude-dir=/tmp/systemd-private* --exclude-dir=/var/lib/docker --exclude-dir=/var/cache --exclude-dir=/var/log --exclude-dir=/var/lib/clamav --exclude-dir=/var/lib/maldet --exclude-dir=/usr/local/maldetect --exclude=*.pid --exclude=*.lock --exclude=*.sock"
 
 # Location of log file
 LOG_FILE="/var/log/clamav/manual_clamscan.log"
@@ -76,9 +77,10 @@ send_slack_notification() {
 # Send start notification
 send_slack_notification "🦠 $SCRIPT_NAME started on $HOSTNAME" "start"
 
-# Update virus definitions before scanning
+# Update virus definitions before scanning (use different log to avoid conflicts)
 echo "Updating ClamAV virus definitions..."
-freshclam --quiet
+# Use --log option to specify a different log file to avoid lock conflicts with daemon
+freshclam --quiet --log=/var/log/clamav/freshclam_manual.log || echo "Warning: ClamAV signature update failed or already running"
 
 # Record scan start time
 echo "Starting ClamAV scan at $(date)" | tee -a "$LOG_FILE"

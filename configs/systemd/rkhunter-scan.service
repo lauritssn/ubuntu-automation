@@ -7,7 +7,7 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 User=root
-ExecStart=/usr/bin/rkhunter --cronjob --check --sk
+ExecStart=/usr/local/bin/rkhunter-scan.sh
 StandardOutput=journal
 StandardError=journal
 TimeoutSec=10800

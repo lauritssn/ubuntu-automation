@@ -44,10 +44,69 @@ show_yellow "ClamAV installation successfull."
 ##########################################################################################
 
 show_yellow "Updating ClamAV (this may take a while!)."
-systemctl stop clamav-freshclam.service >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Stopping freshclam service failed. Please check logfile and fix error manually.")
-freshclam >>$LOGDIR/$LOGFILE 2>&1 || (show_err "ClamAV update failed. Please check logfile and fix error manually.")
+
+# Ensure proper permissions for ClamAV directories
+mkdir -p /var/log/clamav
+mkdir -p /var/lib/clamav
+chown clamav:clamav /var/log/clamav
+chown clamav:clamav /var/lib/clamav
+chmod 755 /var/log/clamav
+chmod 755 /var/lib/clamav
+
+# Stop services before updating
+systemctl stop clamav-freshclam.service >>$LOGDIR/$LOGFILE 2>&1 || true
+systemctl stop clamav-daemon.service >>$LOGDIR/$LOGFILE 2>&1 || true
+
+# Configure freshclam to avoid log conflicts
+if [ -f /etc/clamav/freshclam.conf ]; then
+    # Fix log file size and rotation settings
+    sed -i 's/^LogFileMaxSize.*/LogFileMaxSize 10M/' /etc/clamav/freshclam.conf >>$LOGDIR/$LOGFILE 2>&1 || true
+    sed -i 's/^LogRotate.*/LogRotate true/' /etc/clamav/freshclam.conf >>$LOGDIR/$LOGFILE 2>&1 || true
+    show_yellow "Fixed freshclam log configuration."
+fi
+
+# Configure ClamAV daemon
+if [ -f /etc/clamav/clamd.conf ]; then
+    # Remove duplicate DatabaseDirectory entries (keep only the main one)
+    sed -i '/^DatabaseDirectory \/usr\/local\/maldetect\/sigs/d' /etc/clamav/clamd.conf >>$LOGDIR/$LOGFILE 2>&1 || true
+
+    # Ensure main DatabaseDirectory is set correctly
+    if ! grep -q "^DatabaseDirectory /var/lib/clamav" /etc/clamav/clamd.conf; then
+        sed -i 's/^DatabaseDirectory.*/DatabaseDirectory \/var\/lib\/clamav/' /etc/clamav/clamd.conf >>$LOGDIR/$LOGFILE 2>&1 || true
+    fi
+
+    # Fix log configuration
+    sed -i 's/^LogFileMaxSize.*/LogFileMaxSize 10M/' /etc/clamav/clamd.conf >>$LOGDIR/$LOGFILE 2>&1 || true
+    sed -i 's/^LogRotate.*/LogRotate true/' /etc/clamav/clamd.conf >>$LOGDIR/$LOGFILE 2>&1 || true
+
+    # Optimize performance settings
+    sed -i 's/^MaxDirectoryRecursion.*/MaxDirectoryRecursion 25/' /etc/clamav/clamd.conf >>$LOGDIR/$LOGFILE 2>&1 || true
+    sed -i 's/^StreamMaxLength.*/StreamMaxLength 100M/' /etc/clamav/clamd.conf >>$LOGDIR/$LOGFILE 2>&1 || true
+    sed -i 's/^MaxScanTime.*/MaxScanTime 300000/' /etc/clamav/clamd.conf >>$LOGDIR/$LOGFILE 2>&1 || true
+    sed -i 's/^MaxScanSize.*/MaxScanSize 500M/' /etc/clamav/clamd.conf >>$LOGDIR/$LOGFILE 2>&1 || true
+    sed -i 's/^MaxFileSize.*/MaxFileSize 100M/' /etc/clamav/clamd.conf >>$LOGDIR/$LOGFILE 2>&1 || true
+
+    show_yellow "Fixed ClamAV daemon configuration and removed duplicate database directories."
+fi
+
+# Create socket directory
+mkdir -p /var/run/clamav
+chown clamav:clamav /var/run/clamav
+chmod 755 /var/run/clamav
+
+# Update ClamAV databases with manual freshclam to avoid conflicts
+freshclam --log=/var/log/clamav/freshclam_install.log >>$LOGDIR/$LOGFILE 2>&1 || (show_err "ClamAV update failed. Please check logfile and fix error manually.")
+
+# Start services in proper order
 systemctl start clamav-freshclam.service >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Starting freshclam service failed. Please check logfile and fix error manually.")
-show_yellow "ClamAV update done."
+sleep 5
+systemctl start clamav-daemon.service >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Starting clamav-daemon service failed. Please check logfile and fix error manually.")
+
+# Enable services to start at boot
+systemctl enable clamav-freshclam.service >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Enabling freshclam service failed. Please check logfile and fix error manually.")
+systemctl enable clamav-daemon.service >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Enabling clamav-daemon service failed. Please check logfile and fix error manually.")
+
+show_yellow "ClamAV update done and daemon configured."
 
 ##########################################################################################
 ## Deploy optimized ClamAV scan script with false positive reduction
@@ -93,8 +152,24 @@ show_yellow "ClamAV scan script $SCRIPT_ORG made executable."
 ## Restart ClamAV
 ##########################################################################################
 
-systemctl restart clamav-daemon >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Restarting ClamAV failed. Please check logfile and fix error manually.")
-show_yellow "ClamAV restarted."
+# Restart services in proper order to ensure they're running
+systemctl daemon-reload >>$LOGDIR/$LOGFILE 2>&1
+systemctl restart clamav-freshclam >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Restarting ClamAV freshclam failed. Please check logfile and fix error manually.")
+sleep 3
+systemctl restart clamav-daemon >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Restarting ClamAV daemon failed. Please check logfile and fix error manually.")
+
+# Verify services are running
+if systemctl is-active --quiet clamav-daemon; then
+    show_yellow "ClamAV daemon is running successfully."
+else
+    show_warn "ClamAV daemon may not be running properly. Check 'systemctl status clamav-daemon' for details."
+fi
+
+if systemctl is-active --quiet clamav-freshclam; then
+    show_yellow "ClamAV freshclam service is running successfully."
+else
+    show_warn "ClamAV freshclam service may not be running properly. Check 'systemctl status clamav-freshclam' for details."
+fi
 
 ##########################################################################################
 ## DONE

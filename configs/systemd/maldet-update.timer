@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily Maldet Signature Update
+Documentation=man:maldet(8)
+
+[Timer]
+OnCalendar=daily
+RandomizedDelaySec=2h
+Persistent=true
+
+[Install]
+WantedBy=timers.target 

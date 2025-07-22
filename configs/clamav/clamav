@@ -8,7 +8,8 @@ SCAN_DIR="/home /tmp /var /srv"
 
 # Exclude common false positive locations and file types
 # You can uncomment and modify these as needed
-EXCLUDE_OPTS="--exclude-dir=/tmp/systemd-private* --exclude-dir=/var/lib/docker --exclude-dir=/var/cache --exclude=*.pid --exclude=*.lock --exclude=*.sock"
+# Enhanced exclusions to prevent scanning ClamAV's own files and logs
+EXCLUDE_OPTS="--exclude-dir=/tmp/systemd-private* --exclude-dir=/var/lib/docker --exclude-dir=/var/cache --exclude-dir=/var/log --exclude-dir=/var/lib/clamav --exclude-dir=/var/lib/maldet --exclude-dir=/usr/local/maldetect --exclude=*.pid --exclude=*.lock --exclude=*.sock"
 
 # Alternative: More restrictive /tmp scanning (recommended for high false positive environments)
 # SCAN_DIR="/home /var/log /var/www /srv"

@@ -16,6 +16,13 @@ fi
 LOGFILE=$SUBSCRIPT-$DATE.log
 
 ##########################################################################################
+## Load script template helper functions
+##########################################################################################
+
+# Source helper functions for script template management
+source "$BASEDIR/configs/script-templates/script_helper_functions.sh"
+
+##########################################################################################
 ## RKHunter configuration
 ##########################################################################################
 
@@ -62,11 +69,13 @@ fi
 ## Reconfigure E-mails
 ##########################################################################################
 
-sed -i 's/INFO_EMAIL/'${INFO_EMAIL}'/ig' $CONF1_ORG
-sed -i 's/EMAIL_DOMAIN/'${EMAIL_DOMAIN}'/ig' $CONF1_ORG
+# Use the helper function to replace template variables properly
+replace_script_variables "$CONF1_ORG"
+replace_script_variables "$CONF2_ORG"
 
-sed -i 's/INFO_EMAIL/'${INFO_EMAIL}'/ig' $CONF2_ORG
-sed -i 's/EMAIL_DOMAIN/'${EMAIL_DOMAIN}'/ig' $CONF2_ORG
+# Verify that all placeholders were replaced correctly
+verify_script_template "$CONF1_ORG" "RKHunter Default Config"
+verify_script_template "$CONF2_ORG" "RKHunter Main Config"
 
 ##########################################################################################
 ## Update rkhunter - exit'ing disabled due to weird but OK exit codes from RKHunter

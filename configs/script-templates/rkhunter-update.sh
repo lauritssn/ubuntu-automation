@@ -57,17 +57,37 @@ send_slack_notification "🔄 $SCRIPT_NAME started on $HOSTNAME" "start"
 
 # Update RKHunter database
 echo "Starting RKHunter update at $(date)"
-/usr/bin/rkhunter --update --cronjob
-UPDATE_EXIT_CODE=$?
 
-if [ $UPDATE_EXIT_CODE -eq 0 ]; then
+# Skip update if WEB_CMD is set to /bin/false (security measure)
+if grep -q 'WEB_CMD="/bin/false"' /etc/rkhunter.conf 2>/dev/null; then
+    echo "Warning: WEB_CMD is set to /bin/false in rkhunter.conf"
+    echo "This prevents remote updates. Consider commenting out WEB_CMD or using package manager updates."
+    send_slack_notification "⚠️ $SCRIPT_NAME on $HOSTNAME: WEB_CMD disabled, skipping remote update" "warning"
+    UPDATE_EXIT_CODE=0
+else
+    /usr/bin/rkhunter --update --cronjob
+    UPDATE_EXIT_CODE=$?
+fi
+
+# Update file properties regardless of database update result
+echo "Updating RKHunter file properties at $(date)"
+/usr/bin/rkhunter --propupd --cronjob
+PROPUPD_EXIT_CODE=$?
+
+# Determine overall result
+if [ $UPDATE_EXIT_CODE -eq 0 ] && [ $PROPUPD_EXIT_CODE -eq 0 ]; then
     END_TIME=$(date)
     DURATION=$(($(date +%s) - $(date -d "$START_TIME" +%s)))
     send_slack_notification "✅ $SCRIPT_NAME completed successfully on $HOSTNAME (Duration: ${DURATION}s)" "success"
     echo "RKHunter update completed successfully"
-else
-    send_slack_notification "❌ $SCRIPT_NAME failed on $HOSTNAME with exit code $UPDATE_EXIT_CODE" "error"
-    echo "RKHunter update failed with exit code: $UPDATE_EXIT_CODE"
+elif [ $PROPUPD_EXIT_CODE -ne 0 ]; then
+    send_slack_notification "❌ $SCRIPT_NAME failed on $HOSTNAME: Property update failed with exit code $PROPUPD_EXIT_CODE" "error"
+    echo "RKHunter property update failed with exit code: $PROPUPD_EXIT_CODE"
+    exit $PROPUPD_EXIT_CODE
+elif [ $UPDATE_EXIT_CODE -ne 0 ]; then
+    send_slack_notification "❌ $SCRIPT_NAME failed on $HOSTNAME: Database update failed with exit code $UPDATE_EXIT_CODE" "error"
+    echo "RKHunter database update failed with exit code: $UPDATE_EXIT_CODE"
+    exit $UPDATE_EXIT_CODE
 fi
 
 echo "RKHunter update completed at $(date)"

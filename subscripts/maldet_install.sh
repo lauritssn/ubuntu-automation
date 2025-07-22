@@ -43,6 +43,11 @@ cd maldetect-*
 ./install.sh >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of maldet failed. Please check logfile and fix error manually.")
 show_yellow "Maldet installed successfully."
 
+# Clean up extracted maldet directory after installation
+cd /tmp
+rm -rf maldetect-* >>$LOGDIR/$LOGFILE 2>&1
+show_yellow "Maldet installation directory cleaned up from /tmp."
+
 ##########################################################################################
 # Backup and deploy default config
 ##########################################################################################
@@ -75,23 +80,54 @@ show_yellow "Maldet configured to work with ClamAV as backend engine."
 # Configure ClamAV to use Maldet signatures
 ##########################################################################################
 
-# Add Maldet signature path to ClamAV
-CLAMAV_CONF="/etc/clamav/clamd.conf"
-if [ -f "$CLAMAV_CONF" ]; then
-    if ! grep -q "/usr/local/maldetect/sigs" "$CLAMAV_CONF"; then
-        echo "DatabaseDirectory /usr/local/maldetect/sigs" >>"$CLAMAV_CONF"
-        show_yellow "Added Maldet signatures to ClamAV configuration."
-    fi
-fi
-
-# Create symbolic link for Maldet signatures in ClamAV directory
+# Instead of modifying clamd.conf, create symbolic links in the main database directory
+# This avoids duplicate DatabaseDirectory entries that can cause conflicts
 CLAMAV_DB_DIR="/var/lib/clamav"
-if [ -d "$CLAMAV_DB_DIR" ] && [ -d "/usr/local/maldetect/sigs" ]; then
-    ln -sf /usr/local/maldetect/sigs/*.{hdb,ndb,ldb} "$CLAMAV_DB_DIR/" 2>/dev/null || true
-    show_yellow "Linked Maldet signatures to ClamAV database directory."
+MALDET_SIG_DIR="/usr/local/maldetect/sigs"
+
+if [ -d "$CLAMAV_DB_DIR" ] && [ -d "$MALDET_SIG_DIR" ]; then
+    show_yellow "Integrating Maldet signatures with ClamAV database directory."
+
+    # Create symbolic links for Maldet signatures in ClamAV's main database directory
+    # This way ClamAV can access Maldet signatures without duplicate database directories
+    for sig_type in hdb ndb ldb; do
+        if ls "$MALDET_SIG_DIR"/*.$sig_type >/dev/null 2>&1; then
+            for sig_file in "$MALDET_SIG_DIR"/*.$sig_type; do
+                if [ -f "$sig_file" ]; then
+                    sig_basename=$(basename "$sig_file")
+                    # Create link with maldet prefix to avoid naming conflicts
+                    ln -sf "$sig_file" "$CLAMAV_DB_DIR/maldet_$sig_basename" 2>/dev/null || true
+                fi
+            done
+            show_yellow "Linked Maldet .$sig_type signature files to ClamAV database."
+        fi
+    done
+
+    # Ensure proper permissions for ClamAV to read the linked signatures
+    chown -h clamav:clamav "$CLAMAV_DB_DIR"/maldet_* 2>/dev/null || true
+
+    show_yellow "Maldet signatures successfully integrated via symbolic links."
+else
+    show_warn "ClamAV database directory ($CLAMAV_DB_DIR) or Maldet signature directory ($MALDET_SIG_DIR) not found."
 fi
 
-show_yellow "Maldet configuration successfully customized for ClamAV integration."
+# Deploy the separate Maldet signature link update script
+SCRIPT_TEMPLATE_DIR="$(dirname "$0")/../configs/script-templates"
+MALDET_LINK_SCRIPT="/usr/local/bin/update-maldet-clamav-links.sh"
+
+if [ -f "$SCRIPT_TEMPLATE_DIR/update-maldet-clamav-links.sh" ]; then
+    cp "$SCRIPT_TEMPLATE_DIR/update-maldet-clamav-links.sh" "$MALDET_LINK_SCRIPT" >>$LOGDIR/$LOGFILE 2>&1
+    chmod +x "$MALDET_LINK_SCRIPT" >>$LOGDIR/$LOGFILE 2>&1
+    show_yellow "Deployed Maldet signature link update script to $MALDET_LINK_SCRIPT"
+
+    # Run the script to establish initial signature links
+    show_yellow "Running initial signature link update..."
+    "$MALDET_LINK_SCRIPT" update >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Initial signature link update reported issues. Check log for details."
+else
+    show_warn "Maldet signature link update script template not found at $SCRIPT_TEMPLATE_DIR/update-maldet-clamav-links.sh"
+fi
+
+show_yellow "Maldet configuration successfully customized for ClamAV integration without config conflicts."
 
 # Configure scan paths for temporary directories to reduce false positives
 # Enable scanning of temporary paths but with reduced sensitivity for false positives

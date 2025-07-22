@@ -25,7 +25,7 @@ log_message() {
     local message="$1"
     local level="$2"
     local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    
+
     echo "[$timestamp] [$level] $message" | tee -a "$LOG_FILE"
 }
 
@@ -33,23 +33,23 @@ log_message() {
 print_status() {
     local message="$1"
     local status="$2"
-    
+
     case "$status" in
-        "INFO")
-            echo -e "${BLUE}[INFO]${NC} $message"
-            ;;
-        "SUCCESS")
-            echo -e "${GREEN}[SUCCESS]${NC} $message"
-            ;;
-        "WARNING")
-            echo -e "${YELLOW}[WARNING]${NC} $message"
-            ;;
-        "ERROR")
-            echo -e "${RED}[ERROR]${NC} $message"
-            ;;
-        *)
-            echo "$message"
-            ;;
+    "INFO")
+        echo -e "${BLUE}[INFO]${NC} $message"
+        ;;
+    "SUCCESS")
+        echo -e "${GREEN}[SUCCESS]${NC} $message"
+        ;;
+    "WARNING")
+        echo -e "${YELLOW}[WARNING]${NC} $message"
+        ;;
+    "ERROR")
+        echo -e "${RED}[ERROR]${NC} $message"
+        ;;
+    *)
+        echo "$message"
+        ;;
     esac
 }
 
@@ -58,19 +58,19 @@ run_service() {
     local service_name="$1"
     local description="$2"
     local command="$3"
-    
+
     print_status "Testing $service_name: $description" "INFO"
     log_message "Starting test for $service_name" "INFO"
-    
-    echo "========================================" >> "$LOG_FILE"
-    echo "Service: $service_name" >> "$LOG_FILE"
-    echo "Description: $description" >> "$LOG_FILE"
-    echo "Command: $command" >> "$LOG_FILE"
-    echo "Start Time: $(date)" >> "$LOG_FILE"
-    echo "========================================" >> "$LOG_FILE"
-    
+
+    echo "========================================" >>"$LOG_FILE"
+    echo "Service: $service_name" >>"$LOG_FILE"
+    echo "Description: $description" >>"$LOG_FILE"
+    echo "Command: $command" >>"$LOG_FILE"
+    echo "Start Time: $(date)" >>"$LOG_FILE"
+    echo "========================================" >>"$LOG_FILE"
+
     # Run the service and capture both stdout and stderr
-    if eval "$command" >> "$LOG_FILE" 2>&1; then
+    if eval "$command" >>"$LOG_FILE" 2>&1; then
         print_status "$service_name completed successfully" "SUCCESS"
         log_message "$service_name completed successfully" "SUCCESS"
         SUCCESS_SERVICES+=("$service_name")
@@ -80,10 +80,10 @@ run_service() {
         log_message "$service_name failed with exit code $exit_code" "ERROR"
         FAILED_SERVICES+=("$service_name")
     fi
-    
-    echo "End Time: $(date)" >> "$LOG_FILE"
-    echo "" >> "$LOG_FILE"
-    
+
+    echo "End Time: $(date)" >>"$LOG_FILE"
+    echo "" >>"$LOG_FILE"
+
     # Add a small delay between services
     sleep 2
 }
@@ -91,14 +91,14 @@ run_service() {
 # Function to check if required dependencies exist
 check_dependencies() {
     local missing_deps=()
-    
+
     print_status "Checking dependencies..." "INFO"
-    
+
     # Check for systemctl
     if ! command -v systemctl >/dev/null 2>&1; then
         missing_deps+=("systemctl")
     fi
-    
+
     # Check for specific commands used by services
     local commands=("df" "free" "bc" "curl" "ps" "ping" "ss" "journalctl")
     for cmd in "${commands[@]}"; do
@@ -106,7 +106,7 @@ check_dependencies() {
             missing_deps+=("$cmd")
         fi
     done
-    
+
     if [ ${#missing_deps[@]} -gt 0 ]; then
         print_status "Missing dependencies: ${missing_deps[*]}" "ERROR"
         log_message "Missing dependencies: ${missing_deps[*]}" "ERROR"
@@ -122,7 +122,7 @@ display_summary() {
     local total_services=$((${#SUCCESS_SERVICES[@]} + ${#FAILED_SERVICES[@]}))
     local end_time=$(date)
     local duration=$(($(date +%s) - $(date -d "$START_TIME" +%s)))
-    
+
     echo ""
     echo "========================================"
     echo "           TEST SUMMARY"
@@ -135,7 +135,7 @@ display_summary() {
     echo "Successful: ${#SUCCESS_SERVICES[@]}"
     echo "Failed: ${#FAILED_SERVICES[@]}"
     echo ""
-    
+
     if [ ${#SUCCESS_SERVICES[@]} -gt 0 ]; then
         print_status "Successful Services:" "SUCCESS"
         for service in "${SUCCESS_SERVICES[@]}"; do
@@ -143,7 +143,7 @@ display_summary() {
         done
         echo ""
     fi
-    
+
     if [ ${#FAILED_SERVICES[@]} -gt 0 ]; then
         print_status "Failed Services:" "ERROR"
         for service in "${FAILED_SERVICES[@]}"; do
@@ -151,10 +151,10 @@ display_summary() {
         done
         echo ""
     fi
-    
+
     echo "Log file: $LOG_FILE"
     echo "========================================"
-    
+
     # Log summary to file
     {
         echo ""
@@ -166,86 +166,97 @@ display_summary() {
         echo "Failed: ${#FAILED_SERVICES[@]}"
         echo "Duration: ${duration} seconds"
         echo "========================================"
-    } >> "$LOG_FILE"
+    } >>"$LOG_FILE"
 }
 
 # Main execution
 main() {
     print_status "Starting $SCRIPT_NAME on $HOSTNAME" "INFO"
     log_message "Starting $SCRIPT_NAME" "INFO"
-    
+
     # Create log file
     touch "$LOG_FILE"
-    
+
     # Check dependencies
     if ! check_dependencies; then
         print_status "Dependency check failed. Exiting." "ERROR"
         exit 1
     fi
-    
+
     echo ""
     print_status "Starting service tests..." "INFO"
     echo ""
-    
+
     # Test each service manually (not using systemctl start to avoid conflicts)
-    
+
     # 1. Disk Space Monitor
     run_service "disk-space-monitor" \
-                "Check disk space with warning at 20% and critical at 10%" \
-                "/srv/apps/scripts/check_disk_space.sh -w 20 -c 10"
-    
+        "Check disk space with warning at 20% and critical at 10%" \
+        "/srv/apps/scripts/check_disk_space.sh -w 20 -c 10"
+
     # 2. Swap Monitor
     run_service "swap-monitor" \
-                "Monitor swap usage and memory pressure" \
-                "/srv/apps/scripts/check_swap_usage.sh"
-    
+        "Monitor swap usage and memory pressure" \
+        "/srv/apps/scripts/check_swap_usage.sh"
+
     # 3. System Health Check
     run_service "system-health-check" \
-                "Comprehensive system health monitoring" \
-                "/srv/apps/scripts/system_health_check.sh"
-    
+        "Comprehensive system health monitoring" \
+        "/srv/apps/scripts/system_health_check.sh"
+
     # 4. RKHunter Scan (if available) - Allow up to 3 hours
     if command -v rkhunter >/dev/null 2>&1; then
         print_status "RKHunter scan may take up to 3 hours to complete..." "INFO"
         run_service "rkhunter-scan" \
-                    "Security scan with RKHunter (timeout: 3h)" \
-                    "timeout 10800 rkhunter --cronjob --check --sk"
+            "Security scan with RKHunter (timeout: 3h)" \
+            "timeout 10800 rkhunter --cronjob --check --sk"
     else
         print_status "RKHunter not installed, skipping scan" "WARNING"
         log_message "RKHunter not installed, skipping scan" "WARNING"
     fi
-    
+
     # 5. RKHunter Update (if available) - Allow up to 1 hour
     if command -v rkhunter >/dev/null 2>&1; then
         print_status "RKHunter update may take up to 1 hour to complete..." "INFO"
         run_service "rkhunter-update" \
-                    "Update RKHunter database and properties (timeout: 1h)" \
-                    "timeout 3600 bash -c 'rkhunter --cronjob --update --sk && rkhunter --cronjob --propupd --sk'"
+            "Update RKHunter database and properties (timeout: 1h)" \
+            "timeout 3600 bash -c 'rkhunter --cronjob --update --sk && rkhunter --cronjob --propupd --sk'"
     else
         print_status "RKHunter not installed, skipping update" "WARNING"
         log_message "RKHunter not installed, skipping update" "WARNING"
     fi
-    
+
+    # 5.5. Maldet Signature Update (if available) - Allow up to 30 minutes
+    if command -v maldet >/dev/null 2>&1; then
+        print_status "Maldet signature update may take up to 30 minutes to complete..." "INFO"
+        run_service "maldet-update" \
+            "Update Maldet signatures (timeout: 30m)" \
+            "timeout 1800 maldet --update-sigs"
+    else
+        print_status "Maldet not installed, skipping signature update" "WARNING"
+        log_message "Maldet not installed, skipping signature update" "WARNING"
+    fi
+
     # 6. ClamAV Scan (if available) - Allow up to 6 hours
     if [ -f "/usr/local/bin/clamav-scan.sh" ]; then
         print_status "ClamAV scan may take up to 6 hours to complete..." "INFO"
         run_service "clamav-scan" \
-                    "Antivirus scan with ClamAV (timeout: 6h)" \
-                    "timeout 21600 /usr/local/bin/clamav-scan.sh"
+            "Antivirus scan with ClamAV (timeout: 6h)" \
+            "timeout 21600 /usr/local/bin/clamav-scan.sh"
     elif command -v clamscan >/dev/null 2>&1; then
         # Fallback to basic clamscan if script not available
         print_status "Basic ClamAV scan may take a while to complete..." "INFO"
         run_service "clamav-scan-basic" \
-                    "Basic ClamAV scan of /tmp (timeout: 1h)" \
-                    "timeout 3600 clamscan -r --bell -i /tmp"
+            "Basic ClamAV scan of /tmp (timeout: 1h)" \
+            "timeout 3600 clamscan -r --bell -i /tmp"
     else
         print_status "ClamAV not installed, skipping scan" "WARNING"
         log_message "ClamAV not installed, skipping scan" "WARNING"
     fi
-    
+
     # Display final summary
     display_summary
-    
+
     # Exit with appropriate code
     if [ ${#FAILED_SERVICES[@]} -gt 0 ]; then
         exit 1
@@ -280,4 +291,4 @@ if [[ "$1" == "--help" || "$1" == "-h" ]]; then
 fi
 
 # Run main function
-main "$@" 
+main "$@"

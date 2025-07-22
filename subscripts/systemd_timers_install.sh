@@ -77,11 +77,25 @@ cp $BASEDIR/configs/systemd/rkhunter-scan.timer /etc/systemd/system/
 cp $BASEDIR/configs/systemd/rkhunter-update.service /etc/systemd/system/
 cp $BASEDIR/configs/systemd/rkhunter-update.timer /etc/systemd/system/
 
-# Update service files to use our scripts
-sed -i 's|ExecStart=/usr/bin/rkhunter --cronjob --check --sk|ExecStart=/usr/local/bin/rkhunter-scan.sh|' /etc/systemd/system/rkhunter-scan.service
-sed -i 's|ExecStart=/usr/bin/rkhunter --update --cronjob|ExecStart=/usr/local/bin/rkhunter-update.sh|' /etc/systemd/system/rkhunter-update.service
-
 show_yellow "RKHunter systemd timers installed with Slack notifications."
+
+##########################################################################################
+## Install Maldet Update timer
+##########################################################################################
+
+show_yellow "Installing Maldet Update systemd timer."
+
+# Create Maldet update script using template
+copy_and_configure_script "maldet-update.sh" "/usr/local/bin/maldet-update.sh" "Maldet Update Script"
+
+# Verify script template variables
+verify_script_template "/usr/local/bin/maldet-update.sh" "Maldet Update"
+
+# Copy Maldet update service and timer files
+cp $BASEDIR/configs/systemd/maldet-update.service /etc/systemd/system/
+cp $BASEDIR/configs/systemd/maldet-update.timer /etc/systemd/system/
+
+show_yellow "Maldet Update systemd timer installed with Slack notifications."
 
 ##########################################################################################
 ## Install System Health Check timer
@@ -156,6 +170,10 @@ systemctl start rkhunter-scan.timer >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Failed
 
 systemctl enable rkhunter-update.timer >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Failed to enable RKHunter update timer."
 systemctl start rkhunter-update.timer >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Failed to start RKHunter update timer."
+
+# Enable and start Maldet update timer
+systemctl enable maldet-update.timer >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Failed to enable Maldet update timer."
+systemctl start maldet-update.timer >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Failed to start Maldet update timer."
 
 # Enable and start System Health Check timer
 systemctl enable system-health-check.timer >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Failed to enable System Health Check timer."
