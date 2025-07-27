@@ -359,8 +359,8 @@ cat /proc/swaps
 sudo ./run_subscript.sh lightweight_monitoring_install.sh
 
 # Verify
-sudo /usr/local/bin/check_disk_space.sh
-sudo /usr/local/bin/system_health_check.sh
+sudo /srv/apps/scripts/check_disk_space.sh
+sudo /srv/apps/scripts/system_health_check.sh
 ```
 
 **Expected results:**
