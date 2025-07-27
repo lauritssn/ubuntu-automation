@@ -114,7 +114,11 @@ ChallengeResponseAuthentication yes
 KbdInteractiveAuthentication yes
 
 # Authentication methods (require public key + 2FA)
-AuthenticationMethods publickey,keyboard-interactive
+AuthenticationMethods publickey publickey,keyboard-interactive
+
+# Special user for sensitive operations
+# Match User sensitive_user
+#     AuthenticationMethods publickey
 
 ##########################################################################################
 ## Connection Security
