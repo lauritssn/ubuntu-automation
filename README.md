@@ -218,6 +218,8 @@ The automation suite is modular, allowing you to choose which components to inst
 - **System health script:** Automated health checks with intelligent alerting
 - **Swap usage monitoring:** Memory pressure detection and alerting
 - **Disk space monitoring:** Proactive storage monitoring with alerts
+- **Security monitoring:** Comprehensive scripts for SSH, Fail2Ban, and network security
+- **Service testing:** Validation scripts for all installed components
 
 **📱 Slack Integration Features:**
 
@@ -465,6 +467,59 @@ External access limited to: 22 (SSH), 80 (HTTP), 443 (HTTPS), 51820 (Wireguard)
 
 ## 📊 Post-Installation
 
+### Installed Utility Scripts
+
+The automation installs comprehensive utility scripts to `/srv/apps/scripts/` for system management:
+
+#### System Management
+- **`view_install_log.sh`** - View installation logs with filtering options
+- **`view_install_status.sh`** - Check module installation status and reset failed modules
+- **`system_health_check.sh`** - Comprehensive system health monitoring with Slack alerts
+
+#### User & Account Management
+- **`add_user.sh`** - Create users with sudo, 2FA, and VPN access (interactive/CLI modes)
+- **`unlock_account.sh`** - Reset account lockouts using faillock
+- **`show_locked_accounts.sh`** - Display locked accounts and failed login attempts
+- **`show_sudo_usage.sh`** - Audit recent sudo command usage
+
+#### SSH & 2FA Management
+- **`setup_user_2fa.sh`** - Configure 2FA for existing users
+- **`show_2fa_qr.sh`** - Display 2FA QR codes for mobile setup
+- **`disable_user_2fa.sh`** - Remove 2FA from user accounts
+
+#### Security Monitoring
+- **`show_fail2ban_status.sh`** - Comprehensive Fail2Ban monitoring and IP management
+- **`show_ssh_attacks.sh`** - Display recent SSH attack attempts
+- **`show_ssh_security.sh`** - SSH security configuration overview
+- **`show_network_security.sh`** - Network security status and firewall rules
+
+#### Antivirus & Malware
+- **`clamav-scan.sh`** - Manual/scheduled ClamAV system scans with Slack alerts
+- **`clamav-update.sh`** - Update ClamAV signatures with notification
+- **`maldet-scan.sh`** - Linux Malware Detect scans with reporting
+- **`maldet-update.sh`** - Update Maldet signatures and configuration
+
+#### Intrusion Detection
+- **`rkhunter-scan.sh`** - Manual/scheduled rootkit scans with alerts
+- **`rkhunter-update.sh`** - Update RKHunter database and signatures
+
+#### Resource Monitoring
+- **`check_disk_space.sh`** - Monitor disk usage with threshold alerts
+- **`check_swap_usage.sh`** - Track memory pressure and swap utilization
+
+#### Network & VPN Tools
+- **`add-wg-client`** - Add new WireGuard VPN clients
+- **`remove-wg-client`** - Remove WireGuard VPN clients
+- **`enable_ip_forwarding.sh`** - Configure IP forwarding for VPN
+- **`ufw.sh`** - Firewall rule management script
+
+#### Testing & Validation
+- **`test_services.sh`** - Validate all installed services and configurations
+- **`test_ssh_security.sh`** - Test SSH security configuration
+- **`test_network_security.sh`** - Validate network security settings
+
+All scripts include comprehensive help (`--help`) and are designed for Ubuntu 24.04 LTS.
+
 ### Viewing Installation Logs
 
 ```bash
@@ -478,8 +533,8 @@ journalctl -t ubuntu-automation-[TIMESTAMP] INSTALL_STEP=summary --no-pager
 journalctl -t ubuntu-automation-[TIMESTAMP] -p warning --no-pager
 
 # Use the log viewer script
-./view_install_log.sh --list
-./view_install_log.sh --summary
+/srv/apps/scripts/view_install_log.sh --list
+/srv/apps/scripts/view_install_log.sh --summary
 ```
 
 ### Managing Systemd Timers
@@ -514,9 +569,9 @@ journalctl -u disk-space-monitor.service --since yesterday
 /srv/apps/scripts/check_disk_space.sh
 
 # Run security scans manually (with Slack notifications)
-/usr/local/bin/clamav-scan.sh
-/usr/local/bin/rkhunter-scan.sh
-/usr/local/bin/rkhunter-update.sh
+/srv/apps/scripts/clamav-scan.sh
+/srv/apps/scripts/rkhunter-scan.sh
+/srv/apps/scripts/rkhunter-update.sh
 
 # Use monitoring aliases (available after installation)
 syshealth    # Full system health report with Slack alerts

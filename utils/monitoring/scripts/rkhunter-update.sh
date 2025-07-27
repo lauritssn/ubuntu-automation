@@ -65,15 +65,27 @@ chmod 644 /var/log/rkhunter.log 2>/dev/null || true
 # Update RKHunter database
 echo "Starting RKHunter update at $(date)"
 
-# Skip update if WEB_CMD is set to /bin/false (security measure)
-if grep -q 'WEB_CMD="/bin/false"' /etc/rkhunter.conf 2>/dev/null; then
+# Skip update if WEB_CMD is explicitly set to /bin/false (security measure)
+# Check for uncommented line only
+if grep -q '^[[:space:]]*WEB_CMD="/bin/false"' /etc/rkhunter.conf 2>/dev/null; then
     echo "Warning: WEB_CMD is set to /bin/false in rkhunter.conf"
     echo "This prevents remote updates. Consider commenting out WEB_CMD or using package manager updates."
     send_slack_notification "⚠️ $SCRIPT_NAME on $HOSTNAME: WEB_CMD disabled, skipping remote update" "warning"
     UPDATE_EXIT_CODE=0
 else
+    # Run the update and capture both output and exit code
+    echo "Running rkhunter --update..."
     /usr/bin/rkhunter --update --cronjob
     UPDATE_EXIT_CODE=$?
+    
+    # If update fails, check if it's due to WEB_CMD being disabled by rkhunter itself
+    if [ $UPDATE_EXIT_CODE -ne 0 ]; then
+        # Check rkhunter log for web-related errors
+        if grep -q -i "web.*disabled\|download.*disabled\|update.*disabled" /var/log/rkhunter.log 2>/dev/null; then
+            echo "RKHunter update failed - web downloads may be disabled"
+            send_slack_notification "⚠️ $SCRIPT_NAME on $HOSTNAME: Update failed, web downloads may be disabled" "warning"
+        fi
+    fi
 fi
 
 # Update file properties regardless of database update result
