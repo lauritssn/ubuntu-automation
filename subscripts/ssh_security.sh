@@ -281,8 +281,8 @@ if [[ "$DO_SSH_2FA" =~ [Yy]$ ]]; then
 
     show_yellow "Creating 2FA setup script for users."
 
-    # Create setup script for generating 2FA codes
-    cp utils/setup_user_2fa.sh $SCRIPTSDIR/setup_user_2fa.sh
+    # Create script to setup 2FA for a user
+    cp utils/ssh/setup_user_2fa.sh $SCRIPTSDIR/setup_user_2fa.sh
 
     chmod +x $SCRIPTSDIR/setup_user_2fa.sh
     show_yellow "2FA setup script created at $SCRIPTSDIR/setup_user_2fa.sh"
@@ -293,14 +293,14 @@ if [[ "$DO_SSH_2FA" =~ [Yy]$ ]]; then
 
     show_yellow "Creating 2FA management scripts."
 
-    # Create script to display QR code for existing users
-    cp utils/show_2fa_qr.sh $SCRIPTSDIR/show_2fa_qr.sh
+    # Create script to show 2FA QR codes
+    cp utils/ssh/show_2fa_qr.sh $SCRIPTSDIR/show_2fa_qr.sh
 
     chmod +x $SCRIPTSDIR/show_2fa_qr.sh
     show_yellow "2FA QR display script created at $SCRIPTSDIR/show_2fa_qr.sh"
 
     # Create script to disable 2FA for a user
-    cp utils/disable_user_2fa.sh $SCRIPTSDIR/disable_user_2fa.sh
+    cp utils/ssh/disable_user_2fa.sh $SCRIPTSDIR/disable_user_2fa.sh
 
     chmod +x $SCRIPTSDIR/disable_user_2fa.sh
     show_yellow "2FA disable script created at $SCRIPTSDIR/disable_user_2fa.sh"
@@ -316,17 +316,17 @@ fi
 show_yellow "Creating SSH security monitoring utilities."
 
 # Create script to show SSH security status
-cp utils/show_ssh_security.sh $SCRIPTSDIR/show_ssh_security.sh
+cp utils/monitoring/show_ssh_security.sh $SCRIPTSDIR/show_ssh_security.sh
 
 chmod +x $SCRIPTSDIR/show_ssh_security.sh
 
 # Create script to test SSH configuration
-cp utils/test_ssh_security.sh $SCRIPTSDIR/test_ssh_security.sh
+cp utils/monitoring/test_ssh_security.sh $SCRIPTSDIR/test_ssh_security.sh
 
 chmod +x $SCRIPTSDIR/test_ssh_security.sh
 
 # Create script to show failed SSH attempts
-cp utils/show_ssh_attacks.sh $SCRIPTSDIR/show_ssh_attacks.sh
+cp utils/monitoring/show_ssh_attacks.sh $SCRIPTSDIR/show_ssh_attacks.sh
 
 chmod +x $SCRIPTSDIR/show_ssh_attacks.sh
 

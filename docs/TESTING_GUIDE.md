@@ -151,7 +151,7 @@ sudo cat /etc/security/faillock.conf
 
 # Test sudo logging
 sudo cat /etc/sudoers.d/security-policies
-ls -la /var/log/sudo-io/
+sudo ls -la /var/log/sudo-io/
 ```
 
 **Expected results:**
@@ -176,11 +176,11 @@ sudo ./run_subscript.sh ssh_security.sh
 # Verify SSH configuration
 sudo cat /etc/ssh/sshd_config | grep -E "(PermitRootLogin|PasswordAuthentication|PubkeyAuthentication)"
 
-# Test SSH monitoring scripts
+# Test SSH monitoring scripts (only available after running ssh_security.sh)
 sudo /srv/apps/scripts/show_ssh_security.sh
 sudo /srv/apps/scripts/test_ssh_security.sh
 
-# Test 2FA utilities (optional)
+# Test 2FA utilities (optional - only available after running ssh_security.sh with 2FA enabled)
 sudo /srv/apps/scripts/setup_user_2fa.sh testuser
 ```
 
