@@ -375,6 +375,30 @@ replace_script_variables() {
     return 0
 }
 
+# Function to verify that all template placeholders have been replaced
+verify_script_template() {
+    local script_path="$1"
+    local script_name="${2:-Script}"
+
+    if [ ! -f "$script_path" ]; then
+        show_err "Script file not found: $script_path"
+        return 1
+    fi
+
+    # Check for unreplaced template placeholders
+    local unreplaced=$(grep -o '{{[^}]*}}' "$script_path" 2>/dev/null || true)
+
+    if [ -n "$unreplaced" ]; then
+        show_warn "$script_name contains unreplaced template variables:"
+        echo "$unreplaced" | sort | uniq
+        show_warn "This may cause configuration issues. Please check the template variables."
+        return 1
+    else
+        show_yellow "$script_name template verification passed - all variables replaced"
+        return 0
+    fi
+}
+
 ##########################################################################################
 ## Module Execution Functions
 ##########################################################################################
@@ -596,6 +620,7 @@ export -f check_wireguard_available
 # Export script template functions
 export -f copy_and_configure_script
 export -f replace_script_variables
+export -f verify_script_template
 
 # Export module execution functions
 export -f execute_module
