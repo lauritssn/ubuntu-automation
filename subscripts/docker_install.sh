@@ -1,31 +1,34 @@
 #!/bin/bash
 
 ##########################################################################################
-## Ubuntu Configuration Files Modified by this Script
+## Source shared helper functions
 ##########################################################################################
-# This script modifies the following Ubuntu system configuration files and directories:
-#
-# CREATED/MODIFIED FILES:
-# - /etc/apt/keyrings/docker.asc          - Docker GPG key for package verification
-# - /etc/apt/sources.list.d/docker.list   - Docker official repository configuration
-# - /etc/docker/daemon.json               - Docker daemon configuration (copied from configs/docker/daemon.json)
-# - /usr/local/bin/docker-compose         - Symlink to Docker Compose v2 plugin for compatibility
-#
-# CREATED DIRECTORIES:
-# - /etc/apt/keyrings/                     - Directory for APT repository signing keys (if not exists)
-# - /etc/docker/                           - Docker configuration directory (if not exists)
-# - $DOCKER_DATA_ROOT                      - Custom Docker data directory (if specified, default: /var/lib/docker)
-#
-# BACKUP FILES CREATED:
-# - $BACKUPDIR/daemon.json_$DATE           - Backup of original /etc/docker/daemon.json (if exists)
-#
-# MODIFIED FILES (in-place):
-# - /etc/docker/daemon.json               - Modified to add custom data-root path (if DOCKER_DATA_ROOT specified)
-#
-# PERMISSIONS SET:
-# - /etc/apt/keyrings/                     - 755 (created with install command)
-# - /etc/apt/keyrings/docker.asc          - a+r (world readable)
-# - $DOCKER_DATA_ROOT                      - 755, root:root ownership (if custom path specified)
+
+# Set BASEDIR early for shared functions to use
+export BASEDIR="${BASEDIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+
+# Source the shared helper functions
+if [ -f "$BASEDIR/utils/shared_functions.sh" ]; then
+    source "$BASEDIR/utils/shared_functions.sh"
+else
+    echo "❌ ERROR: Shared functions script not found at $BASEDIR/utils/shared_functions.sh"
+    echo "Please run this script from the ubuntu-automation directory or set BASEDIR environment variable"
+    exit 1
+fi
+
+# Fallback function definitions if shared functions aren't available
+if ! command -v show_info &>/dev/null; then
+    show_info() { echo "INFO: $1"; }
+    show_warn() { echo "WARN: $1"; }
+    show_err() {
+        echo "ERROR: $1"
+        exit 1
+    }
+    show_yellow() { echo "STATUS: $1"; }
+fi
+
+##########################################################################################
+## Docker Installation and Configuration
 ##########################################################################################
 
 ##########################################################################################

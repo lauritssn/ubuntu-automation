@@ -1,43 +1,65 @@
 #!/bin/bash
 
 ##########################################################################################
-## SSH Security and Hardening Configuration
+## SSH Security Hardening and 2FA Management Script
+##########################################################################################
+##
+## Description:
+##   Configures comprehensive SSH security hardening including key-only authentication,
+##   connection limits, cipher restrictions, and 2FA management utilities.
+##
+## Ubuntu Config Files Changed/Altered:
+##   - /etc/ssh/sshd_config - Main SSH daemon configuration
+##   - /srv/apps/scripts/setup_user_2fa.sh - 2FA setup utility
+##   - /srv/apps/scripts/disable_user_2fa.sh - 2FA disable utility
+##   - /srv/apps/scripts/show_2fa_qr.sh - 2FA QR code display utility
+##   - /srv/apps/scripts/show_ssh_security.sh - SSH security monitoring
+##   - /srv/apps/scripts/test_ssh_security.sh - SSH security testing
+##
+## Security Features Configured:
+##   - Root login disabled completely
+##   - Password authentication disabled (key-only access)
+##   - Modern SSH algorithms and ciphers only
+##   - Connection rate limiting and timeout controls
+##   - X11 forwarding disabled for security
+##   - Protocol 2 only (modern SSH)
+##   - Comprehensive 2FA management utilities
+##
+## Security Impact:
+##   - Eliminates password-based SSH attacks
+##   - Prevents SSH brute force attempts
+##   - Ensures only secure cryptographic methods
+##   - Provides easy 2FA management for users
+##   - Comprehensive SSH attack monitoring
+##
 ##########################################################################################
 
 ##########################################################################################
-## MODIFIED UBUNTU CONFIG FILES
+## Source shared helper functions
 ##########################################################################################
-##
-## This script modifies the following Ubuntu system configuration files:
-##
-## MODIFIED FILES:
-## • /etc/ssh/sshd_config - Completely replaced with hardened SSH configuration
-## • /etc/pam.d/sshd - Modified to add Google Authenticator 2FA (if 2FA enabled)
-## • /etc/default/motd-news - Modified to disable MOTD news (ENABLED=0)
-##
-## BACKUP FILES CREATED:
-## • $BACKUPDIR/sshd_config_ssh_security_$DATE - Backup of original SSH config
-## • $BACKUPDIR/sshd_ssh_security_$DATE - Backup of original PAM SSH config (if 2FA enabled)
-##
-## DIRECTORIES CREATED:
-## • /run/sshd - SSH privilege separation directory (if not exists)
-##
-## SYSTEMD SERVICES AFFECTED:
-## • motd-news.service - Disabled
-## • ssh.service - Restarted to apply new configuration
-##
-## USER FILES CREATED (when 2FA is configured):
-## • ~/.google_authenticator - 2FA configuration file (per user)
-##
-## UTILITY SCRIPTS CREATED:
-## • $SCRIPTSDIR/setup_user_2fa.sh - Script to setup 2FA for users
-## • $SCRIPTSDIR/show_2fa_qr.sh - Script to display 2FA QR codes
-## • $SCRIPTSDIR/disable_user_2fa.sh - Script to disable user 2FA
-## • $SCRIPTSDIR/show_ssh_security.sh - SSH security status monitoring
-## • $SCRIPTSDIR/test_ssh_security.sh - SSH configuration testing
-## • $SCRIPTSDIR/show_ssh_attacks.sh - SSH attack monitoring
-##
-##########################################################################################
+
+# Set BASEDIR early for shared functions to use
+export BASEDIR="${BASEDIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+
+# Source the shared helper functions
+if [ -f "$BASEDIR/utils/shared_functions.sh" ]; then
+    source "$BASEDIR/utils/shared_functions.sh"
+else
+    echo "❌ ERROR: Shared functions script not found at $BASEDIR/utils/shared_functions.sh"
+    echo "Please run this script from the ubuntu-automation directory or set BASEDIR environment variable"
+    exit 1
+fi
+
+# Fallback function definitions if shared functions aren't available
+if ! command -v show_info &>/dev/null; then
+    show_info() { echo "INFO: $1"; }
+    show_warn() { echo "WARN: $1"; }
+    show_err() {
+        echo "ERROR: $1"
+        exit 1
+    }
+    show_yellow() { echo "STATUS: $1"; }
+fi
 
 ##########################################################################################
 ## Set variables

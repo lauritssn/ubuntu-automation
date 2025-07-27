@@ -1,37 +1,34 @@
 #!/bin/bash
 
 ##########################################################################################
-## Wireguard Installation Script
-##
-## This script installs and configures Wireguard VPN server on Ubuntu.
-##
-## Ubuntu Configuration Files Modified/Created:
-## ------------------------------------------
-## CREATED:
-## - /etc/wireguard/                         - Main Wireguard configuration directory
-## - /etc/wireguard/wg0.conf                 - Main server configuration file
-## - /etc/wireguard/server_private_key       - Server private key file
-## - /etc/wireguard/server_public_key        - Server public key file
-## - /etc/wireguard/add_client.sh            - Client management script
-## - /etc/wireguard/clients/                 - Directory for client configuration files
-## - /usr/local/bin/add-wg-client            - Global client addition script
-## - /usr/local/bin/remove-wg-client         - Global client removal script
-##
-## MODIFIED:
-## - /etc/sysctl.conf                        - Enables IP forwarding (net.ipv4.ip_forward=1, net.ipv6.conf.all.forwarding=1)
-##
-## SYSTEMD SERVICES:
-## - wg-quick@wg0.service                    - Enabled and started for automatic Wireguard startup
-##
-## PACKAGE INSTALLATIONS:
-## - wireguard                               - Core Wireguard package
-## - wireguard-tools                         - Wireguard management tools
-## - qrencode                                - QR code generation for mobile clients
-##
-## NETWORK CONFIGURATION:
-## - Configures iptables rules via PostUp/PostDown hooks in wg0.conf
-## - Sets up NAT masquerading for VPN traffic routing
-##
+## Source shared helper functions
+##########################################################################################
+
+# Set BASEDIR early for shared functions to use
+export BASEDIR="${BASEDIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+
+# Source the shared helper functions
+if [ -f "$BASEDIR/utils/shared_functions.sh" ]; then
+    source "$BASEDIR/utils/shared_functions.sh"
+else
+    echo "❌ ERROR: Shared functions script not found at $BASEDIR/utils/shared_functions.sh"
+    echo "Please run this script from the ubuntu-automation directory or set BASEDIR environment variable"
+    exit 1
+fi
+
+# Fallback function definitions if shared functions aren't available
+if ! command -v show_info &>/dev/null; then
+    show_info() { echo "INFO: $1"; }
+    show_warn() { echo "WARN: $1"; }
+    show_err() {
+        echo "ERROR: $1"
+        exit 1
+    }
+    show_yellow() { echo "STATUS: $1"; }
+fi
+
+##########################################################################################
+## WireGuard VPN Installation and Configuration
 ##########################################################################################
 
 ##########################################################################################

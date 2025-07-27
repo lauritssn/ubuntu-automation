@@ -5,6 +5,7 @@ This guide provides detailed instructions for testing each subscript individuall
 ## Prerequisites
 
 ### Server Requirements
+
 - Fresh Ubuntu 24.04 LTS server
 - Root access or sudo privileges
 - Minimum 2GB RAM and 20GB disk space
@@ -13,32 +14,55 @@ This guide provides detailed instructions for testing each subscript individuall
 ### Preparation Steps
 
 1. **Clone the repository:**
+
    ```bash
    git clone <your-repo-url>
    cd ubuntu-automation
    ```
 
 2. **Set execute permissions:**
+
    ```bash
    chmod +x subscripts/*.sh
    chmod +x utils/**/*.sh
    ```
 
 3. **Create required directories:**
+
    ```bash
    sudo mkdir -p /srv/apps/{logs,scripts,backups}
    sudo mkdir -p /var/log/{clamav,maldet,rkhunter}
    ```
 
-4. **Source shared functions:**
+4. **Create required directories:**
+
    ```bash
-   export BASEDIR=$(pwd)
-   source utils/shared_functions.sh
+   # Create the directories first with proper permissions
+   sudo mkdir -p /srv/apps/{logs,scripts,backups}
+   sudo chmod 755 /srv/apps/{logs,scripts,backups}
+   sudo mkdir -p /var/log/{clamav,maldet,rkhunter}
    ```
+
+   **Note:** You don't need to manually source the shared functions when testing individual subscripts. Each subscript will automatically source the shared functions when executed.
 
 ## Testing Individual Subscripts
 
+**Note:** All subscripts have been updated to properly source the shared functions and can now be run directly. You can use either method:
+
+```bash
+# Method 1: Direct execution (recommended for individual testing)
+sudo ./subscripts/<script_name>
+
+# Method 2: Using run_subscript.sh wrapper (alternative method)
+sudo ./run_subscript.sh <script_name>
+
+# Examples:
+sudo ./subscripts/system_update.sh
+sudo ./run_subscript.sh system_update.sh
+```
+
 ### 1. System Update (`system_update.sh`)
+
 **Purpose:** Updates system packages and kernel
 
 **Prerequisites:** None
@@ -54,12 +78,14 @@ uname -r  # Check kernel version
 ```
 
 **Expected results:**
+
 - All packages updated to latest versions
 - System reboot may be required for kernel updates
 
 ---
 
 ### 2. Package Installation (`packages_install.sh`)
+
 **Purpose:** Installs essential system packages and development tools
 
 **Prerequisites:** system_update.sh completed
@@ -77,12 +103,14 @@ curl --version
 ```
 
 **Expected results:**
+
 - Essential packages installed: htop, iotop, git, curl, build-essential, etc.
 - Development tools available
 
 ---
 
 ### 3. Network Security (`network_security.sh`)
+
 **Purpose:** Configures comprehensive network hardening
 
 **Prerequisites:** None
@@ -103,6 +131,7 @@ sudo /srv/apps/scripts/test_network_security.sh
 ```
 
 **Expected results:**
+
 - Network security sysctl settings applied
 - ICMP ping disabled, SYN cookies enabled
 - Monitoring scripts functional
@@ -110,6 +139,7 @@ sudo /srv/apps/scripts/test_network_security.sh
 ---
 
 ### 4. Account Security (`account_security.sh`)
+
 **Purpose:** Configures password policies, account lockouts, and sudo security
 
 **Prerequisites:** None
@@ -129,6 +159,7 @@ ls -la /var/log/sudo-io/
 ```
 
 **Expected results:**
+
 - Strong password policies enforced
 - Account lockout after 5 failed attempts
 - Sudo commands logged with I/O recording
@@ -136,6 +167,7 @@ ls -la /var/log/sudo-io/
 ---
 
 ### 5. SSH Security (`ssh_security.sh`)
+
 **Purpose:** Hardens SSH configuration and provides 2FA utilities
 
 **Prerequisites:** account_security.sh completed
@@ -157,6 +189,7 @@ sudo /srv/apps/scripts/setup_user_2fa.sh testuser
 ```
 
 **Expected results:**
+
 - Root login disabled, password auth disabled
 - SSH hardened with modern algorithms
 - 2FA management scripts available
@@ -164,6 +197,7 @@ sudo /srv/apps/scripts/setup_user_2fa.sh testuser
 ---
 
 ### 6. NTP Installation (`ntp_install.sh`)
+
 **Purpose:** Configures time synchronization
 
 **Prerequisites:** None
@@ -179,6 +213,7 @@ systemctl status systemd-timesyncd
 ```
 
 **Expected results:**
+
 - NTP synchronization enabled
 - Correct timezone configured
 - Time accurately synchronized
@@ -188,6 +223,7 @@ systemctl status systemd-timesyncd
 ### 7. Security Tools Installation
 
 #### Secure Shared Memory (`secure_shared_memory_install.sh`)
+
 ```bash
 # Test secure shared memory
 sudo ./subscripts/secure_shared_memory_install.sh
@@ -198,6 +234,7 @@ cat /etc/fstab | grep tmpfs
 ```
 
 #### Maldet Installation (`maldet_install.sh`)
+
 **Estimated time:** 3-5 minutes
 
 ```bash
@@ -214,6 +251,7 @@ ls -la /usr/local/maldetect/
 ```
 
 #### ClamAV Installation (`clamav_install.sh`)
+
 **Estimated time:** 5-10 minutes
 
 ```bash
@@ -227,6 +265,7 @@ sudo /usr/local/bin/clamav-scan.sh  # Test scan
 ```
 
 #### RKHunter Installation (`rkhunter_install.sh`)
+
 **Estimated time:** 2-4 minutes
 
 ```bash
@@ -239,6 +278,7 @@ sudo rkhunter --check --sk  # Quick test
 ```
 
 #### Fail2Ban Installation (`fail2ban_install.sh`)
+
 **Estimated time:** 2-3 minutes
 
 ```bash
@@ -252,6 +292,7 @@ sudo /srv/apps/scripts/show_fail2ban_status.sh
 ```
 
 #### Postfix Installation (`postfix_install.sh`)
+
 **Estimated time:** 2-4 minutes
 
 ```bash
@@ -266,6 +307,7 @@ echo "Test email" | mail -s "Test" root
 ---
 
 ### 8. Swap Installation (`swap_install.sh`)
+
 **Purpose:** Creates encrypted swap file
 
 **Prerequisites:** None
@@ -282,12 +324,14 @@ cat /proc/swaps
 ```
 
 **Expected results:**
+
 - Encrypted swap file created and active
 - Memory management optimized
 
 ---
 
 ### 9. Lightweight Monitoring (`lightweight_monitoring_install.sh`)
+
 **Purpose:** Installs basic monitoring tools and scripts
 
 **Prerequisites:** packages_install.sh completed
@@ -303,12 +347,14 @@ sudo /usr/local/bin/system_health_check.sh
 ```
 
 **Expected results:**
+
 - Monitoring scripts installed and functional
 - System health checks operational
 
 ---
 
 ### 10. Systemd Timers (`systemd_timers_install.sh`)
+
 **Purpose:** Sets up automated scanning and monitoring
 
 **Prerequisites:** Security tools installed
@@ -324,12 +370,14 @@ systemctl status clamav-scan.timer
 ```
 
 **Expected results:**
+
 - Automated scanning timers active
 - Daily security scans scheduled
 
 ---
 
 ### 11. UFW Installation (`ufw_install.sh`)
+
 **Purpose:** Configures firewall with intelligent rules
 
 **Prerequisites:** All other services installed
@@ -345,6 +393,7 @@ sudo ufw status numbered
 ```
 
 **Expected results:**
+
 - Firewall enabled with secure defaults
 - SSH access preserved
 - Service-specific rules applied
@@ -354,6 +403,7 @@ sudo ufw status numbered
 ### 12. Optional Services
 
 #### Docker Installation (`docker_install.sh`)
+
 **Estimated time:** 3-8 minutes
 
 ```bash
@@ -369,6 +419,7 @@ docker run hello-world
 ```
 
 #### Netdata Installation (`netdata_install.sh`)
+
 **Estimated time:** 5-10 minutes
 
 ```bash
@@ -381,6 +432,7 @@ curl http://localhost:19999
 ```
 
 #### WireGuard Installation (`wireguard_install.sh`)
+
 **Estimated time:** 2-4 minutes
 
 ```bash
@@ -395,6 +447,7 @@ add-wg-client testclient
 ```
 
 #### Dokku Installation (`dokku_install.sh`)
+
 **Estimated time:** 5-15 minutes
 
 ```bash
@@ -409,21 +462,25 @@ dokku apps:list
 ## Testing Strategy Recommendations
 
 ### 1. **Snapshot Testing**
+
 - Take VM snapshots before each test
 - Restore snapshot between major tests
 - Keep a clean baseline for comparison
 
 ### 2. **Incremental Testing**
+
 - Test core security scripts first (network, account, SSH)
 - Add monitoring and tools incrementally
 - Test UFW last (affects network connectivity)
 
 ### 3. **Integration Testing**
+
 - After individual testing, run full installation
 - Verify all services work together
 - Test cross-dependencies
 
 ### 4. **Rollback Testing**
+
 - Test on disposable VMs/containers
 - Have backup/restore procedures ready
 - Document any issues encountered
@@ -431,6 +488,7 @@ dokku apps:list
 ## Troubleshooting Common Issues
 
 ### Permission Issues
+
 ```bash
 # Fix permission issues
 sudo chown -R root:root /srv/apps/
@@ -438,6 +496,7 @@ sudo chmod +x /srv/apps/scripts/*.sh
 ```
 
 ### Missing Dependencies
+
 ```bash
 # Install missing packages manually
 sudo apt update
@@ -445,6 +504,7 @@ sudo apt install -y curl wget git
 ```
 
 ### Service Startup Issues
+
 ```bash
 # Check service status
 systemctl status <service-name>
@@ -452,6 +512,7 @@ journalctl -u <service-name> -f
 ```
 
 ### Network Connectivity Issues
+
 ```bash
 # If UFW blocks access, reset firewall
 sudo ufw --force reset

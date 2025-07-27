@@ -1,31 +1,34 @@
 #!/bin/bash
 
 ##########################################################################################
-## Ubuntu Configuration Files Modified by This Script
+## Source shared helper functions
 ##########################################################################################
-#
-# This script modifies the following Ubuntu system configuration files:
-#
-# FILES CREATED/REPLACED:
-# - /etc/default/rkhunter          - RKHunter default configuration (backed up if exists)
-# - /etc/rkhunter.conf             - Main RKHunter scan configuration (backed up if exists)
-#
-# FILES MODIFIED IN-PLACE:
-# - /etc/rkhunter.conf             - Template variables replaced (email addresses, etc.)
-#                                  - WEB_CMD lines commented out to enable remote updates
-#
-# BACKUP FILES CREATED:
-# - $BACKUPDIR/rkhunter_YYYY-MM-DD_HHMM    - Backup of /etc/default/rkhunter
-# - $BACKUPDIR/rkhunter.conf_YYYY-MM-DD_HHMM - Backup of /etc/rkhunter.conf
-#
-# PACKAGES INSTALLED:
-# - rkhunter                       - Rootkit Hunter security tool
-# - mailutils                      - Required for email notifications
-#
-# SYSTEM DATABASES UPDATED:
-# - RKHunter signature database    - Updated via 'rkhunter --update'
-# - RKHunter file properties       - Updated via 'rkhunter --propupd'
-#
+
+# Set BASEDIR early for shared functions to use
+export BASEDIR="${BASEDIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+
+# Source the shared helper functions
+if [ -f "$BASEDIR/utils/shared_functions.sh" ]; then
+   source "$BASEDIR/utils/shared_functions.sh"
+else
+   echo "❌ ERROR: Shared functions script not found at $BASEDIR/utils/shared_functions.sh"
+   echo "Please run this script from the ubuntu-automation directory or set BASEDIR environment variable"
+   exit 1
+fi
+
+# Fallback function definitions if shared functions aren't available
+if ! command -v show_info &>/dev/null; then
+   show_info() { echo "INFO: $1"; }
+   show_warn() { echo "WARN: $1"; }
+   show_err() {
+      echo "ERROR: $1"
+      exit 1
+   }
+   show_yellow() { echo "STATUS: $1"; }
+fi
+
+##########################################################################################
+## RKHunter Rootkit Scanner Installation and Configuration
 ##########################################################################################
 
 ##########################################################################################

@@ -1,49 +1,34 @@
 #!/bin/bash
 
 ##########################################################################################
-## Ubuntu Configuration Files Modified by This Script
+## Source shared helper functions
 ##########################################################################################
-#
-# This script makes the following changes to Ubuntu system files and directories:
-#
-# PACKAGES INSTALLED:
-#   - inotify-tools (via apt-get)
-#   - maldetect (from source: https://www.rfxn.com/downloads/maldetect-current.tar.gz)
-#
-# CONFIGURATION FILES MODIFIED:
-#   - /usr/local/maldetect/conf.maldet
-#     * Backed up to: $BACKUPDIR/conf.maldet_YYYY-MM-DD_HHMM
-#     * email_alert=1 (enables email notifications)
-#     * email_addr="$INFO_EMAIL" (sets notification email address)
-#     * quar_hits=1 (enables quarantine of detected malware)
-#     * quar_clean=1 (enables automatic cleaning of quarantined files)
-#     * quar_susp=0 (disables quarantine of suspicious files to reduce false positives)
-#     * quar_susp_minuid=500 (sets minimum UID for suspicious file quarantine)
-#     * scan_clamscan=1 (enables ClamAV integration)
-#     * scan_clamscan_engine=1 (enables ClamAV scanning engine)
-#     * scan_clamscan_daemon=1 (uses ClamAV daemon for efficiency)
-#     * scan_hex_only=1 (enables hex-based signature scanning)
-#     * scan_hexdepth=3 (sets hex scan depth)
-#     * autoupdate_signatures=1 (enables automatic signature updates)
-#     * autoupdate_version=1 (enables automatic version updates)
-#     * scan_tmpdir_paths="/tmp /var/tmp" (configures temporary directory scanning)
-#
-# DIRECTORIES CREATED:
-#   - /usr/local/maldetect/sigs/ (signature database directory, if not exists)
-#
-# FILES CREATED:
-#   - /usr/local/maldetect/sigs/custom.hex.dat (placeholder signature file if download fails)
-#   - /usr/local/maldetect/sigs/README.txt (instructions for signature updates)
-#
-# BINARIES INSTALLED:
-#   - /usr/local/maldetect/maldet (main maldet executable)
-#   - /usr/local/maldetect/maldet-* (various maldet utilities)
-#   - /usr/local/bin/maldet (system-wide symlink to maldet)
-#
-# TEMPORARY FILES USED:
-#   - /tmp/maldetect-current.tar.gz (downloaded and removed)
-#   - /tmp/maldetect-*/ (extracted directory, removed after installation)
-#
+
+# Set BASEDIR early for shared functions to use
+export BASEDIR="${BASEDIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+
+# Source the shared helper functions
+if [ -f "$BASEDIR/utils/shared_functions.sh" ]; then
+    source "$BASEDIR/utils/shared_functions.sh"
+else
+    echo "❌ ERROR: Shared functions script not found at $BASEDIR/utils/shared_functions.sh"
+    echo "Please run this script from the ubuntu-automation directory or set BASEDIR environment variable"
+    exit 1
+fi
+
+# Fallback function definitions if shared functions aren't available
+if ! command -v show_info &>/dev/null; then
+    show_info() { echo "INFO: $1"; }
+    show_warn() { echo "WARN: $1"; }
+    show_err() {
+        echo "ERROR: $1"
+        exit 1
+    }
+    show_yellow() { echo "STATUS: $1"; }
+fi
+
+##########################################################################################
+## Maldet (LMD) Installation and Configuration
 ##########################################################################################
 
 ##########################################################################################

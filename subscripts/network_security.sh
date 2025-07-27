@@ -1,49 +1,62 @@
 #!/bin/bash
 
 ##########################################################################################
-## Network Security and Hardening
+## Network Security Hardening Script for Ubuntu 24.04
 ##########################################################################################
 ##
-## UBUNTU CONFIGURATION FILES MODIFIED BY THIS SCRIPT:
+## Description:
+##   Configures comprehensive network security settings including sysctl parameters,
+##   DNS security, and interface-specific hardening.
 ##
-## FILES CREATED/MODIFIED:
-## • /etc/sysctl.d/99-network-security.conf     - Main network security configuration for sysctl
-## • /etc/network/if-pre-up.d/network-security  - Network interface security script (auto-runs on interface up)
-## • /etc/systemd/resolved.conf.d/security.conf - DNS security configuration for systemd-resolved
+## Ubuntu Config Files Changed/Altered:
+##   - /etc/sysctl.d/99-network-security.conf - Network security sysctl settings
+##   - /etc/systemd/resolved.conf.d/resolved-security.conf - DNS security settings
+##   - /etc/NetworkManager/dispatcher.d/99-network-security - Interface security script
+##   - /srv/apps/scripts/show_network_security.sh - Network monitoring script
+##   - /srv/apps/scripts/test_network_security.sh - Network testing script
+##   - /usr/local/bin/network-interface-security.sh - Interface security helper
 ##
-## RUNTIME KERNEL PARAMETERS MODIFIED (via /proc/sys/):
-## • /proc/sys/net/ipv4/conf/*/rp_filter         - Reverse path filtering (per interface)
-## • /proc/sys/net/ipv4/conf/*/accept_source_route - Source routing acceptance (per interface)
-## • /proc/sys/net/ipv4/conf/*/accept_redirects   - ICMP redirect acceptance (per interface)
-## • /proc/sys/net/ipv4/conf/*/send_redirects     - ICMP redirect sending (per interface)
-## • /proc/sys/net/ipv4/conf/*/log_martians       - Martian packet logging (per interface)
-## • /proc/sys/net/ipv6/conf/*/accept_ra          - IPv6 Router Advertisement acceptance (per interface)
-## • /proc/sys/net/ipv6/conf/*/accept_redirects   - IPv6 redirect acceptance (per interface)
-## • /proc/sys/net/ipv6/conf/*/autoconf           - IPv6 autoconfiguration (per interface)
-## • /proc/sys/net/ipv4/ip_forward                - IPv4 forwarding (when IP forwarding is enabled)
-## • /proc/sys/net/ipv6/conf/all/forwarding       - IPv6 forwarding (when IP forwarding is enabled)
+## Features Configured:
+##   - IP forwarding disabled (default secure state)
+##   - Source routing disabled (prevents routing attacks)
+##   - ICMP responses disabled (reduces attack surface)
+##   - TCP SYN cookies enabled (SYN flood protection)
+##   - Reverse path filtering enabled (anti-spoofing)
+##   - Network buffer limits configured for security
+##   - DNS security with secure resolvers and DNSSEC
+##   - Automatic interface hardening on network changes
 ##
-## BACKUP FILES CREATED:
-## • $BACKUPDIR/sysctl.conf_$DATE                - Backup of original /etc/sysctl.conf (if exists)
-##
-## DIRECTORIES CREATED:
-## • /etc/systemd/resolved.conf.d/               - systemd-resolved configuration directory (if not exists)
-##
-## MONITORING SCRIPTS CREATED:
-## • $SCRIPTSDIR/show_network_security.sh        - Script to display current network security status
-## • $SCRIPTSDIR/test_network_security.sh        - Script to test network security configuration
-## • $SCRIPTSDIR/enable_ip_forwarding.sh         - Script to temporarily enable IP forwarding (for VPN services)
-##
-## PERMISSIONS SET:
-## • /etc/network/if-pre-up.d/network-security   - Set to executable (755)
-## • $SCRIPTSDIR/show_network_security.sh        - Set to executable (755)
-## • $SCRIPTSDIR/test_network_security.sh        - Set to executable (755)
-## • $SCRIPTSDIR/enable_ip_forwarding.sh         - Set to executable (755)
-##
-## SERVICES RESTARTED:
-## • systemd-resolved                            - Restarted to apply DNS security configuration
+## Security Impact:
+##   - Blocks network-based reconnaissance attempts
+##   - Prevents common network attack vectors
+##   - Hardens DNS resolution against attacks
+##   - Automatically secures new network interfaces
 ##
 ##########################################################################################
+
+##########################################################################################
+## Source shared helper functions
+##########################################################################################
+
+# Set BASEDIR early for shared functions to use
+export BASEDIR="${BASEDIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+
+# Source the shared helper functions
+if [ -f "$BASEDIR/utils/shared_functions.sh" ]; then
+    source "$BASEDIR/utils/shared_functions.sh"
+else
+    echo "❌ ERROR: Shared functions script not found at $BASEDIR/utils/shared_functions.sh"
+    echo "Please run this script from the ubuntu-automation directory or set BASEDIR environment variable"
+    exit 1
+fi
+
+# Fallback function definitions if shared functions aren't available
+if ! command -v show_info &>/dev/null; then
+    show_info() { echo "INFO: $1"; }
+    show_warn() { echo "WARN: $1"; }
+    show_err() { echo "ERROR: $1"; exit 1; }
+    show_yellow() { echo "STATUS: $1"; }
+fi
 
 ##########################################################################################
 ## Set variables

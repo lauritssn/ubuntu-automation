@@ -1,49 +1,65 @@
 #!/bin/bash
 
 ##########################################################################################
-## Account Security and User Management
+## Account Security and Password Policy Configuration
+##########################################################################################
+##
+## Description:
+##   Configures comprehensive account security policies including password requirements,
+##   account lockout policies, sudo security enhancements, and session management.
+##
+## Ubuntu Config Files Changed/Altered:
+##   - /etc/security/pwquality.conf - Password complexity requirements
+##   - /etc/security/faillock.conf - Account lockout configuration
+##   - /etc/sudoers.d/security-policies - Enhanced sudo security policies
+##   - /etc/profile.d/session-timeout.sh - Session timeout configuration
+##   - /usr/share/pam-configs/faillock - PAM faillock configuration
+##   - /etc/tmpfiles.d/faillock.conf - Faillock directory configuration
+##   - Root account password locking
+##
+## Security Features Configured:
+##   - Strong password policies (12+ characters, complexity requirements)
+##   - Account lockout after failed attempts (5 attempts, 10 minute lockout)
+##   - Enhanced sudo security with logging and TTY requirement
+##   - Session timeout (30 minutes for idle sessions)
+##   - Root account password disabled (SSH key only access)
+##   - Comprehensive audit logging for sudo commands
+##
+## Security Impact:
+##   - Prevents brute force password attacks
+##   - Enforces strong password creation
+##   - Logs all privileged command execution
+##   - Automatically locks idle sessions
+##   - Secures root account access
+##
 ##########################################################################################
 
 ##########################################################################################
-## UBUNTU CONFIGURATION FILES MODIFIED BY THIS SCRIPT
+## Source shared helper functions
 ##########################################################################################
-##
-## This script modifies the following Ubuntu system configuration files:
-##
-## CREATED/OVERWRITTEN FILES:
-## • /etc/security/pwquality.conf - Password quality requirements configuration
-## • /etc/security/faillock.conf - Account lockout policy configuration
-## • /etc/sudoers.d/security-policies - Enhanced sudo security policies
-## • /etc/profile.d/session-timeout.sh - Automatic session timeout configuration
-## • /etc/tmpfiles.d/faillock.conf - Faillock directory persistence configuration
-##
-## MODIFIED FILES (with backups created):
-## • /etc/pam.d/common-password - PAM password authentication configuration
-## • /etc/pam.d/common-auth - PAM authentication configuration (faillock integration)
-## • /etc/pam.d/common-account - PAM account management configuration
-## • /etc/login.defs - System-wide login and password policies
-## • /etc/default/useradd - Default settings for new user creation
-## • /etc/sudoers - Main sudo configuration (backed up before sudoers.d creation)
-##
-## DIRECTORIES CREATED:
-## • /var/log/sudo-io - Sudo input/output logging directory
-## • /var/run/faillock - Account lockout state directory
-##
-## FILES CREATED:
-## • /var/log/sudo.log - Sudo command logging file
-##
-## SYSTEM ACCOUNTS MODIFIED:
-## • root account - Password locked, home directory permissions secured
-##
-## BACKUPS CREATED IN $BACKUPDIR:
-## • common-password_$DATE - Original PAM password config backup
-## • common-auth_$DATE - Original PAM auth config backup
-## • common-account_$DATE - Original PAM account config backup
-## • login.defs_$DATE - Original login definitions backup
-## • useradd_$DATE - Original useradd defaults backup
-## • sudoers_$DATE - Original sudoers file backup
-##
-##########################################################################################
+
+# Set BASEDIR early for shared functions to use
+export BASEDIR="${BASEDIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+
+# Source the shared helper functions
+if [ -f "$BASEDIR/utils/shared_functions.sh" ]; then
+    source "$BASEDIR/utils/shared_functions.sh"
+else
+    echo "❌ ERROR: Shared functions script not found at $BASEDIR/utils/shared_functions.sh"
+    echo "Please run this script from the ubuntu-automation directory or set BASEDIR environment variable"
+    exit 1
+fi
+
+# Fallback function definitions if shared functions aren't available
+if ! command -v show_info &>/dev/null; then
+    show_info() { echo "INFO: $1"; }
+    show_warn() { echo "WARN: $1"; }
+    show_err() {
+        echo "ERROR: $1"
+        exit 1
+    }
+    show_yellow() { echo "STATUS: $1"; }
+fi
 
 ##########################################################################################
 ## Set variables
