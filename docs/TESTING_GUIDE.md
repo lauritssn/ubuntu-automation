@@ -253,6 +253,9 @@ grep "scan_user_access" /usr/local/maldetect/conf.maldet
 
 # Check /etc/default/maldet permissions
 ls -la /etc/default/maldet
+
+# If you get "public scanning is enabled but paths do not exist" error:
+sudo maldet --mkpubpaths
 ```
 
 #### ClamAV Installation (`clamav_install.sh`)

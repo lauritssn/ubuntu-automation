@@ -136,6 +136,12 @@ if [ -f "/etc/default/maldet" ]; then
     show_yellow "/etc/default/maldet permissions fixed to allow user access."
 fi
 
+# Create public paths required for user access scanning
+if command -v maldet >/dev/null 2>&1; then
+    maldet --mkpubpaths >>$LOGDIR/$LOGFILE 2>&1
+    show_yellow "Maldet public paths created for user access scanning."
+fi
+
 show_yellow "Maldet configured to optionally use ClamAV engine while maintaining independent scanning capability."
 
 ##########################################################################################
