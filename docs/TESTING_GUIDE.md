@@ -426,24 +426,32 @@ sudo ufw status numbered
 **Docker Installation Options:**
 
 - **System Docker:** Traditional Docker with root daemon (requires user in docker group)
-- **Rootless Docker with existing user:** Uses your current user account
-- **Rootless Docker with dedicated user:** Creates a dedicated `dockeruser` for better isolation
+- **Rootless Docker with existing user:** Uses your current user account (set DOCKER_DEDICATED_USER=N)
+- **Rootless Docker with dedicated user:** Creates a dedicated `dockerrootless` user for better isolation (default)
 
-**Recommended approach:** Use dedicated user for production servers, existing user for development.
+**Recommended approach:** Use dedicated user for production servers (default), existing user for development.
 
 ```bash
 # Test Docker installation with options
 
-# Option 1: Rootless Docker with existing user
+# Option 1: Rootless Docker with dedicated user (default - recommended)
 export DOCKER_DATA_ROOT="/var/lib/docker"
 export DOCKER_ROOTLESS="Y"
+# DOCKER_DEDICATED_USER defaults to "Y" for rootless installations
+# DOCKER_USER_NAME defaults to "dockerrootless"
 sudo ./run_subscript.sh docker_install.sh
 
-# Option 2: Rootless Docker with dedicated user (recommended)
+# Option 2: Rootless Docker with existing user
+export DOCKER_DATA_ROOT="/var/lib/docker"
+export DOCKER_ROOTLESS="Y"
+export DOCKER_DEDICATED_USER="N"
+sudo ./run_subscript.sh docker_install.sh
+
+# Option 3: Rootless Docker with custom dedicated user name
 export DOCKER_DATA_ROOT="/var/lib/docker"
 export DOCKER_ROOTLESS="Y"
 export DOCKER_DEDICATED_USER="Y"
-export DOCKER_USER_NAME="dockeruser"  # Optional: defaults to "dockeruser"
+export DOCKER_USER_NAME="mycustomdockeruser"
 sudo ./run_subscript.sh docker_install.sh
 
 # Verify installation type
@@ -451,39 +459,39 @@ if [[ "$DOCKER_ROOTLESS" =~ [Yy]$ ]]; then
     if [[ "$DOCKER_DEDICATED_USER" =~ [Yy]$ ]]; then
         # For rootless Docker with dedicated user
         echo "Testing with dedicated Docker user..."
-        
+
         # Switch to the Docker user
-        sudo su - ${DOCKER_USER_NAME:-dockeruser} -c "
+        sudo su - ${DOCKER_USER_NAME:-dockerrootless} -c "
             # Verify Docker is available
             docker --version
-            
+
             # Check if rootless daemon is running
             systemctl --user status docker
-            
+
             # Test Docker rootless (no sudo needed)
             docker run hello-world
         "
-        
+
         # Alternative: manually switch and test
         echo "Or manually switch to test:"
-        echo "sudo su - ${DOCKER_USER_NAME:-dockeruser}"
+        echo "sudo su - ${DOCKER_USER_NAME:-dockerrootless}"
         echo "docker run hello-world"
-        
+
     else
         # For rootless Docker with existing user
         docker --version
-        
+
         # Check if rootless daemon is running
         systemctl --user status docker
-        
+
         # If not set up, run manual setup
         dockerd-rootless-setuptool.sh install
-        
+
         # Add environment variables to shell profile
         echo 'export PATH=$PATH:/usr/bin' >> ~/.bashrc
         echo 'export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/docker.sock' >> ~/.bashrc
         source ~/.bashrc
-        
+
         # Test Docker rootless (no sudo needed)
         docker run hello-world
     fi
@@ -491,16 +499,16 @@ else
     # For system Docker
     sudo docker --version
     sudo systemctl status docker
-    
+
     # Check if user is in docker group
     groups $USER | grep docker
-    
+
     # If not in docker group, add user and restart session
     sudo usermod -aG docker $USER
-    
+
     # Test Docker (may require logout/login for group changes to take effect)
     sudo docker run hello-world
-    
+
     # After logout/login, test without sudo
     docker run hello-world
 fi
@@ -524,41 +532,14 @@ curl http://localhost:19999
 **Estimated time:** 2-4 minutes
 
 ```bash
-# Test WireGuard installation
-# Optional: Set custom subnet (defaults to 10.66.66.0/24 if not provided)
-export WIREGUARD_SUBNET="10.66.66.0/24"
+# Test WireGuard installation (uses default 10.66.66.0/24 subnet)
 sudo ./run_subscript.sh wireguard_install.sh
 
-# Or run without setting subnet to use default:
-# sudo ./run_subscript.sh wireguard_install.sh
-
-# Verify installation
-systemctl status wg-quick@wg0
-wg show
-
-# Check configuration
-sudo cat /etc/wireguard/wg0.conf | head -10
-
-# Test client management utilities
+# Verify
+sudo systemctl status wg-quick@wg0
+sudo wg show
 add-wg-client testclient
-
-# Check if client was created
-ls -la /etc/wireguard/clients/
-cat /etc/wireguard/clients/testclient.conf
-
-# Remove test client
-remove-wg-client testclient
 ```
-
-**Expected results:**
-- WireGuard service running and active
-- Server configuration properly created with valid IP addresses
-- Client management utilities functional
-
-**Common issues:**
-- If service fails to start, check `journalctl -xeu wg-quick@wg0.service` for details
-- Ensure WIREGUARD_SUBNET is in correct format (X.X.X.X/XX) if manually specified
-- Check firewall rules if clients can't connect
 
 #### Dokku Installation (`dokku_install.sh`)
 

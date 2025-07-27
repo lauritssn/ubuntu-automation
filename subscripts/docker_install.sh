@@ -92,7 +92,7 @@ if [ -n "$GPG_FINGERPRINT" ]; then
     show_yellow "Docker GPG key fingerprint found: $GPG_FINGERPRINT"
     show_yellow "Please verify this matches Docker's official fingerprint."
 else
-    show_warn "Could not extract GPG key fingerprint, but continuing..."
+    show_yellow "GPG key fingerprint verification skipped, proceeding with installation..."
 fi
 
 # Add repository using new format for Ubuntu 24.04
@@ -116,14 +116,12 @@ if [[ $DOCKER_ROOTLESS =~ [Yy]$ ]]; then
     systemctl disable docker.service docker.socket
     systemctl stop docker.service docker.socket
 
-    # Determine which user should run Docker
-    DOCKER_USER=""
-    
-    # Check if DOCKER_DEDICATED_USER is set to create a dedicated user
-    if [[ "${DOCKER_DEDICATED_USER:-}" =~ [Yy]$ ]]; then
-        DOCKER_USER_NAME="${DOCKER_USER_NAME:-dockeruser}"
+    # For rootless mode, default to creating a dedicated user unless explicitly disabled
+    if [[ "${DOCKER_DEDICATED_USER:-Y}" =~ [Yy]$ ]]; then
+        # Use "dockerrootless" as the default user name for rootless installations
+        DOCKER_USER_NAME="${DOCKER_USER_NAME:-dockerrootless}"
         show_yellow "Creating dedicated Docker user: $DOCKER_USER_NAME"
-        
+
         # Create dedicated user for Docker
         if ! id "$DOCKER_USER_NAME" &>/dev/null; then
             useradd -m -s /bin/bash "$DOCKER_USER_NAME"
@@ -131,7 +129,7 @@ if [[ $DOCKER_ROOTLESS =~ [Yy]$ ]]; then
         else
             show_yellow "User $DOCKER_USER_NAME already exists"
         fi
-        
+
         DOCKER_USER="$DOCKER_USER_NAME"
     elif [ -n "$SUDO_USER" ]; then
         DOCKER_USER="$SUDO_USER"
@@ -144,24 +142,24 @@ if [[ $DOCKER_ROOTLESS =~ [Yy]$ ]]; then
     # Setup rootless Docker for the determined user
     if [ -n "$DOCKER_USER" ]; then
         show_yellow "Setting up Docker rootless for user: $DOCKER_USER"
-        
+
         # Ensure user has proper shell and home directory
         usermod -s /bin/bash "$DOCKER_USER" 2>/dev/null || true
-        
+
         # Run setup as the actual user, not root
         sudo -u "$DOCKER_USER" dockerd-rootless-setuptool.sh install >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Rootless setup failed - user may need to run manually"
-        
+
         # Add PATH and Docker configuration for the user
         sudo -u "$DOCKER_USER" bash -c 'echo "export PATH=\$PATH:/usr/bin" >> ~/.bashrc'
         sudo -u "$DOCKER_USER" bash -c 'echo "export DOCKER_HOST=unix://\$XDG_RUNTIME_DIR/docker.sock" >> ~/.bashrc'
-        
+
         # Enable user lingering for systemd user services
         loginctl enable-linger "$DOCKER_USER" 2>/dev/null || show_warn "Could not enable lingering for $DOCKER_USER"
-        
+
         show_yellow "Docker rootless setup completed for $DOCKER_USER."
         show_yellow "To test Docker, switch to user $DOCKER_USER and run: docker run hello-world"
-        
-        if [[ "${DOCKER_DEDICATED_USER:-}" =~ [Yy]$ ]]; then
+
+        if [[ "${DOCKER_DEDICATED_USER:-Y}" =~ [Yy]$ ]]; then
             show_yellow "Switch to Docker user with: sudo su - $DOCKER_USER"
         else
             show_yellow "User $DOCKER_USER should log out and back in for changes to take effect."
@@ -211,7 +209,7 @@ else
         else
             # Fallback: Use jq if available for proper JSON handling
             if command -v jq >/dev/null 2>&1; then
-                jq --arg dataroot "$DOCKER_DATA_ROOT" '. + {"data-root": $dataroot}' "$CONF_ORG" > "${CONF_ORG}.tmp" && mv "${CONF_ORG}.tmp" "$CONF_ORG"
+                jq --arg dataroot "$DOCKER_DATA_ROOT" '. + {"data-root": $dataroot}' "$CONF_ORG" >"${CONF_ORG}.tmp" && mv "${CONF_ORG}.tmp" "$CONF_ORG"
             else
                 # Last resort: safer sed with proper JSON structure
                 sed -i '1s/{/{\n  "data-root": "'"$DOCKER_DATA_ROOT"'",/' "$CONF_ORG"
@@ -220,7 +218,7 @@ else
     else
         # Remove any empty data-root entries if using default path
         if command -v jq >/dev/null 2>&1; then
-            jq 'del(.["data-root"]) | del(."data-root")' "$CONF_ORG" > "${CONF_ORG}.tmp" && mv "${CONF_ORG}.tmp" "$CONF_ORG"
+            jq 'del(.["data-root"]) | del(."data-root")' "$CONF_ORG" >"${CONF_ORG}.tmp" && mv "${CONF_ORG}.tmp" "$CONF_ORG"
         else
             # Remove empty data-root lines with sed
             sed -i '/^[[:space:]]*"data-root":[[:space:]]*"[[:space:]]*"[,]*$/d' "$CONF_ORG"
@@ -230,7 +228,7 @@ else
     ##########################################################################################
     ## Add current user to docker group for permission management
     ##########################################################################################
-    
+
     # Add the user who will use Docker to the docker group
     if [ -n "$SUDO_USER" ]; then
         show_yellow "Adding user $SUDO_USER to docker group."

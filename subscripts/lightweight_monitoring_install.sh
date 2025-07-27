@@ -105,7 +105,7 @@ DEST_HEALTH_SCRIPT="$SCRIPTSDIR/system_health_check.sh"
 if [ -f "$SOURCE_HEALTH_SCRIPT" ]; then
     show_yellow "Installing system health check script from $SOURCE_HEALTH_SCRIPT"
     cp "$SOURCE_HEALTH_SCRIPT" "$DEST_HEALTH_SCRIPT"
-    
+
     # Replace template variables if they exist
     if [ -f "$DEST_HEALTH_SCRIPT" ]; then
         sed -i "s|{{SLACK_WEBHOOK_URL}}|${SLACK_WEBHOOK_URL:-}|g" "$DEST_HEALTH_SCRIPT"
@@ -129,7 +129,7 @@ DEST_DISK_SCRIPT="$SCRIPTSDIR/check_disk_space.sh"
 if [ -f "$SOURCE_DISK_SCRIPT" ]; then
     show_yellow "Installing disk space monitoring script from $SOURCE_DISK_SCRIPT"
     cp "$SOURCE_DISK_SCRIPT" "$DEST_DISK_SCRIPT"
-    
+
     # Replace template variables if they exist
     if [ -f "$DEST_DISK_SCRIPT" ]; then
         sed -i "s|{{SLACK_WEBHOOK_URL}}|${SLACK_WEBHOOK_URL:-}|g" "$DEST_DISK_SCRIPT"

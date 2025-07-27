@@ -303,18 +303,18 @@ DEST_SCRIPT="$SCRIPTSDIR/check_swap_usage.sh"
 
 if [ -f "$SOURCE_SCRIPT" ]; then
     show_yellow "Installing swap monitoring script from $SOURCE_SCRIPT"
-    
+
     # Copy the monitoring script
     cp "$SOURCE_SCRIPT" "$DEST_SCRIPT"
-    
+
     # Replace template variables if they exist
     if [ -f "$DEST_SCRIPT" ]; then
         # Replace Slack webhook URL placeholder with environment variable or empty string
         sed -i "s|{{SLACK_WEBHOOK_URL}}|${SLACK_WEBHOOK_URL:-}|g" "$DEST_SCRIPT"
-        
+
         # Make script executable
         chmod +x "$DEST_SCRIPT"
-        
+
         show_yellow "Swap monitoring script installed at $DEST_SCRIPT"
     else
         show_warn "Failed to copy swap monitoring script"
