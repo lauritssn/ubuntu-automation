@@ -423,27 +423,87 @@ sudo ufw status numbered
 
 **Estimated time:** 3-8 minutes
 
+**Docker Installation Options:**
+
+- **System Docker:** Traditional Docker with root daemon (requires user in docker group)
+- **Rootless Docker with existing user:** Uses your current user account
+- **Rootless Docker with dedicated user:** Creates a dedicated `dockeruser` for better isolation
+
+**Recommended approach:** Use dedicated user for production servers, existing user for development.
+
 ```bash
-# Test Docker installation
+# Test Docker installation with options
+
+# Option 1: Rootless Docker with existing user
 export DOCKER_DATA_ROOT="/var/lib/docker"
 export DOCKER_ROOTLESS="Y"
 sudo ./run_subscript.sh docker_install.sh
 
-# Verify
-sudo docker --version
-sudo systemctl status docker
+# Option 2: Rootless Docker with dedicated user (recommended)
+export DOCKER_DATA_ROOT="/var/lib/docker"
+export DOCKER_ROOTLESS="Y"
+export DOCKER_DEDICATED_USER="Y"
+export DOCKER_USER_NAME="dockeruser"  # Optional: defaults to "dockeruser"
+sudo ./run_subscript.sh docker_install.sh
 
-# Check if user is in docker group
-groups $USER | grep docker
-
-# If not in docker group, add user and restart session
-sudo usermod -aG docker $USER
-
-# Test Docker (may require logout/login for group changes to take effect)
-sudo docker run hello-world
-
-# After logout/login, test without sudo
-docker run hello-world
+# Verify installation type
+if [[ "$DOCKER_ROOTLESS" =~ [Yy]$ ]]; then
+    if [[ "$DOCKER_DEDICATED_USER" =~ [Yy]$ ]]; then
+        # For rootless Docker with dedicated user
+        echo "Testing with dedicated Docker user..."
+        
+        # Switch to the Docker user
+        sudo su - ${DOCKER_USER_NAME:-dockeruser} -c "
+            # Verify Docker is available
+            docker --version
+            
+            # Check if rootless daemon is running
+            systemctl --user status docker
+            
+            # Test Docker rootless (no sudo needed)
+            docker run hello-world
+        "
+        
+        # Alternative: manually switch and test
+        echo "Or manually switch to test:"
+        echo "sudo su - ${DOCKER_USER_NAME:-dockeruser}"
+        echo "docker run hello-world"
+        
+    else
+        # For rootless Docker with existing user
+        docker --version
+        
+        # Check if rootless daemon is running
+        systemctl --user status docker
+        
+        # If not set up, run manual setup
+        dockerd-rootless-setuptool.sh install
+        
+        # Add environment variables to shell profile
+        echo 'export PATH=$PATH:/usr/bin' >> ~/.bashrc
+        echo 'export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/docker.sock' >> ~/.bashrc
+        source ~/.bashrc
+        
+        # Test Docker rootless (no sudo needed)
+        docker run hello-world
+    fi
+else
+    # For system Docker
+    sudo docker --version
+    sudo systemctl status docker
+    
+    # Check if user is in docker group
+    groups $USER | grep docker
+    
+    # If not in docker group, add user and restart session
+    sudo usermod -aG docker $USER
+    
+    # Test Docker (may require logout/login for group changes to take effect)
+    sudo docker run hello-world
+    
+    # After logout/login, test without sudo
+    docker run hello-world
+fi
 ```
 
 #### Netdata Installation (`netdata_install.sh`)

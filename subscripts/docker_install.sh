@@ -112,9 +112,67 @@ if [[ $DOCKER_ROOTLESS =~ [Yy]$ ]]; then
     # Install rootless extras
     apt-get --yes install uidmap dbus-user-session >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of rootless dependencies failed. Please check logfile and fix error manually.")
 
-    # Setup rootless Docker for current user (assuming non-root user will run this)
-    show_yellow "Docker rootless setup will be completed after reboot by the user."
-    show_yellow "Run: dockerd-rootless-setuptool.sh install"
+    # Disable system Docker daemon for rootless mode
+    systemctl disable docker.service docker.socket
+    systemctl stop docker.service docker.socket
+
+    # Determine which user should run Docker
+    DOCKER_USER=""
+    
+    # Check if DOCKER_DEDICATED_USER is set to create a dedicated user
+    if [[ "${DOCKER_DEDICATED_USER:-}" =~ [Yy]$ ]]; then
+        DOCKER_USER_NAME="${DOCKER_USER_NAME:-dockeruser}"
+        show_yellow "Creating dedicated Docker user: $DOCKER_USER_NAME"
+        
+        # Create dedicated user for Docker
+        if ! id "$DOCKER_USER_NAME" &>/dev/null; then
+            useradd -m -s /bin/bash "$DOCKER_USER_NAME"
+            show_yellow "Created user: $DOCKER_USER_NAME"
+        else
+            show_yellow "User $DOCKER_USER_NAME already exists"
+        fi
+        
+        DOCKER_USER="$DOCKER_USER_NAME"
+    elif [ -n "$SUDO_USER" ]; then
+        DOCKER_USER="$SUDO_USER"
+        show_yellow "Using existing user for Docker: $DOCKER_USER"
+    else
+        show_yellow "No user specified for Docker rootless setup."
+        show_yellow "Set DOCKER_DEDICATED_USER=Y to create a dedicated user, or run as non-root user."
+    fi
+
+    # Setup rootless Docker for the determined user
+    if [ -n "$DOCKER_USER" ]; then
+        show_yellow "Setting up Docker rootless for user: $DOCKER_USER"
+        
+        # Ensure user has proper shell and home directory
+        usermod -s /bin/bash "$DOCKER_USER" 2>/dev/null || true
+        
+        # Run setup as the actual user, not root
+        sudo -u "$DOCKER_USER" dockerd-rootless-setuptool.sh install >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Rootless setup failed - user may need to run manually"
+        
+        # Add PATH and Docker configuration for the user
+        sudo -u "$DOCKER_USER" bash -c 'echo "export PATH=\$PATH:/usr/bin" >> ~/.bashrc'
+        sudo -u "$DOCKER_USER" bash -c 'echo "export DOCKER_HOST=unix://\$XDG_RUNTIME_DIR/docker.sock" >> ~/.bashrc'
+        
+        # Enable user lingering for systemd user services
+        loginctl enable-linger "$DOCKER_USER" 2>/dev/null || show_warn "Could not enable lingering for $DOCKER_USER"
+        
+        show_yellow "Docker rootless setup completed for $DOCKER_USER."
+        show_yellow "To test Docker, switch to user $DOCKER_USER and run: docker run hello-world"
+        
+        if [[ "${DOCKER_DEDICATED_USER:-}" =~ [Yy]$ ]]; then
+            show_yellow "Switch to Docker user with: sudo su - $DOCKER_USER"
+        else
+            show_yellow "User $DOCKER_USER should log out and back in for changes to take effect."
+        fi
+    else
+        show_yellow "Docker rootless setup will be completed manually by the user."
+        show_yellow "Run as your user (not root): dockerd-rootless-setuptool.sh install"
+        show_yellow "Then add to ~/.bashrc:"
+        show_yellow "  export PATH=\$PATH:/usr/bin"
+        show_yellow "  export DOCKER_HOST=unix://\$XDG_RUNTIME_DIR/docker.sock"
+    fi
 
 else
     ##########################################################################################
