@@ -89,7 +89,11 @@ if [ $PROPUPD_EXIT_CODE -ne 0 ]; then
     WARNING_COUNT=$(grep -c "Warning:" /var/log/rkhunter.log 2>/dev/null || echo "0")
     ERROR_COUNT=$(grep -c "ERROR:" /var/log/rkhunter.log 2>/dev/null || echo "0")
 
-    if [ $WARNING_COUNT -gt 0 ] && [ $ERROR_COUNT -eq 0 ]; then
+    # Ensure we have numeric values
+    WARNING_COUNT=${WARNING_COUNT:-0}
+    ERROR_COUNT=${ERROR_COUNT:-0}
+
+    if [ "$WARNING_COUNT" -gt 0 ] && [ "$ERROR_COUNT" -eq 0 ]; then
         echo "Found $WARNING_COUNT warnings but no errors. This may be acceptable."
         echo "Consider reviewing and whitelisting legitimate warnings."
         send_slack_notification "⚠️ $SCRIPT_NAME on $HOSTNAME: Property update failed due to $WARNING_COUNT warnings (no errors)" "warning"

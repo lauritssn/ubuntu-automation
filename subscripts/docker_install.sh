@@ -174,6 +174,37 @@ ln -sf /usr/libexec/docker/cli-plugins/docker-compose /usr/local/bin/docker-comp
 show_yellow "Docker Compose v2 installed."
 
 ##########################################################################################
+## Update RKHunter configuration if installed
+##########################################################################################
+
+if command -v rkhunter >/dev/null 2>&1 && [ -f /etc/rkhunter.conf ]; then
+    show_yellow "RKHunter detected. Updating configuration to whitelist Docker."
+
+    # Check if the commented docker entry exists
+    if grep -q "^#SCRIPTWHITELIST=/usr/bin/docker" /etc/rkhunter.conf; then
+        # Uncomment the docker SCRIPTWHITELIST entry
+        sed -i 's/^#SCRIPTWHITELIST=\/usr\/bin\/docker.*$/SCRIPTWHITELIST=\/usr\/bin\/docker/' /etc/rkhunter.conf
+        show_yellow "Docker added to RKHunter SCRIPTWHITELIST."
+
+        # Update RKHunter file properties to include the new docker binary
+        show_yellow "Updating RKHunter file properties for Docker."
+        rkhunter --propupd --cronjob >/dev/null 2>&1 || show_warn "RKHunter property update failed - this may cause warnings during scans."
+    elif ! grep -q "^SCRIPTWHITELIST=/usr/bin/docker" /etc/rkhunter.conf; then
+        # Add docker to SCRIPTWHITELIST if not present
+        echo "SCRIPTWHITELIST=/usr/bin/docker" >>/etc/rkhunter.conf
+        show_yellow "Docker added to RKHunter SCRIPTWHITELIST."
+
+        # Update RKHunter file properties
+        show_yellow "Updating RKHunter file properties for Docker."
+        rkhunter --propupd --cronjob >/dev/null 2>&1 || show_warn "RKHunter property update failed - this may cause warnings during scans."
+    else
+        show_yellow "Docker already whitelisted in RKHunter configuration."
+    fi
+else
+    show_yellow "RKHunter not detected. Skipping RKHunter configuration update."
+fi
+
+##########################################################################################
 ## Docker detection helper function
 ##########################################################################################
 
