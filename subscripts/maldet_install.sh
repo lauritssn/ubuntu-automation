@@ -127,6 +127,15 @@ sed -i 's/scan_hexdepth=.*/scan_hexdepth=3/ig' $CONF_ORG
 sed -i 's/autoupdate_signatures=.*/autoupdate_signatures=1/ig' $CONF_ORG
 sed -i 's/autoupdate_version=.*/autoupdate_version=1/ig' $CONF_ORG
 
+# Enable user access for public scanning
+sed -i 's/scan_user_access=.*/scan_user_access=1/ig' $CONF_ORG
+
+# Fix permissions on /etc/default/maldet to allow users to read it
+if [ -f "/etc/default/maldet" ]; then
+    chmod 644 /etc/default/maldet
+    show_yellow "/etc/default/maldet permissions fixed to allow user access."
+fi
+
 show_yellow "Maldet configured to optionally use ClamAV engine while maintaining independent scanning capability."
 
 ##########################################################################################

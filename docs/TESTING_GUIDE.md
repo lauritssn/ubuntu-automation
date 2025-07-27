@@ -244,6 +244,15 @@ sudo ./run_subscript.sh maldet_install.sh
 # Verify
 maldet --version
 ls -la /usr/local/maldetect/
+
+# Test scanning functionality
+sudo maldet --scan /tmp
+
+# Verify user access is enabled
+grep "scan_user_access" /usr/local/maldetect/conf.maldet
+
+# Check /etc/default/maldet permissions
+ls -la /etc/default/maldet
 ```
 
 #### ClamAV Installation (`clamav_install.sh`)
