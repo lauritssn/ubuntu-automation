@@ -139,17 +139,33 @@ cp $BASEDIR/configs/systemd/clamav-scan.timer /etc/systemd/system/
 cp $BASEDIR/configs/systemd/clamav-update.service /etc/systemd/system/
 cp $BASEDIR/configs/systemd/clamav-update.timer /etc/systemd/system/
 
-# Create ClamAV scan script using template
-copy_and_configure_script "clamav-scan.sh" "/usr/local/bin/clamav-scan.sh" "ClamAV Scan Script"
+# Copy ClamAV scan script from utils/monitoring/scripts/
+SOURCE_CLAMAV_SCAN="$BASEDIR/utils/monitoring/scripts/clamav-scan.sh"
+DEST_CLAMAV_SCAN="/usr/local/bin/clamav-scan.sh"
 
-# Verify script template variables
-verify_script_template "/usr/local/bin/clamav-scan.sh" "ClamAV Scan"
+if [ -f "$SOURCE_CLAMAV_SCAN" ]; then
+    show_yellow "Installing ClamAV scan script from $SOURCE_CLAMAV_SCAN"
+    cp "$SOURCE_CLAMAV_SCAN" "$DEST_CLAMAV_SCAN"
+    sed -i "s|{{SLACK_WEBHOOK_URL}}|${SLACK_WEBHOOK_URL:-}|g" "$DEST_CLAMAV_SCAN"
+    chmod +x "$DEST_CLAMAV_SCAN"
+    show_yellow "ClamAV scan script installed at $DEST_CLAMAV_SCAN"
+else
+    show_warn "Source ClamAV scan script not found at $SOURCE_CLAMAV_SCAN"
+fi
 
-# Create ClamAV update script using template
-copy_and_configure_script "clamav-update.sh" "/usr/local/bin/clamav-update.sh" "ClamAV Update Script"
+# Copy ClamAV update script from utils/monitoring/scripts/
+SOURCE_CLAMAV_UPDATE="$BASEDIR/utils/monitoring/scripts/clamav-update.sh"
+DEST_CLAMAV_UPDATE="/usr/local/bin/clamav-update.sh"
 
-# Verify script template variables
-verify_script_template "/usr/local/bin/clamav-update.sh" "ClamAV Update"
+if [ -f "$SOURCE_CLAMAV_UPDATE" ]; then
+    show_yellow "Installing ClamAV update script from $SOURCE_CLAMAV_UPDATE"
+    cp "$SOURCE_CLAMAV_UPDATE" "$DEST_CLAMAV_UPDATE"
+    sed -i "s|{{SLACK_WEBHOOK_URL}}|${SLACK_WEBHOOK_URL:-}|g" "$DEST_CLAMAV_UPDATE"
+    chmod +x "$DEST_CLAMAV_UPDATE"
+    show_yellow "ClamAV update script installed at $DEST_CLAMAV_UPDATE"
+else
+    show_warn "Source ClamAV update script not found at $SOURCE_CLAMAV_UPDATE"
+fi
 
 show_yellow "ClamAV systemd timers installed with Slack notifications enabled."
 
@@ -159,17 +175,33 @@ show_yellow "ClamAV systemd timers installed with Slack notifications enabled."
 
 show_yellow "Installing RKHunter systemd timers."
 
-# Create RKHunter scan script using template
-copy_and_configure_script "rkhunter-scan.sh" "/usr/local/bin/rkhunter-scan.sh" "RKHunter Scan Script"
+# Copy RKHunter scan script from utils/monitoring/scripts/
+SOURCE_RKHUNTER_SCAN="$BASEDIR/utils/monitoring/scripts/rkhunter-scan.sh"
+DEST_RKHUNTER_SCAN="/usr/local/bin/rkhunter-scan.sh"
 
-# Verify script template variables
-verify_script_template "/usr/local/bin/rkhunter-scan.sh" "RKHunter Scan"
+if [ -f "$SOURCE_RKHUNTER_SCAN" ]; then
+    show_yellow "Installing RKHunter scan script from $SOURCE_RKHUNTER_SCAN"
+    cp "$SOURCE_RKHUNTER_SCAN" "$DEST_RKHUNTER_SCAN"
+    sed -i "s|{{SLACK_WEBHOOK_URL}}|${SLACK_WEBHOOK_URL:-}|g" "$DEST_RKHUNTER_SCAN"
+    chmod +x "$DEST_RKHUNTER_SCAN"
+    show_yellow "RKHunter scan script installed at $DEST_RKHUNTER_SCAN"
+else
+    show_warn "Source RKHunter scan script not found at $SOURCE_RKHUNTER_SCAN"
+fi
 
-# Create RKHunter update script using template
-copy_and_configure_script "rkhunter-update.sh" "/usr/local/bin/rkhunter-update.sh" "RKHunter Update Script"
+# Copy RKHunter update script from utils/monitoring/scripts/
+SOURCE_RKHUNTER_UPDATE="$BASEDIR/utils/monitoring/scripts/rkhunter-update.sh"
+DEST_RKHUNTER_UPDATE="/usr/local/bin/rkhunter-update.sh"
 
-# Verify script template variables
-verify_script_template "/usr/local/bin/rkhunter-update.sh" "RKHunter Update"
+if [ -f "$SOURCE_RKHUNTER_UPDATE" ]; then
+    show_yellow "Installing RKHunter update script from $SOURCE_RKHUNTER_UPDATE"
+    cp "$SOURCE_RKHUNTER_UPDATE" "$DEST_RKHUNTER_UPDATE"
+    sed -i "s|{{SLACK_WEBHOOK_URL}}|${SLACK_WEBHOOK_URL:-}|g" "$DEST_RKHUNTER_UPDATE"
+    chmod +x "$DEST_RKHUNTER_UPDATE"
+    show_yellow "RKHunter update script installed at $DEST_RKHUNTER_UPDATE"
+else
+    show_warn "Source RKHunter update script not found at $SOURCE_RKHUNTER_UPDATE"
+fi
 
 # Copy RKHunter service and timer files
 cp $BASEDIR/configs/systemd/rkhunter-scan.service /etc/systemd/system/
@@ -185,11 +217,19 @@ show_yellow "RKHunter systemd timers installed with Slack notifications."
 
 show_yellow "Installing Maldet Update systemd timer."
 
-# Create Maldet update script using template
-copy_and_configure_script "maldet-update.sh" "/usr/local/bin/maldet-update.sh" "Maldet Update Script"
+# Copy Maldet update script from utils/monitoring/scripts/
+SOURCE_MALDET_UPDATE="$BASEDIR/utils/monitoring/scripts/maldet-update.sh"
+DEST_MALDET_UPDATE="/usr/local/bin/maldet-update.sh"
 
-# Verify script template variables
-verify_script_template "/usr/local/bin/maldet-update.sh" "Maldet Update"
+if [ -f "$SOURCE_MALDET_UPDATE" ]; then
+    show_yellow "Installing Maldet update script from $SOURCE_MALDET_UPDATE"
+    cp "$SOURCE_MALDET_UPDATE" "$DEST_MALDET_UPDATE"
+    sed -i "s|{{SLACK_WEBHOOK_URL}}|${SLACK_WEBHOOK_URL:-}|g" "$DEST_MALDET_UPDATE"
+    chmod +x "$DEST_MALDET_UPDATE"
+    show_yellow "Maldet update script installed at $DEST_MALDET_UPDATE"
+else
+    show_warn "Source Maldet update script not found at $SOURCE_MALDET_UPDATE"
+fi
 
 # Copy Maldet update service and timer files
 cp $BASEDIR/configs/systemd/maldet-update.service /etc/systemd/system/
@@ -203,11 +243,19 @@ show_yellow "Maldet Update systemd timer installed with Slack notifications."
 
 show_yellow "Installing Maldet Scan systemd timer."
 
-# Create Maldet scan script using template
-copy_and_configure_script "maldet-scan.sh" "/usr/local/bin/maldet-scan.sh" "Maldet Scan Script"
+# Copy Maldet scan script from utils/monitoring/scripts/
+SOURCE_MALDET_SCAN="$BASEDIR/utils/monitoring/scripts/maldet-scan.sh"
+DEST_MALDET_SCAN="/usr/local/bin/maldet-scan.sh"
 
-# Verify script template variables
-verify_script_template "/usr/local/bin/maldet-scan.sh" "Maldet Scan"
+if [ -f "$SOURCE_MALDET_SCAN" ]; then
+    show_yellow "Installing Maldet scan script from $SOURCE_MALDET_SCAN"
+    cp "$SOURCE_MALDET_SCAN" "$DEST_MALDET_SCAN"
+    sed -i "s|{{SLACK_WEBHOOK_URL}}|${SLACK_WEBHOOK_URL:-}|g" "$DEST_MALDET_SCAN"
+    chmod +x "$DEST_MALDET_SCAN"
+    show_yellow "Maldet scan script installed at $DEST_MALDET_SCAN"
+else
+    show_warn "Source Maldet scan script not found at $SOURCE_MALDET_SCAN"
+fi
 
 # Copy Maldet scan service and timer files
 cp $BASEDIR/configs/systemd/maldet-scan.service /etc/systemd/system/

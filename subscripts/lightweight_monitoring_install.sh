@@ -98,11 +98,23 @@ show_yellow "Lightweight monitoring tools installed successfully."
 
 show_yellow "Creating system monitoring utilities."
 
-# Create system health check script using template
-copy_and_configure_script "system_health_check.sh" "$SCRIPTSDIR/system_health_check.sh" "System Health Check Script"
+# Copy system health check script from utils/monitoring/scripts/
+SOURCE_HEALTH_SCRIPT="$BASEDIR/utils/monitoring/scripts/system_health_check.sh"
+DEST_HEALTH_SCRIPT="$SCRIPTSDIR/system_health_check.sh"
 
-# Verify script template variables
-verify_script_template "$SCRIPTSDIR/system_health_check.sh" "System Health Check"
+if [ -f "$SOURCE_HEALTH_SCRIPT" ]; then
+    show_yellow "Installing system health check script from $SOURCE_HEALTH_SCRIPT"
+    cp "$SOURCE_HEALTH_SCRIPT" "$DEST_HEALTH_SCRIPT"
+    
+    # Replace template variables if they exist
+    if [ -f "$DEST_HEALTH_SCRIPT" ]; then
+        sed -i "s|{{SLACK_WEBHOOK_URL}}|${SLACK_WEBHOOK_URL:-}|g" "$DEST_HEALTH_SCRIPT"
+        chmod +x "$DEST_HEALTH_SCRIPT"
+        show_yellow "System health check script installed at $DEST_HEALTH_SCRIPT"
+    fi
+else
+    show_warn "Source system health check script not found at $SOURCE_HEALTH_SCRIPT"
+fi
 
 ##########################################################################################
 ## Create disk space monitoring script
@@ -110,11 +122,23 @@ verify_script_template "$SCRIPTSDIR/system_health_check.sh" "System Health Check
 
 show_yellow "Creating disk space monitoring script."
 
-# Create disk space monitoring script using template
-copy_and_configure_script "check_disk_space.sh" "$SCRIPTSDIR/check_disk_space.sh" "Disk Space Monitor Script"
+# Copy disk space monitoring script from utils/monitoring/scripts/
+SOURCE_DISK_SCRIPT="$BASEDIR/utils/monitoring/scripts/check_disk_space.sh"
+DEST_DISK_SCRIPT="$SCRIPTSDIR/check_disk_space.sh"
 
-# Verify script template variables
-verify_script_template "$SCRIPTSDIR/check_disk_space.sh" "Disk Space Monitor"
+if [ -f "$SOURCE_DISK_SCRIPT" ]; then
+    show_yellow "Installing disk space monitoring script from $SOURCE_DISK_SCRIPT"
+    cp "$SOURCE_DISK_SCRIPT" "$DEST_DISK_SCRIPT"
+    
+    # Replace template variables if they exist
+    if [ -f "$DEST_DISK_SCRIPT" ]; then
+        sed -i "s|{{SLACK_WEBHOOK_URL}}|${SLACK_WEBHOOK_URL:-}|g" "$DEST_DISK_SCRIPT"
+        chmod +x "$DEST_DISK_SCRIPT"
+        show_yellow "Disk space monitoring script installed at $DEST_DISK_SCRIPT"
+    fi
+else
+    show_warn "Source disk space monitoring script not found at $SOURCE_DISK_SCRIPT"
+fi
 
 ##########################################################################################
 ## Configure disk space monitoring script
