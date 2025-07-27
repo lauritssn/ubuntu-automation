@@ -426,12 +426,23 @@ sudo ufw status numbered
 ```bash
 # Test Docker installation
 export DOCKER_DATA_ROOT="/var/lib/docker"
-export DOCKER_ROOTLESS="N"
+export DOCKER_ROOTLESS="Y"
 sudo ./run_subscript.sh docker_install.sh
 
 # Verify
-docker --version
-systemctl status docker
+sudo docker --version
+sudo systemctl status docker
+
+# Check if user is in docker group
+groups $USER | grep docker
+
+# If not in docker group, add user and restart session
+sudo usermod -aG docker $USER
+
+# Test Docker (may require logout/login for group changes to take effect)
+sudo docker run hello-world
+
+# After logout/login, test without sudo
 docker run hello-world
 ```
 

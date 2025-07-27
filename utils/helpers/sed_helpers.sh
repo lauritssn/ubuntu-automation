@@ -212,8 +212,16 @@ safe_json_insert() {
     # Create backup
     cp "$file" "$file.$backup_suffix" || return 1
     
-    # Use alternate separator to avoid issues with forward slashes in paths
-    sed -i "s|{|{\n  \"${json_key}\": \"${json_value}\",|" "$file"
+    # Check if key already exists and remove it first
+    if grep -q "\"${json_key}\"" "$file"; then
+        # Remove existing key-value pair (handles both with and without trailing comma)
+        sed -i "/\"${json_key}\"[[:space:]]*:[^,}]*/d" "$file"
+        # Clean up any orphaned commas
+        sed -i 's/,[[:space:]]*,/,/g; s/,[[:space:]]*}/}/g; s/{[[:space:]]*,/{/g' "$file"
+    fi
+    
+    # Add the new key-value pair after the opening brace
+    sed -i "1s|{|{\n  \"${json_key}\": \"${json_value}\",|" "$file"
 }
 
 # Function to safely replace commented configuration lines

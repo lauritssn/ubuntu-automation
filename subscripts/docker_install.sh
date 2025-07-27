@@ -147,14 +147,42 @@ else
         chown root:root $DOCKER_DATA_ROOT
         chmod 755 $DOCKER_DATA_ROOT
 
-        # Add data-root to daemon.json
-        # Use safe function for JSON configuration to handle paths with special characters
+        # Add data-root to daemon.json using proper JSON handling
         if command -v safe_json_insert >/dev/null 2>&1; then
             safe_json_insert "$CONF_ORG" "data-root" "$DOCKER_DATA_ROOT" "docker_backup"
         else
-            # Fallback to safer sed with alternate separator and proper escaping
-            sed -i "s|{|{\n  \"data-root\": \"${DOCKER_DATA_ROOT}\",|" "$CONF_ORG"
+            # Fallback: Use jq if available for proper JSON handling
+            if command -v jq >/dev/null 2>&1; then
+                jq --arg dataroot "$DOCKER_DATA_ROOT" '. + {"data-root": $dataroot}' "$CONF_ORG" > "${CONF_ORG}.tmp" && mv "${CONF_ORG}.tmp" "$CONF_ORG"
+            else
+                # Last resort: safer sed with proper JSON structure
+                sed -i '1s/{/{\n  "data-root": "'"$DOCKER_DATA_ROOT"'",/' "$CONF_ORG"
+            fi
         fi
+    else
+        # Remove any empty data-root entries if using default path
+        if command -v jq >/dev/null 2>&1; then
+            jq 'del(.["data-root"]) | del(."data-root")' "$CONF_ORG" > "${CONF_ORG}.tmp" && mv "${CONF_ORG}.tmp" "$CONF_ORG"
+        else
+            # Remove empty data-root lines with sed
+            sed -i '/^[[:space:]]*"data-root":[[:space:]]*"[[:space:]]*"[,]*$/d' "$CONF_ORG"
+        fi
+    fi
+
+    ##########################################################################################
+    ## Add current user to docker group for permission management
+    ##########################################################################################
+    
+    # Add the user who will use Docker to the docker group
+    if [ -n "$SUDO_USER" ]; then
+        show_yellow "Adding user $SUDO_USER to docker group."
+        usermod -aG docker "$SUDO_USER"
+    elif [ -n "$USER" ] && [ "$USER" != "root" ]; then
+        show_yellow "Adding user $USER to docker group."
+        usermod -aG docker "$USER"
+    else
+        show_warn "No non-root user detected. Docker group membership will need to be set manually."
+        show_warn "Run: sudo usermod -aG docker <username>"
     fi
 fi
 
