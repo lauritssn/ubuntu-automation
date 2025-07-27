@@ -9,7 +9,7 @@
 ##   DNS security, and interface-specific hardening.
 ##
 ## Ubuntu Config Files Changed/Altered:
-##   - /etc/sysctl.d/99-network-security.conf - Network security sysctl settings
+##   - /etc/sysctl.d/30-enhanced-network-security.conf - Enhanced network security sysctl settings
 ##   - /etc/systemd/resolved.conf.d/resolved-security.conf - DNS security settings
 ##   - /etc/NetworkManager/dispatcher.d/99-network-security - Interface security script
 ##   - /srv/apps/scripts/show_network_security.sh - Network monitoring script
@@ -97,12 +97,13 @@ if [ -a $CONF_ORG ]; then
     cp -p $CONF_ORG $CONF_BACK && show_yellow "Sysctl file $CONF_ORG backed up to $CONF_BACK."
 fi
 
-# Create comprehensive network security configuration
-cp "$SCRIPTDIR/../configs/network_security/99-network-security.conf" /etc/sysctl.d/99-network-security.conf
+# Create enhanced network security configuration following Ubuntu 24.04 conventions
+# Use 30- prefix to complement system 10-network-security.conf without conflicts
+cp "$SCRIPTDIR/../configs/network_security/30-enhanced-network-security.conf" /etc/sysctl.d/30-enhanced-network-security.conf
 
 # Apply the new sysctl configuration
-if ! sysctl -p /etc/sysctl.d/99-network-security.conf >>$LOGDIR/$LOGFILE 2>&1; then
-    show_err "Network security sysctl configuration failed. Please check logfile and fix error manually."
+if ! sysctl -p /etc/sysctl.d/30-enhanced-network-security.conf >>$LOGDIR/$LOGFILE 2>&1; then
+    show_err "Enhanced network security sysctl configuration failed. Please check logfile and fix error manually."
     exit 1
 fi
 
@@ -170,9 +171,9 @@ elif sysctl -a 2>/dev/null | grep -q "net.ipv4.tcp_syncookies = 1"; then
     show_yellow "Network security sysctl settings verified (alternative check)."
 else
     show_warn "Some network security settings may not be applied correctly."
-    show_yellow "Attempting to reload network security configuration..."
-    if [ -f /etc/sysctl.d/99-network-security.conf ]; then
-        sysctl -p /etc/sysctl.d/99-network-security.conf >>$LOGDIR/$LOGFILE 2>&1
+    show_yellow "Attempting to reload enhanced network security configuration..."
+    if [ -f /etc/sysctl.d/30-enhanced-network-security.conf ]; then
+        sysctl -p /etc/sysctl.d/30-enhanced-network-security.conf >>$LOGDIR/$LOGFILE 2>&1
         # Re-test after reload
         tcp_syncookies_retry=$(sysctl -n net.ipv4.tcp_syncookies 2>/dev/null)
         if [ "$tcp_syncookies_retry" = "1" ]; then
