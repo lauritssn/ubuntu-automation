@@ -121,7 +121,9 @@ SCAN_EXIT_CODE=$?
 
 # Parse scan results
 INFECTED_FILES=$(grep "FOUND" "$LOG_FILE" | tail -20)
-INFECTED_COUNT=$(grep -c "FOUND" "$LOG_FILE" || echo "0")
+INFECTED_COUNT=$(grep -c "FOUND" "$LOG_FILE" 2>/dev/null || echo "0")
+# Ensure INFECTED_COUNT is a clean integer (remove any newlines/whitespace)
+INFECTED_COUNT=$(echo "$INFECTED_COUNT" | tr -d '\n\r' | head -1)
 
 echo "ClamAV scan completed at $(date)" | tee -a "$LOG_FILE"
 echo "Scan exit code: $SCAN_EXIT_CODE" | tee -a "$LOG_FILE"
