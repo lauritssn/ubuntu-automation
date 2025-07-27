@@ -147,6 +147,19 @@ else
 fi
 
 ##########################################################################################
+## Copy monitoring scripts
+##########################################################################################
+
+# Copy fail2ban monitoring scripts
+if [ -f "$BASEDIR/utils/monitoring/show_fail2ban_status.sh" ]; then
+    cp "$BASEDIR/utils/monitoring/show_fail2ban_status.sh" "$SCRIPTSDIR/show_fail2ban_status.sh"
+    chmod +x "$SCRIPTSDIR/show_fail2ban_status.sh"
+    show_yellow "Fail2Ban monitoring script deployed to $SCRIPTSDIR/show_fail2ban_status.sh"
+else
+    show_warn "Fail2Ban monitoring script not found at $BASEDIR/utils/monitoring/show_fail2ban_status.sh"
+fi
+
+##########################################################################################
 ## Done
 ##########################################################################################
 

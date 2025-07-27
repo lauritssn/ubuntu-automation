@@ -365,6 +365,28 @@ show_info "• Sessions timeout after 30 minutes of inactivity"
 show_info "• Strong password requirements are enforced"
 
 ##########################################################################################
+## Copy monitoring scripts
+##########################################################################################
+
+# Copy account security monitoring scripts
+if [ -f "$BASEDIR/utils/monitoring/show_sudo_usage.sh" ]; then
+    cp "$BASEDIR/utils/monitoring/show_sudo_usage.sh" "$SCRIPTSDIR/show_sudo_usage.sh"
+    chmod +x "$SCRIPTSDIR/show_sudo_usage.sh"
+    show_yellow "Sudo monitoring script deployed to $SCRIPTSDIR/show_sudo_usage.sh"
+fi
+
+if [ -f "$BASEDIR/utils/monitoring/show_locked_accounts.sh" ]; then
+    cp "$BASEDIR/utils/monitoring/show_locked_accounts.sh" "$SCRIPTSDIR/show_locked_accounts.sh"
+    chmod +x "$SCRIPTSDIR/show_locked_accounts.sh"
+    show_yellow "Account lockout monitoring script deployed to $SCRIPTSDIR/show_locked_accounts.sh"
+fi
+
+show_info ""
+show_info "=== Available Monitoring Commands ==="
+show_info "• Show sudo usage: $SCRIPTSDIR/show_sudo_usage.sh"
+show_info "• Show locked accounts: $SCRIPTSDIR/show_locked_accounts.sh"
+
+##########################################################################################
 ## Done
 ##########################################################################################
 

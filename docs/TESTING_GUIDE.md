@@ -152,6 +152,10 @@ sudo cat /etc/security/faillock.conf
 # Test sudo logging
 sudo cat /etc/sudoers.d/security-policies
 sudo ls -la /var/log/sudo-io/
+
+# Test monitoring scripts (installed by account_security.sh)
+sudo /srv/apps/scripts/show_sudo_usage.sh
+sudo /srv/apps/scripts/show_locked_accounts.sh
 ```
 
 **Expected results:**
@@ -245,8 +249,8 @@ sudo ./run_subscript.sh maldet_install.sh
 maldet --version
 ls -la /usr/local/maldetect/
 
-# Test scanning functionality
-sudo maldet --scan /tmp
+# Test scanning functionality (may return empty if no files in /tmp)
+sudo maldet --scan-all /tmp
 
 # Verify user access is enabled
 grep "scan_user_access" /usr/local/maldetect/conf.maldet
@@ -296,7 +300,12 @@ sudo ./run_subscript.sh fail2ban_install.sh
 # Verify
 systemctl status fail2ban
 sudo fail2ban-client status
+
+# Use monitoring script (installed by fail2ban_install.sh)
 sudo /srv/apps/scripts/show_fail2ban_status.sh
+
+# Alternative: use from source location if not installed
+# sudo ./utils/monitoring/show_fail2ban_status.sh
 ```
 
 #### Postfix Installation (`postfix_install.sh`)
