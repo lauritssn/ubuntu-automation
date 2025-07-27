@@ -27,329 +27,33 @@ handle_error() {
     exit 1
 }
 
+##########################################################################################
+## Source shared helper functions
+##########################################################################################
+
+# Set BASEDIR early for shared functions to use
+export BASEDIR=$(pwd)
+
+# Source the shared helper functions
+if [ -f "$BASEDIR/utils/shared_functions.sh" ]; then
+    source "$BASEDIR/utils/shared_functions.sh"
+else
+    echo "❌ ERROR: Shared functions script not found at $BASEDIR/utils/shared_functions.sh"
+    exit 1
+fi
+
 # Initialize systemd journal logging for installation tracking
 INSTALL_ID=$(date +%Y%m%d_%H%M%S)
-JOURNAL_TAG="install-${INSTALL_ID}"
+JOURNAL_TAG="ubuntu-automation-${INSTALL_ID}"
 
-# Function to log to both stdout and systemd journal
-log_install() {
-    local level="$1"
-    local message="$2"
-    local step="$3"
-
-    # Log to systemd journal with structured data (if systemd-cat is available)
-    if command -v systemd-cat >/dev/null 2>&1; then
-        echo "$message" | systemd-cat -t "$JOURNAL_TAG" -p "$level"
-    fi
-
-    # Also display to user
-    echo "$message"
-}
-
-# Enhanced logging functions that integrate with systemd
-log_start() {
-    log_install "info" "=== STARTING: $1 ===" "$1"
-}
-
-log_success() {
-    log_install "info" "✅ SUCCESS: $1" "$1"
-}
-
-log_warning() {
-    log_install "warning" "⚠️  WARNING: $1" "$1"
-}
-
-log_error() {
-    log_install "err" "❌ ERROR: $1" "$1"
-}
-
-log_info() {
-    log_install "info" "ℹ️  INFO: $1" "$1"
-}
-
-##########################################################################################
-## Installation Status Tracking System
-##########################################################################################
-
-# Installation status log file
-export INSTALL_STATUS_LOG="/srv/apps/scripts/installation_status.log"
-
-# Initialize the installation status log
-init_install_status_log() {
-    # Create scripts directory if it doesn't exist
-    if [ ! -d "/srv/apps/scripts" ]; then
-        mkdir -p "/srv/apps/scripts"
-    fi
-
-    # Create the status log if it doesn't exist
-    if [ ! -f "$INSTALL_STATUS_LOG" ]; then
-        cat >"$INSTALL_STATUS_LOG" <<EOF
-# Ubuntu Automation Installation Status Log
-# Format: MODULE_NAME=STATUS
-# STATUS: SUCCESS, FAILED, SKIPPED
-# Generated on: $(date)
-EOF
-        chmod 600 "$INSTALL_STATUS_LOG"
-        log_info "Created new installation status log: $INSTALL_STATUS_LOG"
-    else
-        log_info "Using existing installation status log: $INSTALL_STATUS_LOG"
-    fi
-}
-
-# Check if a module has been successfully installed
-is_module_installed() {
-    local module_name="$1"
-    if [ -f "$INSTALL_STATUS_LOG" ]; then
-        grep -q "^${module_name}=SUCCESS$" "$INSTALL_STATUS_LOG" 2>/dev/null
-        return $?
-    fi
-    return 1 # Not installed
-}
-
-# Mark a module as successfully installed
-mark_module_success() {
-    local module_name="$1"
-    local temp_file=$(mktemp)
-
-    # Remove any existing entry for this module
-    if [ -f "$INSTALL_STATUS_LOG" ]; then
-        grep -v "^${module_name}=" "$INSTALL_STATUS_LOG" >"$temp_file" 2>/dev/null || touch "$temp_file"
-    else
-        touch "$temp_file"
-    fi
-
-    # Add new success entry
-    echo "${module_name}=SUCCESS" >>"$temp_file"
-    mv "$temp_file" "$INSTALL_STATUS_LOG"
-    chmod 600 "$INSTALL_STATUS_LOG"
-
-    log_info "Module '$module_name' marked as successfully installed"
-}
-
-# Mark a module as failed
-mark_module_failed() {
-    local module_name="$1"
-    local temp_file=$(mktemp)
-
-    # Remove any existing entry for this module
-    if [ -f "$INSTALL_STATUS_LOG" ]; then
-        grep -v "^${module_name}=" "$INSTALL_STATUS_LOG" >"$temp_file" 2>/dev/null || touch "$temp_file"
-    else
-        touch "$temp_file"
-    fi
-
-    # Add new failed entry
-    echo "${module_name}=FAILED" >>"$temp_file"
-    mv "$temp_file" "$INSTALL_STATUS_LOG"
-    chmod 600 "$INSTALL_STATUS_LOG"
-
-    log_error "Module '$module_name' marked as failed"
-}
-
-# Mark a module as skipped
-mark_module_skipped() {
-    local module_name="$1"
-    local temp_file=$(mktemp)
-
-    # Remove any existing entry for this module
-    if [ -f "$INSTALL_STATUS_LOG" ]; then
-        grep -v "^${module_name}=" "$INSTALL_STATUS_LOG" >"$temp_file" 2>/dev/null || touch "$temp_file"
-    else
-        touch "$temp_file"
-    fi
-
-    # Add new skipped entry
-    echo "${module_name}=SKIPPED" >>"$temp_file"
-    mv "$temp_file" "$INSTALL_STATUS_LOG"
-    chmod 600 "$INSTALL_STATUS_LOG"
-
-    log_info "Module '$module_name' marked as skipped"
-}
-
-# Execute a module with status tracking
-execute_module() {
-    local module_name="$1"
-    local module_script="$2"
-    local user_choice="$3"
-
-    # Check if user chose to install this module (Y=Yes, M=Mandatory)
-    if [[ ! $user_choice =~ [YyMm]$ ]]; then
-        mark_module_skipped "$module_name"
-        log_info "$module_name installation skipped by user choice"
-        show_warn "$module_name will not be installed"
-        return 0
-    fi
-
-    # Show different messages for mandatory vs optional installations
-    if [[ $user_choice =~ [Mm]$ ]]; then
-        log_info "$module_name is MANDATORY and will be installed automatically"
-    fi
-
-    # Check if module is already successfully installed
-    if is_module_installed "$module_name"; then
-        log_info "$module_name is already successfully installed, skipping..."
-        show_warn "$module_name already installed successfully, skipping..."
-        return 0
-    fi
-
-    # Execute the module
-    log_start "$module_name"
-
-    # Create a temporary error trap for this module
-    set +e # Temporarily disable exit on error
-    (
-        set -e # Re-enable exit on error in subshell
-        . "$module_script"
-    )
-    local exit_code=$?
-    set -e # Re-enable exit on error
-
-    if [ $exit_code -eq 0 ]; then
-        mark_module_success "$module_name"
-        log_success "$module_name"
-        show_yellow "$module_name installation completed successfully"
-    else
-        mark_module_failed "$module_name"
-        log_error "$module_name installation failed with exit code $exit_code"
-        show_err "$module_name installation failed. Check logs for details."
-        echo "❌ $module_name failed. You can retry by running the script again."
-        echo "   Only failed/new modules will be reinstalled."
-
-        # Ask user if they want to continue or exit
-        while true; do
-            read -p "Do you want to continue with other modules (Y/N)? " yn
-            case $yn in
-            [Yy]*)
-                log_info "User chose to continue after $module_name failure"
-                return 0 # Return success to continue with next modules
-                ;;
-            [Nn]*)
-                log_info "User chose to exit after $module_name failure"
-                exit 1
-                ;;
-            *) echo "Please answer yes or no." ;;
-            esac
-        done
-    fi
-
-    return $exit_code
-}
-
-# Display installation status summary
-show_install_status() {
-    if [ ! -f "$INSTALL_STATUS_LOG" ]; then
-        echo "No installation status log found."
-        return
-    fi
-
-    echo ""
-    echo "📋 INSTALLATION STATUS SUMMARY:"
-    echo "=================================="
-
-    local success_count=0
-    local failed_count=0
-    local skipped_count=0
-
-    while IFS='=' read -r module status; do
-        # Skip comments and empty lines
-        if [[ "$module" =~ ^#.*$ ]] || [[ -z "$module" ]]; then
-            continue
-        fi
-
-        case "$status" in
-        "SUCCESS")
-            echo "✅ $module: Successfully installed"
-            ((success_count++))
-            ;;
-        "FAILED")
-            echo "❌ $module: Installation failed"
-            ((failed_count++))
-            ;;
-        "SKIPPED")
-            echo "⏭️  $module: Skipped by user"
-            ((skipped_count++))
-            ;;
-        esac
-    done <"$INSTALL_STATUS_LOG"
-
-    echo "=================================="
-    echo "📊 SUMMARY: $success_count successful, $failed_count failed, $skipped_count skipped"
-
-    if [ $failed_count -gt 0 ]; then
-        echo ""
-        echo "⚠️  Some modules failed. You can re-run this script to retry failed modules."
-        echo "   Successfully installed modules will be skipped automatically."
-    fi
-    echo ""
-}
-
-# User choices persistence
-USER_CHOICES_FILE="/srv/apps/scripts/user_choices.conf"
-
-# Save user choices to file
-save_user_choices() {
-    cat >"$USER_CHOICES_FILE" <<EOF
-# Ubuntu Automation User Choices
-# Generated on: $(date)
-DO_SET_TIMEZONE=$DO_SET_TIMEZONE
-DO_SYSTEM_UPDATE=$DO_SYSTEM_UPDATE
-DO_GENERAL_SERVER_SETTINGS=$DO_GENERAL_SERVER_SETTINGS
-DO_SSH_2FA=$DO_SSH_2FA
-DO_SWAP_INSTALL=$DO_SWAP_INSTALL
-DO_LIGHTWEIGHT_MONITORING=$DO_LIGHTWEIGHT_MONITORING
-ENABLE_SLACK_MONITORING=$ENABLE_SLACK_MONITORING
-SLACK_WEBHOOK_URL="$SLACK_WEBHOOK_URL"
-DO_NETDATA_INSTALL=$DO_NETDATA_INSTALL
-DO_SYSTEMD_TIMERS=$DO_SYSTEMD_TIMERS
-DO_DOCKER_INSTALL=$DO_DOCKER_INSTALL
-DOCKER_ROOTLESS=$DOCKER_ROOTLESS
-DOCKER_DATA_ROOT="$DOCKER_DATA_ROOT"
-DO_UFW_INSTALL=$DO_UFW_INSTALL
-DO_DOKKU_INSTALL=$DO_DOKKU_INSTALL
-DO_WIREGUARD_INSTALL=$DO_WIREGUARD_INSTALL
-WIREGUARD_SUBNET="$WIREGUARD_SUBNET"
-EOF
-    chmod 600 "$USER_CHOICES_FILE"
-    log_info "User choices saved to: $USER_CHOICES_FILE"
-}
-
-# Load user choices from file
-load_user_choices() {
-    if [ -f "$USER_CHOICES_FILE" ]; then
-        source "$USER_CHOICES_FILE"
-        log_info "User choices loaded from: $USER_CHOICES_FILE"
-        return 0
-    fi
-    return 1
-}
-
-# Check if we're resuming (have failed modules)
-is_resuming() {
-    if [ -f "$INSTALL_STATUS_LOG" ]; then
-        grep -q "=FAILED$" "$INSTALL_STATUS_LOG" 2>/dev/null
-        return $?
-    fi
-    return 1
-}
-
-# Export the functions so they're available in subscripts
-export -f is_module_installed
-export -f mark_module_success
-export -f mark_module_failed
-export -f mark_module_skipped
-export -f execute_module
-
-##########################################################################################
-## Define helper functions
-##########################################################################################
+# Initialize logging with the shared functions
+init_logging "install.sh" "$INSTALL_ID"
 
 ##########################################################################################
 ## Define variables with default variables
 ##########################################################################################
 
-# Standardized application paths - no more company placeholders
-export AUTOMATION_ROOT="/srv/apps"
-export BASEDIR=$(pwd)
+# Additional variables specific to install.sh (BASEDIR is already set by shared_functions.sh)
 export LOGDIR='/srv/apps/logs'
 export DATE=$(date +%Y-%m-%d_%H%M)
 export DEBIAN_FRONTEND=noninteractive # Make apt-get install non-interactive
@@ -358,7 +62,7 @@ export DO_CHANGE_TIMEZONE=N
 export DO_SYSTEM_UPDATE=M           # MANDATORY
 export DO_SWAPFILE_INSTALL=M        # MANDATORY
 export DO_EXTRAS_INSTALL=M          # MANDATORY
-export DO_GENERAL_SERVER_SETTINGS=M # MANDATORY
+export DO_NTP_INSTALL=M # MANDATORY
 export DO_LIGHTWEIGHT_MONITORING=M  # MANDATORY
 export DO_NETDATA_INSTALL=N
 export DO_SYSTEMD_TIMERS=M # MANDATORY
@@ -392,85 +96,23 @@ export SECURE_SUBNET="MYIPRANGE/32"
 export SECURE_SUBNET_DESC="MY subnet"
 
 ##########################################################################################
-## Message/logging functions
-##########################################################################################
-
-# Yellow
-show_yellow() {
-    echo $(tput bold)$(tput setaf 4) $@ $(tput sgr 0)
-}
-# White
-show_norm() {
-    echo $(tput bold)$(tput setaf 9) $@ $(tput sgr 0)
-}
-# Blue
-show_info() {
-    echo $(tput bold)$(tput setaf 4) $@ $(tput sgr 0)
-}
-# Green
-show_warn() {
-    echo $(tput bold)$(tput setaf 2) $@ $(tput sgr 0)
-}
-# Red
-show_err() {
-    echo $(tput bold)$(tput setaf 1) $@ $(tput sgr 0)
-}
-
-# Export functions so they're available in sourced subscripts
-export -f show_yellow
-export -f show_norm
-export -f show_info
-export -f show_warn
-export -f show_err
-
-##########################################################################################
 ## Check if we're are root
 ##########################################################################################
 
-if [[ $EUID -ne 0 ]]; then
-    show_err "Script must be run as root. Please check logfile and fix error manually."
-    exit 1
-fi
+check_root
 
 ##########################################################################################
-## Set standardized directory structure (no company name needed)
+## Additional directory setup
 ##########################################################################################
 
-export SCRIPTSDIR="/srv/apps/scripts"
+# Additional deployment directory variable
 export DEPLOYDIR="/srv/apps"
-export BACKUPDIR="/srv/apps/backups"
+
+# Ensure all directories are created (shared functions handles the main ones)
+ensure_directories
 
 ##########################################################################################
-## Check if scripts folder exists and create it if it doesn't
-##########################################################################################
-
-if [ ! -d $SCRIPTSDIR ]; then
-    mkdir -p $SCRIPTSDIR
-fi
-
-##########################################################################################
-## Get input
-##########################################################################################
-
-# Create scripts directory if it doesn't exist
-if [ ! -d $SCRIPTSDIR ]; then
-    mkdir -p $SCRIPTSDIR
-fi
-
-# Create automation-backup dir if it doesn't exist - also creates ($DEPLOYDIR)
-if [ ! -d $BACKUPDIR ]; then
-    mkdir -p $BACKUPDIR
-fi
-
-# Create logs directory if it doesn't exist
-if [ ! -d $LOGDIR ]; then
-    mkdir -p $LOGDIR
-    chmod 755 $LOGDIR
-    log_info "Created logs directory: $LOGDIR"
-fi
-
-##########################################################################################
-## Get input
+## Get user input for configuration
 ##########################################################################################
 
 # Change timezone?
@@ -594,8 +236,8 @@ if is_resuming && load_user_choices; then
     echo "🔄 RESUMING INSTALLATION with previous choices:"
     echo "=================================="
     echo "• DO_SYSTEM_UPDATE: $DO_SYSTEM_UPDATE (Mandatory)"
-    echo "• DO_GENERAL_SERVER_SETTINGS: $DO_GENERAL_SERVER_SETTINGS (Mandatory)"
-    echo "• DO_SSH_2FA: $DO_SSH_2FA"
+    echo "• DO_NTP_INSTALL: $DO_NTP_INSTALL (Mandatory)"
+    echo "• DO_SSH_SECURITY: $DO_SSH_SECURITY"
     echo "• DO_SWAP_INSTALL: $DO_SWAP_INSTALL (Mandatory)"
     echo "• DO_LIGHTWEIGHT_MONITORING: $DO_LIGHTWEIGHT_MONITORING (Mandatory)"
     echo "• ENABLE_SLACK_MONITORING: $ENABLE_SLACK_MONITORING"
@@ -619,36 +261,32 @@ if is_resuming && load_user_choices; then
 else
     echo "📋 Configuration Status:"
     echo "• DO_SYSTEM_UPDATE: $DO_SYSTEM_UPDATE (Mandatory)"
-    echo "• DO_GENERAL_SERVER_SETTINGS: $DO_GENERAL_SERVER_SETTINGS (Mandatory)"
+    echo "• DO_NTP_INSTALL: $DO_NTP_INSTALL (Mandatory)"
     echo "• DO_SWAP_INSTALL: $DO_SWAP_INSTALL (Mandatory)"
     echo "• DO_LIGHTWEIGHT_MONITORING: $DO_LIGHTWEIGHT_MONITORING (Mandatory)"
     echo "• DO_SYSTEMD_TIMERS: $DO_SYSTEMD_TIMERS (Mandatory)"
     echo "• DO_UFW_INSTALL: $DO_UFW_INSTALL (Mandatory)"
     echo ""
 
-    # System update and General server settings are MANDATORY (M) - no user prompts needed
+    # System update and NTP installation are MANDATORY (M) - no user prompts needed
 
-    # SSH 2FA with Google Authenticator
-    if [[ $DO_GENERAL_SERVER_SETTINGS =~ [YyMm]$ ]]; then
-        while true; do
-            read -p "Do You want to enable SSH 2FA with Google Authenticator (Y/N)? " yn
-            case $yn in
-            [Yy]*)
-                DO_SSH_2FA=Y
-                break
-                ;;
-            [Nn]*)
-                DO_SSH_2FA=N
-                break
-                ;;
-            *) echo "Please answer yes or no." ;;
-            esac
-        done
-    else
-        DO_SSH_2FA=N
-    fi
+    # SSH Security with 2FA (now integrated into ssh_security.sh)
+    while true; do
+        read -p "Do You want to enable SSH Security hardening with 2FA support (Y/N)? " yn
+        case $yn in
+        [Yy]*)
+            DO_SSH_SECURITY=Y
+            break
+            ;;
+        [Nn]*)
+            DO_SSH_SECURITY=N
+            break
+            ;;
+        *) echo "Please answer yes or no." ;;
+        esac
+    done
 
-    echo "DO_SSH_2FA: "$DO_SSH_2FA
+    echo "DO_SSH_SECURITY: "$DO_SSH_SECURITY
 
     # Note: User creation is now handled by separate add_user.sh script
     # This keeps the installation focused on system setup
@@ -903,13 +541,18 @@ execute_module "Account_Security" "$BASEDIR/subscripts/account_security.sh" "Y"
 
 printf "\n--------------------\n"
 
-# SSH security configuration (replaces old SSH 2FA and general SSH hardening)
-execute_module "SSH_Security" "$BASEDIR/subscripts/ssh_security.sh" "$DO_SSH_2FA"
+# SSH security configuration (integrated SSH hardening with 2FA support)
+execute_module "SSH_Security" "$BASEDIR/subscripts/ssh_security.sh" "$DO_SSH_SECURITY"
+
+printf "\n--------------------\n"
+
+# NTP install (time synchronization is mandatory for security)
+execute_module "NTP_Installation" "$BASEDIR/subscripts/ntp_install.sh" "$DO_NTP_INSTALL"
 
 printf "\n--------------------\n"
 
 # Security and system hardening tools
-if [[ $DO_GENERAL_SERVER_SETTINGS =~ [YyMm]$ ]]; then
+if [[ $DO_NTP_INSTALL =~ [YyMm]$ ]]; then
     # Check if the entire security suite is already complete
     if is_module_installed "Secure_Shared_Memory" &&
         is_module_installed "Maldet_Installation" &&
@@ -1027,16 +670,16 @@ show_info "   $INSTALL_STATUS_LOG"
 show_info ""
 show_info "👤 USER MANAGEMENT:"
 show_info "   • Root SSH login is DISABLED for security"
-show_info "   • Add new users: $SCRIPTSDIR/add_user.sh --interactive"
-show_info "   • Quick user creation: $SCRIPTSDIR/add_user.sh -u username"
+show_info "   • Add new users: $BASEDIR/utils/user_management/add_user.sh --interactive"
+show_info "   • Quick user creation: $BASEDIR/utils/user_management/add_user.sh -u username"
 show_info "   • All users get sudo access, SSH 2FA, and WireGuard VPN (if available)"
 show_info "   • Use 'sudo su -' to become root after logging in as a regular user"
 show_info ""
-if [[ $DO_GENERAL_SERVER_SETTINGS =~ [Yy]$ ]]; then
+if [[ $DO_NTP_INSTALL =~ [Yy]$ ]]; then
     show_info "🛡️ SECURITY SCANNING INFORMATION:"
     show_info "   • ClamAV/Maldet: Independent scanners with false positive reduction"
     show_info "   • Exclusions: Applied for common system files and applications"
-    show_info "   • Helper script: Run 'clamav-exclude-helper.sh' to optimize for your software stack"
+    show_info "   • Helper script: Run '$BASEDIR/utils/helpers/clamav-exclude-helper.sh' to optimize for your software stack"
     show_info "   • Scan logs: Available in /var/log/clamav/manual_clamscan.log"
     show_info "   • Manual scan: Run '/usr/local/bin/clamav-scan.sh' to test configuration"
     show_info ""

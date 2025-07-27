@@ -1,6 +1,29 @@
 #!/bin/bash
 
 ##########################################################################################
+## System Update Script
+##
+## Description:
+## This script performs system package updates using apt-get commands.
+##
+## Ubuntu Config Files Changed/Altered:
+## - /var/lib/apt/lists/* - Package list files updated during 'apt-get update'
+## - /var/cache/apt/archives/* - Package cache updated during package downloads
+## - /var/lib/dpkg/status - Package status database updated during upgrades
+## - /var/lib/dpkg/info/* - Package information files updated during upgrades
+## - /var/log/apt/history.log - APT command history log updated
+## - /var/log/apt/term.log - APT terminal output log updated
+## - /var/log/dpkg.log - DPKG operations log updated
+## - Various system files under /etc/, /usr/, /lib/, etc. - Updated by individual packages
+## - Package configuration files in /etc/ - May be updated by upgraded packages
+##
+## Note: This script does not directly modify configuration files, but the package
+## upgrades it performs may update system configuration files as part of the normal
+## package upgrade process. Users should review any configuration file prompts
+## during the upgrade process.
+##########################################################################################
+
+##########################################################################################
 ## Set variables
 ##########################################################################################
 

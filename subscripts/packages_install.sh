@@ -3,6 +3,30 @@
 ##########################################################################################
 ## Common Packages Installation
 ##########################################################################################
+##
+## Description:
+##   Installs essential system packages, security tools, and optional services for Ubuntu 24.04.
+##   This script handles package installation and verification but does NOT modify any
+##   Ubuntu configuration files directly.
+##
+## Ubuntu Configuration Files Modified:
+##   - NONE - This script only installs packages via apt-get
+##   - Package configurations are handled by their respective installation scripts
+##   - Postfix mail server is pre-configured via debconf to avoid interactive prompts
+##
+## Packages Installed:
+##   Essential: curl, wget, git, unzip, tar, gzip, gcc, build-essential, htop, etc.
+##   Security: ufw, fail2ban, clamav, libpam-google-authenticator, qrencode
+##   Optional: wireguard, netdata, postfix (based on user selections)
+##
+## Note: Individual service configurations are handled by dedicated scripts:
+##   - SSH security: ssh_security.sh
+##   - Firewall: ufw_install.sh
+##   - Fail2Ban: fail2ban_install.sh
+##   - ClamAV: clamav_install.sh
+##   - etc.
+##
+##########################################################################################
 
 ##########################################################################################
 ## Set variables

@@ -1,6 +1,40 @@
 #!/bin/bash
 
 ##########################################################################################
+## Wireguard Installation Script
+##
+## This script installs and configures Wireguard VPN server on Ubuntu.
+##
+## Ubuntu Configuration Files Modified/Created:
+## ------------------------------------------
+## CREATED:
+## - /etc/wireguard/                         - Main Wireguard configuration directory
+## - /etc/wireguard/wg0.conf                 - Main server configuration file
+## - /etc/wireguard/server_private_key       - Server private key file
+## - /etc/wireguard/server_public_key        - Server public key file
+## - /etc/wireguard/add_client.sh            - Client management script
+## - /etc/wireguard/clients/                 - Directory for client configuration files
+## - /usr/local/bin/add-wg-client            - Global client addition script
+## - /usr/local/bin/remove-wg-client         - Global client removal script
+##
+## MODIFIED:
+## - /etc/sysctl.conf                        - Enables IP forwarding (net.ipv4.ip_forward=1, net.ipv6.conf.all.forwarding=1)
+##
+## SYSTEMD SERVICES:
+## - wg-quick@wg0.service                    - Enabled and started for automatic Wireguard startup
+##
+## PACKAGE INSTALLATIONS:
+## - wireguard                               - Core Wireguard package
+## - wireguard-tools                         - Wireguard management tools
+## - qrencode                                - QR code generation for mobile clients
+##
+## NETWORK CONFIGURATION:
+## - Configures iptables rules via PostUp/PostDown hooks in wg0.conf
+## - Sets up NAT masquerading for VPN traffic routing
+##
+##########################################################################################
+
+##########################################################################################
 ## Set variables
 ##########################################################################################
 DATE=$(date +%Y-%m-%d_%H%M)
@@ -128,59 +162,7 @@ show_yellow "IP forwarding enabled."
 show_yellow "Creating client management utilities."
 
 # Create client generation script
-cat >/etc/wireguard/add_client.sh <<'EOF'
-#!/bin/bash
-
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 <client_name>"
-    exit 1
-fi
-
-CLIENT_NAME=$1
-CLIENT_IP_NUM=$(( $(wg show wg0 peers | wc -l) + 2 ))
-WG_SERVER_IP=$(grep Address /etc/wireguard/wg0.conf | awk '{print $3}' | cut -d'/' -f1)
-WG_CIDR=$(grep Address /etc/wireguard/wg0.conf | awk '{print $3}' | cut -d'/' -f2)
-WG_NETWORK_BASE=$(echo $WG_SERVER_IP | cut -d'.' -f1-3)
-CLIENT_IP="$WG_NETWORK_BASE.$CLIENT_IP_NUM"
-SERVER_PUBLIC_KEY=$(cat /etc/wireguard/server_public_key)
-SERVER_ENDPOINT="$(curl -s ifconfig.me):51820"
-
-# Generate client keys
-CLIENT_PRIVATE_KEY=$(wg genkey)
-CLIENT_PUBLIC_KEY=$(echo "$CLIENT_PRIVATE_KEY" | wg pubkey)
-
-# Add client to server config
-echo "" >> /etc/wireguard/wg0.conf
-echo "# Client: $CLIENT_NAME" >> /etc/wireguard/wg0.conf
-echo "[Peer]" >> /etc/wireguard/wg0.conf
-echo "PublicKey = $CLIENT_PUBLIC_KEY" >> /etc/wireguard/wg0.conf
-echo "AllowedIPs = $CLIENT_IP/32" >> /etc/wireguard/wg0.conf
-
-# Create client config file
-cat > /etc/wireguard/clients/${CLIENT_NAME}.conf << EOL
-[Interface]
-PrivateKey = $CLIENT_PRIVATE_KEY
-Address = $CLIENT_IP/$WG_CIDR
-DNS = $WG_SERVER_IP
-
-[Peer]
-PublicKey = $SERVER_PUBLIC_KEY
-Endpoint = $SERVER_ENDPOINT
-AllowedIPs = 0.0.0.0/0
-PersistentKeepalive = 21
-EOL
-
-# Generate QR code for mobile clients
-qrencode -t ansiutf8 < /etc/wireguard/clients/${CLIENT_NAME}.conf
-
-echo "Client $CLIENT_NAME added successfully!"
-echo "Config file: /etc/wireguard/clients/${CLIENT_NAME}.conf"
-echo "Client IP: $CLIENT_IP"
-
-# Restart Wireguard to apply changes
-systemctl restart wg-quick@wg0
-
-EOF
+cp "$SCRIPTDIR/../utils/generators/add_client.sh" /etc/wireguard/add_client.sh
 
 chmod +x /etc/wireguard/add_client.sh
 
@@ -208,73 +190,12 @@ show_yellow "Wireguard service started successfully."
 show_yellow "Creating global WireGuard management scripts."
 
 # Create global add-wg-client script
-cat >/usr/local/bin/add-wg-client <<'EOF'
-#!/bin/bash
-
-# Global WireGuard client management script
-# Wrapper for the local add_client.sh script
-
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 <client_name>"
-    echo "Example: $0 john"
-    exit 1
-fi
-
-if [ ! -f /etc/wireguard/add_client.sh ]; then
-    echo "Error: WireGuard add_client.sh script not found."
-    echo "Make sure WireGuard is properly installed."
-    exit 1
-fi
-
-# Run the local script
-/etc/wireguard/add_client.sh "$1"
-EOF
+cp "$SCRIPTDIR/../utils/add-wg-client" /usr/local/bin/add-wg-client
 
 chmod +x /usr/local/bin/add-wg-client
 
 # Create global remove-wg-client script
-cat >/usr/local/bin/remove-wg-client <<'EOF'
-#!/bin/bash
-
-# Global WireGuard client removal script
-
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 <client_name>"
-    echo "Example: $0 john"
-    exit 1
-fi
-
-CLIENT_NAME="$1"
-
-if [ ! -f /etc/wireguard/wg0.conf ]; then
-    echo "Error: WireGuard server configuration not found."
-    exit 1
-fi
-
-# Check if client exists
-if ! grep -q "# Client: $CLIENT_NAME" /etc/wireguard/wg0.conf; then
-    echo "Error: Client '$CLIENT_NAME' not found in WireGuard configuration."
-    exit 1
-fi
-
-echo "Removing WireGuard client: $CLIENT_NAME"
-
-# Remove client from server config
-# Remove the client block (from "# Client: name" to the next empty line or EOF)
-sed -i "/# Client: $CLIENT_NAME/,/^$/d" /etc/wireguard/wg0.conf
-
-# Remove client config file
-if [ -f "/etc/wireguard/clients/${CLIENT_NAME}.conf" ]; then
-    rm "/etc/wireguard/clients/${CLIENT_NAME}.conf"
-    echo "Removed client config file: /etc/wireguard/clients/${CLIENT_NAME}.conf"
-fi
-
-# Restart WireGuard to apply changes
-systemctl restart wg-quick@wg0
-
-echo "Client '$CLIENT_NAME' removed successfully!"
-echo "WireGuard service restarted to apply changes."
-EOF
+cp "$SCRIPTDIR/../utils/remove-wg-client" /usr/local/bin/remove-wg-client
 
 chmod +x /usr/local/bin/remove-wg-client
 

@@ -3,6 +3,35 @@
 ##########################################################################################
 ## Modern Ubuntu 24.04 Swap Implementation
 ##########################################################################################
+##
+## CONFIGURATION FILES MODIFIED:
+## -----------------------------
+## • /etc/fstab - Updated with new swap file entry for persistent mounting
+## • /etc/sysctl.conf - Modified with memory management optimization parameters:
+##   - vm.swappiness=60 (balance between ZRAM and traditional swap)
+##   - vm.vfs_cache_pressure=50 (favor keeping directory/inode cache in memory)
+##   - vm.dirty_ratio=15 (control when dirty pages are written to disk)
+##   - vm.dirty_background_ratio=5 (background dirty page write threshold)
+##   - vm.overcommit_memory=1 (conservative memory overcommit for servers)
+##   - vm.overcommit_ratio=50 (memory overcommit ratio)
+##
+## FILES CREATED:
+## --------------
+## • /swapfile - New swap file (size calculated based on system RAM)
+## • $SCRIPTSDIR/check_swap_usage.sh - Swap monitoring script from template
+##
+## FILES BACKED UP:
+## ----------------
+## • /etc/fstab → $BACKUPDIR/fstab_$DATE
+## • /etc/sysctl.conf → $BACKUPDIR/sysctl.conf_$DATE
+##
+## SYSTEM CHANGES:
+## ---------------
+## • Existing swap files (/var/tmp/swapfile, /swapfile) are disabled and removed
+## • New swap space is activated and made persistent across reboots
+## • Memory management parameters are applied immediately via sysctl -p
+##
+##########################################################################################
 
 ##########################################################################################
 ## Set variables
@@ -232,7 +261,8 @@ free -h
 ##########################################################################################
 
 # Source helper functions for script template management
-source "$BASEDIR/configs/script-templates/script_helper_functions.sh"
+# Note: Script template helper functions are available through shared_functions.sh
+# which is already sourced by the parent script (install.sh or run_subscript.sh)
 
 ##########################################################################################
 ## Setup swap monitoring

@@ -1,6 +1,34 @@
 #!/bin/bash
 
 ##########################################################################################
+## Ubuntu Configuration Files Modified by This Script
+##########################################################################################
+#
+# This script modifies the following Ubuntu system configuration files:
+#
+# FILES CREATED/REPLACED:
+# - /etc/default/rkhunter          - RKHunter default configuration (backed up if exists)
+# - /etc/rkhunter.conf             - Main RKHunter scan configuration (backed up if exists)
+#
+# FILES MODIFIED IN-PLACE:
+# - /etc/rkhunter.conf             - Template variables replaced (email addresses, etc.)
+#                                  - WEB_CMD lines commented out to enable remote updates
+#
+# BACKUP FILES CREATED:
+# - $BACKUPDIR/rkhunter_YYYY-MM-DD_HHMM    - Backup of /etc/default/rkhunter
+# - $BACKUPDIR/rkhunter.conf_YYYY-MM-DD_HHMM - Backup of /etc/rkhunter.conf
+#
+# PACKAGES INSTALLED:
+# - rkhunter                       - Rootkit Hunter security tool
+# - mailutils                      - Required for email notifications
+#
+# SYSTEM DATABASES UPDATED:
+# - RKHunter signature database    - Updated via 'rkhunter --update'
+# - RKHunter file properties       - Updated via 'rkhunter --propupd'
+#
+##########################################################################################
+
+##########################################################################################
 ## Set variables
 ##########################################################################################
 
@@ -16,11 +44,11 @@ fi
 LOGFILE=$SUBSCRIPT-$DATE.log
 
 ##########################################################################################
-## Load script template helper functions
+## Helper functions are available via parent script (install.sh or run_subscript.sh)
 ##########################################################################################
 
-# Source helper functions for script template management
-source "$BASEDIR/configs/script-templates/script_helper_functions.sh"
+# Note: Script template helper functions are available through shared_functions.sh
+# which is already sourced by the parent script (install.sh or run_subscript.sh)
 
 ##########################################################################################
 ## RKHunter configuration
@@ -39,6 +67,15 @@ CONF2_GIT=$BASEDIR/configs/rkhunter/rkhunter.conf
 ##########################################################################################
 
 show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFILE."
+
+# Source the sed helpers for safe operations
+if [ -f "$BASEDIR/utils/helpers/sed_helpers.sh" ]; then
+   source "$BASEDIR/utils/helpers/sed_helpers.sh"
+elif [ -f "$(dirname "$0")/../utils/helpers/sed_helpers.sh" ]; then
+   source "$(dirname "$0")/../utils/helpers/sed_helpers.sh"
+else
+   show_warn "sed_helpers.sh not found - using legacy sed operations"
+fi
 
 ##########################################################################################
 ## Install RKHunter
@@ -75,8 +112,16 @@ replace_script_variables "$CONF2_ORG"
 
 # Ensure WEB_CMD is commented out to allow remote updates
 show_yellow "Ensuring WEB_CMD is disabled to allow remote database updates."
-sed -i 's/^WEB_CMD=/#WEB_CMD=/' "$CONF2_ORG" 2>/dev/null || true
-sed -i 's/^WEB_CMD="/.*/#&/' "$CONF2_ORG" 2>/dev/null || true
+
+# Use safe function for commenting out WEB_CMD patterns
+if command -v safe_comment_pattern >/dev/null 2>&1; then
+   safe_comment_pattern "$CONF2_ORG" "WEB_CMD=" "rkhunter_backup"
+else
+   # Fallback to safer sed operations
+   sed -i 's/^WEB_CMD=/#WEB_CMD=/' "$CONF2_ORG" 2>/dev/null || true
+   # Fix the malformed regex - properly comment lines starting with WEB_CMD="
+   sed -i 's/^WEB_CMD="/#&/' "$CONF2_ORG" 2>/dev/null || true
+fi
 
 # Verify WEB_CMD is properly commented
 if grep -q '^WEB_CMD=' "$CONF2_ORG" 2>/dev/null; then

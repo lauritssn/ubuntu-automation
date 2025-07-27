@@ -1,0 +1,47 @@
+# Unified Email Configuration Template
+# This template provides standardized email placeholders for all services
+# 
+# Usage: Services should reference these placeholders consistently
+# Replacement is handled by the sed helper functions
+
+##########################################################################################
+## Standard Email Placeholders
+##########################################################################################
+
+# Primary notification email address
+# Placeholder: {{INFO_EMAIL}}
+# Description: Main email address for system notifications and alerts
+# Used by: fail2ban, clamav, maldet, rkhunter, postfix
+
+# Email domain for system-generated emails
+# Placeholder: {{EMAIL_DOMAIN}}
+# Description: Domain name used for sender addresses (e.g., alerts@yourdomain.com)
+# Used by: fail2ban, clamav, maldet
+
+# Service-specific sender addresses
+# These follow the pattern: service@{{EMAIL_DOMAIN}}
+# Examples:
+# - fail2ban: Fail2Ban@{{EMAIL_DOMAIN}}
+# - clamav: clamav@{{EMAIL_DOMAIN}}
+# - maldet: maldet@{{EMAIL_DOMAIN}}
+# - rkhunter: rkhunter@{{EMAIL_DOMAIN}}
+
+##########################################################################################
+## Template Validation Rules
+##########################################################################################
+
+# Email addresses must be valid RFC 5322 format
+# Domain names must be valid DNS names
+# No special shell characters that could break sed operations
+# All placeholders use double curly braces: {{PLACEHOLDER}}
+
+##########################################################################################
+## Replacement Guidelines
+##########################################################################################
+
+# Use the sed helper functions for replacement:
+# replace_email_placeholder FILE PLACEHOLDER EMAIL
+# 
+# Example:
+# replace_email_placeholder "/etc/fail2ban/jail.conf" "{{INFO_EMAIL}}" "admin@example.com"
+# replace_email_placeholder "/etc/fail2ban/jail.conf" "{{EMAIL_DOMAIN}}" "example.com"

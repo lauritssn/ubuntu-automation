@@ -6,11 +6,13 @@
 DATE=$(date +%Y-%m-%d_%H%M)
 SCRIPT_NAME="Maldet Signature Update"
 
-# Source helper functions if available
-if [ -f "/usr/local/bin/script_helper_functions.sh" ]; then
-    source /usr/local/bin/script_helper_functions.sh
-elif [ -f "$(dirname "$0")/script_helper_functions.sh" ]; then
-    source "$(dirname "$0")/script_helper_functions.sh"
+# Source helper functions if available (look for shared functions in multiple locations)
+if [ -f "/srv/apps/scripts/shared_functions.sh" ]; then
+    source /srv/apps/scripts/shared_functions.sh
+elif [ -f "/usr/local/bin/shared_functions.sh" ]; then
+    source /usr/local/bin/shared_functions.sh
+elif [ -f "$(dirname "$0")/shared_functions.sh" ]; then
+    source "$(dirname "$0")/shared_functions.sh"
 else
     # Fallback functions if helper script not available
     show_info() { echo "[INFO] $1"; }

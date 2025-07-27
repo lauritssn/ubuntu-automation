@@ -5,6 +5,24 @@
 # Tests all monitoring and security services manually
 #########################################################################
 
+##########################################################################################
+## Source shared helper functions
+##########################################################################################
+
+# Set BASEDIR for shared functions (assuming script is in utils/)
+export BASEDIR="$(dirname "$(dirname "$(realpath "$0")")")"
+
+# Source the shared helper functions
+if [ -f "$BASEDIR/utils/shared_functions.sh" ]; then
+    source "$BASEDIR/utils/shared_functions.sh"
+else
+    echo "❌ ERROR: Shared functions script not found at $BASEDIR/utils/shared_functions.sh"
+    exit 1
+fi
+
+# Initialize logging
+init_logging "test_services.sh"
+
 # Configuration
 SCRIPT_NAME="Service Test Runner"
 HOSTNAME=$(hostname)
@@ -12,13 +30,6 @@ START_TIME=$(date)
 LOG_FILE="/tmp/service_test_$(date +%Y%m%d_%H%M%S).log"
 FAILED_SERVICES=()
 SUCCESS_SERVICES=()
-
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
 
 # Function to log with timestamp
 log_message() {
@@ -29,23 +40,23 @@ log_message() {
     echo "[$timestamp] [$level] $message" | tee -a "$LOG_FILE"
 }
 
-# Function to print colored output
+# Function to print colored output (using shared functions)
 print_status() {
     local message="$1"
     local status="$2"
 
     case "$status" in
     "INFO")
-        echo -e "${BLUE}[INFO]${NC} $message"
+        show_info "$message"
         ;;
     "SUCCESS")
-        echo -e "${GREEN}[SUCCESS]${NC} $message"
+        show_warn "$message"  # Using show_warn for green/success color
         ;;
     "WARNING")
-        echo -e "${YELLOW}[WARNING]${NC} $message"
+        show_yellow "$message"
         ;;
     "ERROR")
-        echo -e "${RED}[ERROR]${NC} $message"
+        show_error_no_exit "$message"
         ;;
     *)
         echo "$message"

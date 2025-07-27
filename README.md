@@ -5,6 +5,7 @@ This project provides a comprehensive automation suite for Ubuntu 24.04 server i
 ## 🎯 Overview
 
 The automation script installs and configures:
+
 - **Security hardening** with modern Ubuntu 24.04 practices and mandatory SSH 2FA (root login disabled)
 - **Multi-factor authentication** with Authenticator integration for SSH
 - **User management** with comprehensive user addition script (sudo + 2FA + VPN)
@@ -21,6 +22,7 @@ The automation script installs and configures:
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Fresh Ubuntu 24.04 server with OpenSSH server installed
 - Root access (or sudo privileges)
 - Internet connection for package downloads
@@ -30,18 +32,21 @@ The automation script installs and configures:
 1. **Connect to your server** as root (or use `sudo su root`)
 
 2. **Update system and install Git:**
+
    ```bash
    apt-get update
    apt-get install git
    ```
 
 3. **Clone the repository:**
+
    ```bash
    cd /tmp
    git clone https://github.com/lauritssn/ubuntu-automation.git
    ```
 
 4. **Run the installation:**
+
    ```bash
    cd ubuntu-automation
    bash install.sh
@@ -54,19 +59,23 @@ The automation script installs and configures:
 The automation includes a robust status tracking system that prevents re-installing modules that completed successfully:
 
 ### Status Management
+
 - **Automatic tracking:** Each module's success/failure status is recorded
 - **Smart retry:** Failed modules can be retried without affecting successful ones
 - **Skip successful:** Successfully installed modules are automatically skipped on subsequent runs
 - **Status log location:** `/srv/apps/scripts/installation_status.log`
 
-### Viewing Installation Status
-```bash
+### Viewing Installation Status```bash
+
 # View current installation status
+
 ./view_install_status.sh
 
 # View help and all options
+
 ./view_install_status.sh help
-```
+
+````
 
 ### Managing Module Status
 ```bash
@@ -75,9 +84,10 @@ The automation includes a robust status tracking system that prevents re-install
 
 # Reset all modules (force complete reinstall)
 ./view_install_status.sh reset
-```
+````
 
 ### Status Indicators
+
 - ✅ **SUCCESS:** Module installed successfully, will be skipped
 - ❌ **FAILED:** Module installation failed, will be retried
 - ⏭️ **SKIPPED:** Module was skipped by user choice
@@ -87,9 +97,11 @@ The automation includes a robust status tracking system that prevents re-install
 The automation suite is modular, allowing you to choose which components to install:
 
 ### 🔒 Core Security Module
+
 **Components:** General system settings, SSH hardening with optional 2FA, shared memory protection, sysctl tuning
 
 **What it does:**
+
 - Hardens SSH configuration with Ubuntu 24.04 best practices
 - **Optional SSH 2FA:** Authenticator integration for enhanced security
 - Configures secure shared memory to prevent privilege escalation
@@ -98,6 +110,7 @@ The automation suite is modular, allowing you to choose which components to inst
 - Sets up proper timezone and NTP synchronization
 
 **SSH 2FA Features:**
+
 - **Authenticator integration:** Compatible with Google Authenticator, Authy, and other TOTP apps
 - **Multi-factor authentication:** Requires both SSH key AND 2FA code
 - **QR code generation:** Easy mobile app setup with visual QR codes
@@ -109,9 +122,11 @@ The automation suite is modular, allowing you to choose which components to inst
 **Recommended:** ✅ Yes - Essential for any production server (2FA highly recommended for enhanced security)
 
 ### 🦠 Antivirus & Malware Protection
+
 **Components:** ClamAV, Maldet (independent scanners with optional engine sharing)
 
 **What it does:**
+
 - **ClamAV:** Real-time antivirus scanning with automatic signature updates
 - **Maldet:** Independent Linux malware detection that can optionally use ClamAV engine
 - **Architecture:** Both tools maintain separate signature databases and run independently
@@ -121,9 +136,11 @@ The automation suite is modular, allowing you to choose which components to inst
 **Recommended:** ✅ Yes - Critical for server security
 
 ### 🔍 Intrusion Detection & Response
+
 **Components:** RKHunter, Fail2Ban
 
 **What it does:**
+
 - **RKHunter:** Scans for rootkits, backdoors, and local exploits
 - **Fail2Ban:** Automatically bans IP addresses after failed login attempts
 - **Monitoring:** Daily and weekly security scans
@@ -133,9 +150,11 @@ The automation suite is modular, allowing you to choose which components to inst
 **Recommended:** ✅ Yes - Essential for detecting and preventing attacks
 
 ### 🔥 Firewall Protection (UFW)
+
 **Components:** UFW firewall with Ubuntu 24.04 optimizations
 
 **What it does:**
+
 - **Default policy:** Deny incoming, allow outgoing
 - **IPv6 support:** Full IPv4 and IPv6 protection
 - **Service access:** HTTP (80) and HTTPS (443) open to world
@@ -146,9 +165,11 @@ The automation suite is modular, allowing you to choose which components to inst
 **Recommended:** ✅ Yes - Absolutely critical for server security
 
 ### 💾 Memory Management & Swap
+
 **Components:** Intelligent swap configuration for Ubuntu 24.04
 
 **What it does:**
+
 - **Dynamic sizing:** Calculates optimal swap based on RAM (4-16GB servers)
 - **Modern creation:** Uses `fallocate` for faster allocation
 - **ZRAM integration:** Detects and optimizes for Ubuntu 24.04 ZRAM
@@ -156,6 +177,7 @@ The automation suite is modular, allowing you to choose which components to inst
 - **Monitoring:** Automated swap usage alerts via systemd timers
 
 **Swap sizing logic:**
+
 - ≤4GB RAM: Equal swap size for safety
 - 4-8GB RAM: Equal swap size for balance
 - 8-16GB RAM: 6GB safety buffer
@@ -164,9 +186,11 @@ The automation suite is modular, allowing you to choose which components to inst
 **Recommended:** ✅ Yes - Prevents out-of-memory crashes
 
 ### 🐳 Docker Support
+
 **Components:** Docker CE with modern Ubuntu 24.04 setup
 
 **What it does:**
+
 - **Installation:** Latest Docker CE with proper GPG verification
 - **Docker Compose:** v2 plugin installation
 - **Rootless mode:** Optional rootless Docker for enhanced security
@@ -174,6 +198,7 @@ The automation suite is modular, allowing you to choose which components to inst
 - **Security:** Proper user permissions and group management
 
 **Configuration options:**
+
 - **Root mode:** Traditional Docker (requires root privileges)
 - **Rootless mode:** User-space Docker (enhanced security, some limitations)
 - **Data directory:** Custom location for Docker images/containers
@@ -181,9 +206,11 @@ The automation suite is modular, allowing you to choose which components to inst
 **Recommended:** 🤔 Optional - Only if you plan to use containers
 
 ### 📊 System Monitoring
+
 **Components:** Lightweight monitoring tools with comprehensive Slack notifications and optional Netdata
 
 **Lightweight monitoring includes:**
+
 - **htop, iotop:** Interactive process and I/O monitoring
 - **sysstat:** Historical system statistics
 - **nethogs:** Network bandwidth monitoring per process
@@ -193,6 +220,7 @@ The automation suite is modular, allowing you to choose which components to inst
 - **Disk space monitoring:** Proactive storage monitoring with alerts
 
 **📱 Slack Integration Features:**
+
 - **Real-time notifications:** Instant alerts for all monitoring activities
 - **Smart status tracking:** Start/finish notifications with duration tracking
 - **Intelligent alerting:** Warning and critical thresholds with context
@@ -201,12 +229,14 @@ The automation suite is modular, allowing you to choose which components to inst
 - **Detailed context:** Hostname, metrics, and actionable information
 
 **Monitored metrics with Slack alerts:**
+
 - **System Health:** Load average, memory usage, disk space, service status
 - **Security Scans:** ClamAV antivirus, RKHunter intrusion detection
 - **Resource Usage:** Swap utilization, disk space consumption
 - **Service Health:** Critical service failures and system errors
 
 **Netdata (optional):**
+
 - **Real-time monitoring:** Web-based dashboards
 - **Metrics collection:** CPU, memory, disk, network, services
 - **Alerting:** Built-in notification system
@@ -215,9 +245,11 @@ The automation suite is modular, allowing you to choose which components to inst
 **Recommended:** ✅ Lightweight tools with Slack always, Netdata for advanced monitoring needs
 
 ### 🔐 Wireguard VPN Server
+
 **Components:** Full Wireguard VPN server setup
 
 **What it does:**
+
 - **Server setup:** Complete Wireguard server configuration
 - **Key management:** Automatic server and client key generation
 - **Network routing:** IP forwarding and routing for VPN clients
@@ -226,6 +258,7 @@ The automation suite is modular, allowing you to choose which components to inst
 - **Security:** External access limited to ports 22, 80, 443, and 51820 (Wireguard)
 
 **Use cases:**
+
 - Secure remote access to monitoring tools (Netdata)
 - Administrative access to server services
 - Secure file transfers and database access
@@ -234,9 +267,11 @@ The automation suite is modular, allowing you to choose which components to inst
 **Recommended:** ✅ Yes - Essential for secure remote administration
 
 ### ⏰ Systemd Timers
+
 **Components:** Modern scheduling with comprehensive Slack notifications
 
 **What it does:**
+
 - **Better logging:** Integrated with systemd journal
 - **Reliability:** Persistent execution and error handling
 - **Control:** Easy enable/disable/status checking
@@ -244,6 +279,7 @@ The automation suite is modular, allowing you to choose which components to inst
 - **Real-time alerts:** Instant Slack notifications for all activities
 
 **Scheduled tasks with Slack notifications:**
+
 - **ClamAV Antivirus:** Weekly full system scan with threat detection alerts
 - **RKHunter Security:** Daily intrusion scans and weekly database updates
 - **System Health Check:** Hourly comprehensive health monitoring
@@ -251,12 +287,14 @@ The automation suite is modular, allowing you to choose which components to inst
 - **Disk Space Monitor:** Every 5 minutes with storage alerts
 
 **📱 Notification Schedule:**
+
 - **Every 5 minutes:** Disk space monitoring
 - **Hourly:** System health checks, swap usage monitoring
 - **Daily:** RKHunter security scans
 - **Weekly:** ClamAV antivirus scans, RKHunter database updates
 
 **Alert Types:**
+
 - 🔄 **Start notifications:** When each task begins
 - ✅ **Success notifications:** When tasks complete successfully
 - ⚠️ **Warning alerts:** For elevated metrics or minor issues
@@ -265,9 +303,11 @@ The automation suite is modular, allowing you to choose which components to inst
 **Recommended:** ✅ Yes - Superior to traditional cronjobs with modern alerting
 
 ### 📧 Email Configuration
+
 **Components:** Postfix for system notifications
 
 **What it does:**
+
 - **SMTP setup:** Local mail relay configuration
 - **Security alerts:** Email notifications for security events
 - **System notifications:** Automated alerts for system issues
@@ -290,6 +330,7 @@ The installation script will prompt you for:
 ### Advanced Configuration
 
 #### Docker Configuration
+
 ```bash
 # Choose installation mode
 Rootless Docker: Enhanced security, some limitations
@@ -301,6 +342,7 @@ Custom: /mnt/docker (or your preferred location)
 ```
 
 #### Wireguard VPN Configuration
+
 ```bash
 # VPN subnet configuration
 Default: 10.66.66.0/24
@@ -313,6 +355,7 @@ Generate QR codes: qrencode -t ansiutf8 < /etc/wireguard/clients/<username>.conf
 ```
 
 #### SSH 2FA Configuration
+
 ```bash
 # SSH 2FA with Authenticator setup
 1. Enable SSH 2FA during installation when prompted
@@ -330,11 +373,13 @@ Generate QR codes: qrencode -t ansiutf8 < /etc/wireguard/clients/<username>.conf
 ```
 
 **2FA Authentication Flow:**
+
 1. **SSH Key Authentication:** Your private key authenticates your identity
 2. **2FA Code Entry:** Enter 6-digit code from your Authenticator app
 3. **Access Granted:** Both factors must succeed for login
 
 **Security Benefits:**
+
 - **Root access disabled:** Root SSH login is completely disabled for security
 - **Enhanced protection:** Even if SSH key is compromised, 2FA prevents access
 - **Time-based codes:** TOTP codes change every 30 seconds
@@ -343,6 +388,7 @@ Generate QR codes: qrencode -t ansiutf8 < /etc/wireguard/clients/<username>.conf
 - **Sudo access:** All users get sudo privileges and can become root with 'sudo su -'
 
 #### User Management
+
 ```bash
 # Comprehensive user addition script (after initial installation)
 /srv/apps/scripts/add_user.sh --interactive    # Interactive mode with prompts
@@ -360,6 +406,7 @@ Generate QR codes: qrencode -t ansiutf8 < /etc/wireguard/clients/<username>.conf
 ```
 
 **User Creation Features:**
+
 - **Sudo access:** Users can run commands with sudo and access root via 'sudo su -'
 - **SSH 2FA integration:** Automatically configures 2FA if the system supports it
 - **WireGuard VPN:** Creates VPN config for secure remote access
@@ -369,6 +416,7 @@ Generate QR codes: qrencode -t ansiutf8 < /etc/wireguard/clients/<username>.conf
 - **Flexible options:** Skip 2FA or VPN setup if not needed
 
 **Security Notes:**
+
 - Root SSH login is completely DISABLED for security
 - Each user gets individual 2FA configuration (separate QR codes and backup codes)
 - VPN access is isolated per user with unique IP addresses
@@ -376,6 +424,7 @@ Generate QR codes: qrencode -t ansiutf8 < /etc/wireguard/clients/<username>.conf
 - All users get sudo privileges and can become root with 'sudo su -'
 
 #### Slack Monitoring Configuration
+
 ```bash
 # Slack webhook setup for monitoring notifications
 1. Create a Slack app at https://api.slack.com/apps
@@ -389,18 +438,21 @@ https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
 **Slack Notification Types:**
+
 - 🔄 **Start notifications:** Task beginning (hourly/daily/weekly)
 - ✅ **Success notifications:** Task completion with duration
 - ⚠️ **Warning alerts:** Elevated metrics (high memory, disk space, etc.)
 - 🚨 **Critical alerts:** Immediate attention needed (viruses, service failures)
 
 **Notification Frequency:**
+
 - **Every 5 minutes:** Disk space monitoring (warnings/errors only)
 - **Hourly:** System health and swap monitoring (all statuses)
 - **Daily:** RKHunter security scans (all statuses)
 - **Weekly:** ClamAV antivirus scans and RKHunter updates (all statuses)
 
 #### Firewall Configuration
+
 ```bash
 # SSH access restriction
 SECURE_SUBNET: Replace with your management IP/subnet
@@ -414,6 +466,7 @@ External access limited to: 22 (SSH), 80 (HTTP), 443 (HTTPS), 51820 (Wireguard)
 ## 📊 Post-Installation
 
 ### Viewing Installation Logs
+
 ```bash
 # View complete installation log
 journalctl -t ubuntu-automation-[TIMESTAMP] --no-pager
@@ -430,6 +483,7 @@ journalctl -t ubuntu-automation-[TIMESTAMP] -p warning --no-pager
 ```
 
 ### Managing Systemd Timers
+
 ```bash
 # List all timers
 systemctl list-timers
@@ -448,6 +502,7 @@ journalctl -u disk-space-monitor.service --since yesterday
 ```
 
 ### Monitoring System Health
+
 ```bash
 # Run system health check manually (with Slack notifications)
 /srv/apps/scripts/system_health_check.sh
@@ -473,15 +528,18 @@ processes    # Top processes by CPU usage
 ```
 
 ### 📱 Slack Monitoring Dashboard
+
 All monitoring scripts send notifications to your configured Slack channel:
 
 **Real-time Alerts:**
+
 - **System health issues:** High load, memory usage, disk space warnings
 - **Security threats:** Virus detection, intrusion attempts, failed services
 - **Resource monitoring:** Swap usage, storage consumption
 - **Task tracking:** Start/completion status for all scheduled tasks
 
 **Sample Slack Messages:**
+
 ```
 ✅ System Health Check completed on server-01 - All systems healthy (Duration: 12s)
 ⚠️ WARNING: High Memory Usage on server-01 - Memory usage: 85%
@@ -490,6 +548,11 @@ All monitoring scripts send notifications to your configured Slack channel:
 ```
 
 ### User Management
+
+📖 **For comprehensive user management including SSH keys, 2FA setup, VPN access, and troubleshooting, see the [User Management Guide](docs/USER_MANAGEMENT.md)**
+
+**Quick Commands:**
+
 ```bash
 # Add a new user with sudo, 2FA, and WireGuard access (all-in-one script)
 /srv/apps/scripts/add_user.sh --interactive          # Interactive mode
@@ -500,6 +563,7 @@ All monitoring scripts send notifications to your configured Slack channel:
 ```
 
 ### SSH 2FA Management
+
 ```bash
 # Setup 2FA for existing users
 /srv/apps/scripts/setup_user_2fa.sh myuser
@@ -524,6 +588,7 @@ ssh -i ~/.ssh/mykey sudouser@server
 ```
 
 **2FA Troubleshooting:**
+
 ```bash
 # Check SSH 2FA configuration
 grep -E "(ChallengeResponseAuthentication|AuthenticationMethods|PermitRootLogin)" /etc/ssh/sshd_config
@@ -541,12 +606,15 @@ systemctl status ssh
 sudo -l  # when logged in as sudo user
 ```
 
+**📖 For detailed SSH key setup, 2FA configuration, troubleshooting guides, and security best practices, see [docs/USER_MANAGEMENT.md](docs/USER_MANAGEMENT.md)**
+
 ### Wireguard VPN Management
+
 ```bash
 # Add new VPN client
 add-wg-client username
 
-# Remove VPN client  
+# Remove VPN client
 remove-wg-client username
 
 # View VPN status
@@ -562,24 +630,28 @@ qrencode -t ansiutf8 < /etc/wireguard/clients/username.conf
 ## 🔍 Security Features
 
 ### SSH Hardening
+
 - Key-based authentication encouraged
 - Root login restrictions
 - Connection rate limiting
 - Access restricted to secure subnet only
 
 ### System Hardening
+
 - Secure shared memory configuration
 - Kernel parameter tuning for security
 - IPv6 firewall protection
 - Service restriction and isolation
 
 ### Monitoring & Alerting
+
 - Real-time threat detection
 - Automated security scanning
 - System health monitoring
 - Email notifications for security events
 
 ### Network Security
+
 - Comprehensive firewall rules
 - VPN-only access to sensitive services
 - External access limitation
@@ -590,6 +662,7 @@ qrencode -t ansiutf8 < /etc/wireguard/clients/username.conf
 ### Common Issues
 
 **Installation fails with package errors:**
+
 ```bash
 # Update package lists and retry
 apt-get update
@@ -597,6 +670,7 @@ apt-get upgrade
 ```
 
 **Firewall blocks legitimate access:**
+
 ```bash
 # Check UFW status
 ufw status numbered
@@ -606,6 +680,7 @@ nano /srv/apps/scripts/ufw.sh
 ```
 
 **Wireguard VPN not connecting:**
+
 ```bash
 # Check Wireguard status
 systemctl status wg-quick@wg0
@@ -618,6 +693,7 @@ journalctl -u wg-quick@wg0
 ```
 
 **Email notifications not working:**
+
 ```bash
 # Check postfix status
 systemctl status postfix
@@ -627,6 +703,7 @@ echo "Test" | mail -s "Test Subject" your-email@domain.com
 ```
 
 ### Log Locations
+
 - **Installation logs:** `journalctl -t ubuntu-automation-*`
 - **Security scan logs:** `/var/log/clamav/`, `journalctl -u rkhunter-*`
 - **System logs:** `journalctl`, `/var/log/syslog`
@@ -636,12 +713,14 @@ echo "Test" | mail -s "Test Subject" your-email@domain.com
 ## 📈 Performance Impact
 
 ### Resource Usage
+
 - **Minimal CPU impact:** Security scans scheduled during low-usage periods
 - **Memory usage:** ~200-500MB additional for security tools
 - **Disk usage:** ~1-2GB for packages and logs
 - **Network impact:** Negligible for normal operations
 
 ### Optimization Tips
+
 - **Docker rootless:** Slight performance overhead but enhanced security
 - **Custom Docker storage:** Use faster storage for better performance
 - **Swap configuration:** Optimized for 4-16GB RAM servers
@@ -650,11 +729,13 @@ echo "Test" | mail -s "Test Subject" your-email@domain.com
 ## 🔄 Updates & Maintenance
 
 ### Automatic Updates
+
 - **ClamAV signatures:** Updated automatically via freshclam
 - **RKHunter database:** Updated weekly via systemd timer
 - **System packages:** Manual updates recommended
 
 ### Manual Maintenance
+
 ```bash
 # Update security signatures
 freshclam
@@ -671,7 +752,9 @@ apt-get update && apt-get upgrade
 ## 📚 Advanced Topics
 
 ### Customizing Security Scans
+
 Edit systemd timer configurations:
+
 - `/etc/systemd/system/clamav-scan.timer`
 - `/etc/systemd/system/rkhunter-scan.timer`
 
@@ -719,7 +802,7 @@ For issues and questions:
 ClamAV can sometimes cause startup problems, typically due to:
 
 1. **ClamAV Database Issues**: Ownership or missing signature files
-2. **Database File Ownership**: Mixed ownership of signature database files  
+2. **Database File Ownership**: Mixed ownership of signature database files
 3. **Incomplete Cleanup**: Leftover files from previous installations
 
 **Common Solutions:**

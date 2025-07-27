@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# Global WireGuard client removal script
+
+if [ $# -ne 1 ]; then
+    echo "Usage: $0 <client_name>"
+    echo "Example: $0 john"
+    exit 1
+fi
+
+CLIENT_NAME="$1"
+
+if [ ! -f /etc/wireguard/wg0.conf ]; then
+    echo "Error: WireGuard server configuration not found."
+    exit 1
+fi
+
+# Check if client exists
+if ! grep -q "# Client: $CLIENT_NAME" /etc/wireguard/wg0.conf; then
+    echo "Error: Client '$CLIENT_NAME' not found in WireGuard configuration."
+    exit 1
+fi
+
+echo "Removing WireGuard client: $CLIENT_NAME"
+
+# Remove client from server config
+# Remove the client block (from "# Client: name" to the next empty line or EOF)
+sed -i "/# Client: $CLIENT_NAME/,/^$/d" /etc/wireguard/wg0.conf
+
+# Remove client config file
+if [ -f "/etc/wireguard/clients/${CLIENT_NAME}.conf" ]; then
+    rm "/etc/wireguard/clients/${CLIENT_NAME}.conf"
+    echo "Removed client config file: /etc/wireguard/clients/${CLIENT_NAME}.conf"
+fi
+
+# Restart WireGuard to apply changes
+systemctl restart wg-quick@wg0
+
+echo "Client '$CLIENT_NAME' removed successfully!"
+echo "WireGuard service restarted to apply changes."

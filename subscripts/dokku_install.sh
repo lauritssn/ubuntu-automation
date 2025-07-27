@@ -2,11 +2,27 @@
 
 # Dokku installation script
 # This script installs Dokku on Ubuntu 24.04
+#
+# Ubuntu Configuration Files Modified:
+# ==================================
+# Files Created/Modified:
+# - /etc/apt/trusted.gpg.d/dokku.gpg (GPG key for Dokku repository)
+# - /etc/apt/sources.list.d/dokku.list (APT repository configuration)
+#
+# System Services Modified:
+# - dokku-installer service (enabled and started via systemctl)
+#
+# Dokku Configuration:
+# - Global domain settings (configured via dokku domains:set-global)
+#
+# Directories Created:
+# - /etc/apt/trusted.gpg.d/ (if not exists)
+#
+# Package Installation:
+# - dokku package and all its dependencies via apt-get
 
-# Source helper functions if available
-if [ -f "$BASEDIR/configs/script-templates/script_helper_functions.sh" ]; then
-    source "$BASEDIR/configs/script-templates/script_helper_functions.sh"
-fi
+# Note: Helper functions are available through shared_functions.sh
+# which is already sourced by the parent script (install.sh or run_subscript.sh)
 
 # Fallback function definitions if not sourced
 if ! command -v show_info &>/dev/null; then

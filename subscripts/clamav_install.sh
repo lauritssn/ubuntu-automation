@@ -1,6 +1,38 @@
 #!/bin/bash
 
 ##########################################################################################
+## ClamAV Installation Script for Ubuntu 24.04
+##########################################################################################
+##
+## UBUNTU SYSTEM FILES MODIFIED/CREATED BY THIS SCRIPT:
+##
+## Configuration Files Modified:
+## - /etc/clamav/freshclam.conf          : Modified (Example line commented out, log settings configured)
+## - /etc/clamav/clamd.conf              : Modified (Example line commented out, database dir, log settings, performance tuning)
+##
+## Directories Created/Modified:
+## - /var/log/clamav/                    : Created with clamav:clamav ownership and 755 permissions
+## - /var/lib/clamav/                    : Created with clamav:clamav ownership and 755 permissions
+## - /var/run/clamav/                    : Created with clamav:clamav ownership and 755 permissions
+##
+## Files Created/Copied:
+## - /usr/local/bin/clamav-scan.sh       : Copied from configs/clamav/clamav-scan.sh (with email placeholders replaced)
+## - /usr/local/bin/clamav-exclude-helper.sh : Copied from configs/clamav/clamav-exclude-helper.sh
+## - /var/log/clamav/freshclam_install.log : Created during installation process
+## - /var/lib/clamav/*.cvd/*.cld         : ClamAV signature database files downloaded
+##
+## System Services Modified:
+## - clamav-freshclam.service            : Started, enabled, and restarted
+## - clamav-daemon.service               : Started, enabled, and restarted
+##
+## Packages Installed:
+## - clamav                              : Core ClamAV package
+## - clamav-daemon                       : ClamAV daemon package
+## - clamav-freshclam                    : ClamAV signature update service
+##
+##########################################################################################
+
+##########################################################################################
 ## Set variables
 ##########################################################################################
 
@@ -21,7 +53,7 @@ LOGFILE=$SUBSCRIPT-$DATE.log
 
 SCRIPT_ORG=/usr/local/bin/clamav-scan.sh
 SCRIPT_BACK=$BACKUPDIR/$(basename $SCRIPT_ORG)_$DATE
-SCRIPT_GIT=$BASEDIR/configs/clamav/clamav
+SCRIPT_GIT=$BASEDIR/configs/clamav/clamav-scan.sh
 
 ##########################################################################################
 ## Info
@@ -30,14 +62,27 @@ SCRIPT_GIT=$BASEDIR/configs/clamav/clamav
 show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFILE."
 
 ##########################################################################################
+## Pre-installation checks for Ubuntu 24.04
+##########################################################################################
+
+# Check available disk space (ClamAV databases need ~300MB+)
+AVAILABLE_SPACE=$(df /var | awk 'NR==2 {print $4}')
+if [ "$AVAILABLE_SPACE" -lt 500000 ]; then
+    show_warn "Low disk space detected (less than 500MB available). ClamAV databases require significant space."
+fi
+
+# Update package list first
+apt-get update >>$LOGDIR/$LOGFILE 2>&1
+
+##########################################################################################
 ## Install ClamAV
 ##########################################################################################
 
-if ! apt-get --yes install clamav clamav-daemon clamav-freshclam >$LOGDIR/$LOGFILE 2>&1; then
+if ! apt-get --yes install clamav clamav-daemon clamav-freshclam >>$LOGDIR/$LOGFILE 2>&1; then
     show_err "ClamAV installation failed. Please check logfile and fix error manually."
     exit 1
 fi
-show_yellow "ClamAV installation successfull."
+show_yellow "ClamAV installation successful."
 
 ##########################################################################################
 ## Update ClamAV
@@ -57,17 +102,27 @@ chmod 755 /var/lib/clamav
 systemctl stop clamav-freshclam.service >>$LOGDIR/$LOGFILE 2>&1 || true
 systemctl stop clamav-daemon.service >>$LOGDIR/$LOGFILE 2>&1 || true
 
-# Configure freshclam to avoid log conflicts
+# Configure freshclam to avoid log conflicts and Ubuntu 24.04 issues
 if [ -f /etc/clamav/freshclam.conf ]; then
+    # Fix Ubuntu 24.04 startup issue - comment out Example line
+    sed -i 's/^Example/#Example/' /etc/clamav/freshclam.conf >>$LOGDIR/$LOGFILE 2>&1 || true
+
     # Fix log file size and rotation settings
     sed -i 's/^LogFileMaxSize.*/LogFileMaxSize 10M/' /etc/clamav/freshclam.conf >>$LOGDIR/$LOGFILE 2>&1 || true
     sed -i 's/^LogRotate.*/LogRotate true/' /etc/clamav/freshclam.conf >>$LOGDIR/$LOGFILE 2>&1 || true
+
+    # Ensure log file is properly configured
+    if ! grep -q "^UpdateLogFile" /etc/clamav/freshclam.conf; then
+        echo "UpdateLogFile /var/log/clamav/freshclam.log" >>/etc/clamav/freshclam.conf
+    fi
+
     show_yellow "Fixed freshclam log configuration."
 fi
 
 # Configure ClamAV daemon
 if [ -f /etc/clamav/clamd.conf ]; then
-    # Ensure only the main ClamAV database directory is configured
+    # Fix Ubuntu 24.04 startup issue - comment out Example line
+    sed -i 's/^Example/#Example/' /etc/clamav/clamd.conf >>$LOGDIR/$LOGFILE 2>&1 || true
 
     # Ensure main DatabaseDirectory is set correctly
     if ! grep -q "^DatabaseDirectory /var/lib/clamav" /etc/clamav/clamd.conf; then
@@ -100,14 +155,25 @@ if ! freshclam --log=/var/log/clamav/freshclam_install.log >>$LOGDIR/$LOGFILE 2>
     exit 1
 fi
 
-# Verify that basic ClamAV databases were downloaded
+# Verify that essential ClamAV databases were downloaded (including bytecode)
+DATABASES_OK=true
+
 if [ ! -f "/var/lib/clamav/main.cvd" ] && [ ! -f "/var/lib/clamav/main.cld" ]; then
     show_err "ClamAV main signature database not found after download. Installation failed."
-    exit 1
+    DATABASES_OK=false
 fi
 
 if [ ! -f "/var/lib/clamav/daily.cvd" ] && [ ! -f "/var/lib/clamav/daily.cld" ]; then
     show_err "ClamAV daily signature database not found after download. Installation failed."
+    DATABASES_OK=false
+fi
+
+if [ ! -f "/var/lib/clamav/bytecode.cvd" ] && [ ! -f "/var/lib/clamav/bytecode.cld" ]; then
+    show_warn "ClamAV bytecode signature database not found - this may affect detection capabilities."
+fi
+
+if [ "$DATABASES_OK" = false ]; then
+    show_err "Essential ClamAV signature databases are missing. Installation failed."
     exit 1
 fi
 
@@ -124,9 +190,31 @@ fi
 
 show_yellow "ClamAV database directory setup completed successfully."
 
+# Function to wait for service to be active with timeout
+wait_for_service() {
+    local service=$1
+    local timeout=${2:-30}
+    local count=0
+
+    while [ $count -lt $timeout ]; do
+        if systemctl is-active --quiet "$service"; then
+            return 0
+        fi
+        sleep 1
+        count=$((count + 1))
+    done
+    return 1
+}
+
 # Start services in proper order
 systemctl start clamav-freshclam.service >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Starting freshclam service failed. Please check logfile and fix error manually.")
-sleep 5
+
+# Wait for freshclam to be ready instead of fixed sleep
+if wait_for_service clamav-freshclam 30; then
+    show_yellow "ClamAV freshclam service started successfully."
+else
+    show_warn "ClamAV freshclam service took longer than expected to start."
+fi
 
 # Verify ClamAV daemon can start with current database files
 show_yellow "Starting ClamAV daemon..."
@@ -172,9 +260,10 @@ if ! systemctl start clamav-daemon.service >>$LOGDIR/$LOGFILE 2>&1; then
     show_yellow "ClamAV daemon started successfully after cleanup."
 fi
 
-# Verify daemon is actually running and functional
-sleep 3
-if ! systemctl is-active --quiet clamav-daemon.service; then
+# Verify daemon is actually running and functional using wait function
+if wait_for_service clamav-daemon 30; then
+    show_yellow "ClamAV daemon started successfully and is running."
+else
     show_err "ClamAV daemon is not running after startup attempt."
 
     # Additional diagnostics
@@ -185,8 +274,6 @@ if ! systemctl is-active --quiet clamav-daemon.service; then
     show_err "Installation failed. Check logfile for detailed diagnostics."
     exit 1
 fi
-
-show_yellow "ClamAV daemon started successfully and is running."
 
 # Enable services to start at boot
 systemctl enable clamav-freshclam.service >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Enabling freshclam service failed. Please check logfile and fix error manually.")
@@ -203,10 +290,12 @@ show_yellow "Deploying optimized ClamAV scan script with false positive reductio
 # Copy the optimized scan script from our configs
 cp $SCRIPT_GIT $SCRIPT_ORG >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Copying ClamAV scan script failed. Please check logfile and fix error manually.")
 
-# Replace email placeholders in the deployed script
-sed -i 's/INFO_EMAIL@EMAIL_DOMAIN/'${INFO_EMAIL}'/g' $SCRIPT_ORG
-sed -i 's/EMAIL_DOMAIN/'${EMAIL_DOMAIN}'/g' $SCRIPT_ORG
-sed -i 's/clamav@EMAIL_DOMAIN/clamav@'${EMAIL_DOMAIN}'/g' $SCRIPT_ORG
+# Replace email placeholders in the deployed script using safe functions
+source "$SCRIPTDIR/../utils/helpers/sed_helpers.sh"
+
+replace_email_placeholder "$SCRIPT_ORG" "INFO_EMAIL@EMAIL_DOMAIN" "$INFO_EMAIL"
+replace_email_placeholder "$SCRIPT_ORG" "EMAIL_DOMAIN" "$EMAIL_DOMAIN"
+replace_email_placeholder "$SCRIPT_ORG" "clamav@EMAIL_DOMAIN" "clamav@$EMAIL_DOMAIN"
 
 show_yellow "ClamAV scan script deployed with false positive reduction enabled."
 
@@ -241,11 +330,18 @@ show_yellow "ClamAV scan script $SCRIPT_ORG made executable."
 # Restart services in proper order to ensure they're running
 systemctl daemon-reload >>$LOGDIR/$LOGFILE 2>&1
 systemctl restart clamav-freshclam >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Restarting ClamAV freshclam failed. Please check logfile and fix error manually.")
-sleep 3
+
+# Wait for freshclam to be ready before starting daemon
+if wait_for_service clamav-freshclam 30; then
+    show_yellow "ClamAV freshclam restarted successfully."
+else
+    show_warn "ClamAV freshclam restart took longer than expected."
+fi
+
 systemctl restart clamav-daemon >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Restarting ClamAV daemon failed. Please check logfile and fix error manually.")
 
-# Verify services are running
-if systemctl is-active --quiet clamav-daemon; then
+# Verify services are running with improved checks
+if wait_for_service clamav-daemon 30; then
     show_yellow "ClamAV daemon is running successfully."
 else
     show_warn "ClamAV daemon may not be running properly. Check 'systemctl status clamav-daemon' for details."

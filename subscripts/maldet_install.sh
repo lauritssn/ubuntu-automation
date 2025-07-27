@@ -1,6 +1,52 @@
 #!/bin/bash
 
 ##########################################################################################
+## Ubuntu Configuration Files Modified by This Script
+##########################################################################################
+#
+# This script makes the following changes to Ubuntu system files and directories:
+#
+# PACKAGES INSTALLED:
+#   - inotify-tools (via apt-get)
+#   - maldetect (from source: https://www.rfxn.com/downloads/maldetect-current.tar.gz)
+#
+# CONFIGURATION FILES MODIFIED:
+#   - /usr/local/maldetect/conf.maldet
+#     * Backed up to: $BACKUPDIR/conf.maldet_YYYY-MM-DD_HHMM
+#     * email_alert=1 (enables email notifications)
+#     * email_addr="$INFO_EMAIL" (sets notification email address)
+#     * quar_hits=1 (enables quarantine of detected malware)
+#     * quar_clean=1 (enables automatic cleaning of quarantined files)
+#     * quar_susp=0 (disables quarantine of suspicious files to reduce false positives)
+#     * quar_susp_minuid=500 (sets minimum UID for suspicious file quarantine)
+#     * scan_clamscan=1 (enables ClamAV integration)
+#     * scan_clamscan_engine=1 (enables ClamAV scanning engine)
+#     * scan_clamscan_daemon=1 (uses ClamAV daemon for efficiency)
+#     * scan_hex_only=1 (enables hex-based signature scanning)
+#     * scan_hexdepth=3 (sets hex scan depth)
+#     * autoupdate_signatures=1 (enables automatic signature updates)
+#     * autoupdate_version=1 (enables automatic version updates)
+#     * scan_tmpdir_paths="/tmp /var/tmp" (configures temporary directory scanning)
+#
+# DIRECTORIES CREATED:
+#   - /usr/local/maldetect/sigs/ (signature database directory, if not exists)
+#
+# FILES CREATED:
+#   - /usr/local/maldetect/sigs/custom.hex.dat (placeholder signature file if download fails)
+#   - /usr/local/maldetect/sigs/README.txt (instructions for signature updates)
+#
+# BINARIES INSTALLED:
+#   - /usr/local/maldetect/maldet (main maldet executable)
+#   - /usr/local/maldetect/maldet-* (various maldet utilities)
+#   - /usr/local/bin/maldet (system-wide symlink to maldet)
+#
+# TEMPORARY FILES USED:
+#   - /tmp/maldetect-current.tar.gz (downloaded and removed)
+#   - /tmp/maldetect-*/ (extracted directory, removed after installation)
+#
+##########################################################################################
+
+##########################################################################################
 ## Set variables
 ##########################################################################################
 DATE=$(date +%Y-%m-%d_%H%M)
@@ -26,6 +72,15 @@ CONF_BACK=$BACKUPDIR/$(basename $CONF_ORG)_$DATE
 ## Info
 ##########################################################################################
 show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFILE."
+
+# Source the sed helpers for safe operations
+if [ -f "$BASEDIR/utils/helpers/sed_helpers.sh" ]; then
+    source "$BASEDIR/utils/helpers/sed_helpers.sh"
+elif [ -f "$(dirname "$0")/../utils/helpers/sed_helpers.sh" ]; then
+    source "$(dirname "$0")/../utils/helpers/sed_helpers.sh"
+else
+    show_warn "sed_helpers.sh not found - using legacy sed operations"
+fi
 
 ##########################################################################################
 ## Install Maldet from the newest source.
@@ -59,7 +114,13 @@ cp -p $CONF_ORG $CONF_BACK && show_yellow "Config file $CONF_ORG backed up to $C
 ##########################################################################################
 
 sed -i 's/email_alert=.*/email_alert=1/ig' $CONF_ORG
-sed -i 's/email_addr=.*/email_addr=\"'${INFO_EMAIL}'\"/ig' $CONF_ORG
+# Use safe function for email configuration to handle special characters
+if command -v safe_config_replace_email >/dev/null 2>&1; then
+    safe_config_replace_email "$CONF_ORG" "email_addr" "$INFO_EMAIL" "maldet_backup"
+else
+    # Fallback to safer sed with alternate separator
+    sed -i "s|email_addr=.*|email_addr=\"${INFO_EMAIL}\"|g" "$CONF_ORG"
+fi
 sed -i 's/email_alert=.*/email_alert=1/ig' $CONF_ORG
 sed -i 's/quar_hits=.*/quar_hits=1/ig' $CONF_ORG
 sed -i 's/quar_clean=.*/quar_clean=1/ig' $CONF_ORG
@@ -161,7 +222,13 @@ show_yellow "Maldet configuration completed. Maldet will run independently with 
 # Enable scanning of temporary paths but with reduced sensitivity for false positives
 # This helps with targeted malware detection in high-risk temporary areas
 # Comment out the next line if you experience too many false positives in /tmp
-sed -i 's/scan_tmpdir_paths=.*/scan_tmpdir_paths="\/tmp \/var\/tmp"/ig' $CONF_ORG
+# Use safe function for path configuration to handle forward slashes properly
+if command -v safe_config_replace_path >/dev/null 2>&1; then
+    safe_config_replace_path "$CONF_ORG" "scan_tmpdir_paths" "/tmp /var/tmp" "maldet_backup"
+else
+    # Fallback to safer sed with alternate separator
+    sed -i 's|scan_tmpdir_paths=.*|scan_tmpdir_paths="/tmp /var/tmp"|g' "$CONF_ORG"
+fi
 
 # Disable scanning of /dev/shm to reduce false positives from systemd and applications
 # sed -i 's/scan_tmpdir_paths=.*/scan_tmpdir_paths="\/tmp \/var\/tmp"/ig' $CONF_ORG

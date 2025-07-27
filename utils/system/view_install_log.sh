@@ -4,6 +4,24 @@
 ## Ubuntu Automation Installation Log Viewer
 ##########################################################################################
 
+##########################################################################################
+## Source shared helper functions
+##########################################################################################
+
+# Set BASEDIR for shared functions (assuming script is in utils/)
+export BASEDIR="$(dirname "$(dirname "$(realpath "$0")")")"
+
+# Source the shared helper functions
+if [ -f "$BASEDIR/utils/shared_functions.sh" ]; then
+    source "$BASEDIR/utils/shared_functions.sh"
+else
+    echo "❌ ERROR: Shared functions script not found at $BASEDIR/utils/shared_functions.sh"
+    exit 1
+fi
+
+# Initialize logging
+init_logging "view_install_log.sh"
+
 show_usage() {
     echo "Ubuntu Automation Installation Log Viewer"
     echo ""

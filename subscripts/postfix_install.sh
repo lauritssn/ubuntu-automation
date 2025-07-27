@@ -1,6 +1,36 @@
 #!/bin/bash
 
 ##########################################################################################
+## Ubuntu Configuration Files Modified by this Script
+##########################################################################################
+##
+## Files Modified/Altered:
+## - /etc/postfix/main.cf: Main Postfix configuration file
+##   - Sets hostname, domain, origin, network interfaces, destinations
+##   - Configures security settings (banner, VRFY command, HELO requirement)
+##   - Sets up local mail delivery and alias configuration
+##
+## - /etc/aliases: System mail aliases file
+##   - Adds/updates root mail redirection to INFO_EMAIL
+##   - Regenerated alias database with newaliases command
+##
+## Files Backed Up:
+## - /etc/postfix/main.cf: Backed up to $BACKUPDIR/main.cf_$DATE before modification
+##
+## Services Modified:
+## - postfix: Restarted and enabled for automatic startup
+##
+## Packages Installed:
+## - postfix: Mail Transfer Agent
+## - mailutils: Mail utilities for sending/reading mail
+##
+## Debconf Settings Applied:
+## - postfix/mailname: Set to system FQDN
+## - postfix/main_mailer_type: Set to 'Internet Site'
+##
+##########################################################################################
+
+##########################################################################################
 ## Set variables
 ##########################################################################################
 
@@ -20,6 +50,15 @@ LOGFILE=$SUBSCRIPT-$DATE.log
 ##########################################################################################
 
 show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFILE."
+
+# Source the sed helpers for safe operations
+if [ -f "$BASEDIR/utils/helpers/sed_helpers.sh" ]; then
+    source "$BASEDIR/utils/helpers/sed_helpers.sh"
+elif [ -f "$(dirname "$0")/../utils/helpers/sed_helpers.sh" ]; then
+    source "$(dirname "$0")/../utils/helpers/sed_helpers.sh"
+else
+    show_warn "sed_helpers.sh not found - using legacy sed operations"
+fi
 
 ##########################################################################################
 ## Install Postfix
@@ -83,7 +122,13 @@ show_yellow "Configuring mail aliases..."
 if ! grep -q "root:" /etc/aliases; then
     echo "root: $INFO_EMAIL" >>/etc/aliases
 else
-    sed -i "s/^root:.*/root: $INFO_EMAIL/" /etc/aliases
+    # Use safe function for alias replacement to handle special characters in email
+    if command -v safe_alias_replace >/dev/null 2>&1; then
+        safe_alias_replace "/etc/aliases" "root" "$INFO_EMAIL"
+    else
+        # Fallback to safer sed with alternate separator
+        sed -i "s|^root:.*|root: ${INFO_EMAIL}|" /etc/aliases
+    fi
 fi
 
 # Rebuild alias database

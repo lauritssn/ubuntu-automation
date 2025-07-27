@@ -5,25 +5,30 @@
 # View the current installation status of all modules
 ##########################################################################################
 
-# Installation status log file
-INSTALL_STATUS_LOG="/srv/apps/scripts/installation_status.log"
-
-# Color output functions
-show_info() {
-    echo $(tput bold)$(tput setaf 4) $@ $(tput sgr 0)
-}
-show_warn() {
-    echo $(tput bold)$(tput setaf 2) $@ $(tput sgr 0)
-}
-show_err() {
-    echo $(tput bold)$(tput setaf 1) $@ $(tput sgr 0)
-}
-
 ##########################################################################################
-# Display installation status summary
+## Source shared helper functions
 ##########################################################################################
 
-show_install_status() {
+# Set BASEDIR for shared functions (assuming script is in utils/)
+export BASEDIR="$(dirname "$(dirname "$(realpath "$0")")")"
+
+# Source the shared helper functions
+if [ -f "$BASEDIR/utils/shared_functions.sh" ]; then
+    source "$BASEDIR/utils/shared_functions.sh"
+else
+    echo "❌ ERROR: Shared functions script not found at $BASEDIR/utils/shared_functions.sh"
+    exit 1
+fi
+
+# Initialize logging
+init_logging "view_install_status.sh"
+
+##########################################################################################
+# Local helper functions specific to status viewing
+##########################################################################################
+
+# Enhanced version of show_install_status with additional features
+show_detailed_install_status() {
     if [ ! -f "$INSTALL_STATUS_LOG" ]; then
         show_err "No installation status log found at: $INSTALL_STATUS_LOG"
         echo "Run the main install.sh script first to create the status log."
@@ -171,7 +176,7 @@ case "$1" in
     echo ""
     ;;
 "")
-    show_install_status
+    show_detailed_install_status
     ;;
 *)
     show_err "Unknown command: $1"

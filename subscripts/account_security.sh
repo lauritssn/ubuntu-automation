@@ -5,6 +5,47 @@
 ##########################################################################################
 
 ##########################################################################################
+## UBUNTU CONFIGURATION FILES MODIFIED BY THIS SCRIPT
+##########################################################################################
+##
+## This script modifies the following Ubuntu system configuration files:
+##
+## CREATED/OVERWRITTEN FILES:
+## • /etc/security/pwquality.conf - Password quality requirements configuration
+## • /etc/security/faillock.conf - Account lockout policy configuration
+## • /etc/sudoers.d/security-policies - Enhanced sudo security policies
+## • /etc/profile.d/session-timeout.sh - Automatic session timeout configuration
+## • /etc/tmpfiles.d/faillock.conf - Faillock directory persistence configuration
+##
+## MODIFIED FILES (with backups created):
+## • /etc/pam.d/common-password - PAM password authentication configuration
+## • /etc/pam.d/common-auth - PAM authentication configuration (faillock integration)
+## • /etc/pam.d/common-account - PAM account management configuration
+## • /etc/login.defs - System-wide login and password policies
+## • /etc/default/useradd - Default settings for new user creation
+## • /etc/sudoers - Main sudo configuration (backed up before sudoers.d creation)
+##
+## DIRECTORIES CREATED:
+## • /var/log/sudo-io - Sudo input/output logging directory
+## • /var/run/faillock - Account lockout state directory
+##
+## FILES CREATED:
+## • /var/log/sudo.log - Sudo command logging file
+##
+## SYSTEM ACCOUNTS MODIFIED:
+## • root account - Password locked, home directory permissions secured
+##
+## BACKUPS CREATED IN $BACKUPDIR:
+## • common-password_$DATE - Original PAM password config backup
+## • common-auth_$DATE - Original PAM auth config backup
+## • common-account_$DATE - Original PAM account config backup
+## • login.defs_$DATE - Original login definitions backup
+## • useradd_$DATE - Original useradd defaults backup
+## • sudoers_$DATE - Original sudoers file backup
+##
+##########################################################################################
+
+##########################################################################################
 ## Set variables
 ##########################################################################################
 
@@ -31,49 +72,40 @@ show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFIL
 
 show_yellow "Configuring password policies for Ubuntu 24.04."
 
-# Install password quality checking
-apt-get --yes install libpam-pwquality >>$LOGDIR/$LOGFILE 2>&1 || (show_warn "Failed to install libpam-pwquality, continuing without it.")
+# Update package list first
+apt-get update >>$LOGDIR/$LOGFILE 2>&1
 
-# Configure password quality requirements
-if [ -f /etc/security/pwquality.conf ]; then
-    # Backup original configuration
-    cp /etc/security/pwquality.conf $BACKUPDIR/pwquality.conf_$DATE
-
-    # Configure strong password requirements
-    cat >/etc/security/pwquality.conf <<'EOF'
-# Password quality requirements for Ubuntu 24.04
-# Minimum password length
-minlen = 12
-
-# Require at least one digit
-dcredit = -1
-
-# Require at least one uppercase letter  
-ucredit = -1
-
-# Require at least one lowercase letter
-lcredit = -1
-
-# Require at least one special character
-ocredit = -1
-
-# Maximum number of allowed consecutive characters
-maxrepeat = 3
-
-# Minimum number of character classes
-minclass = 3
-
-# Check against dictionary words
-dictcheck = 1
-
-# Enforce password quality for root
-enforce_for_root
-EOF
-
-    show_yellow "Password quality policies configured."
-else
-    show_warn "Password quality configuration file not found, skipping password policies."
+# Install password quality checking package
+if ! apt-get --yes install libpam-pwquality >>$LOGDIR/$LOGFILE 2>&1; then
+    show_warn "Failed to install libpam-pwquality, continuing without it."
 fi
+
+# Ensure backup directory exists
+mkdir -p $BACKUPDIR
+
+# Backup original PAM password configuration if it exists
+if [ -f /etc/pam.d/common-password ]; then
+    cp /etc/pam.d/common-password $BACKUPDIR/common-password_$DATE
+fi
+
+# Configure password quality requirements - copy from configs
+cp "$SCRIPTDIR/../configs/account_security/pwquality.conf" /etc/security/pwquality.conf
+
+# Ensure PAM common-password includes pwquality
+if [ -f /etc/pam.d/common-password ]; then
+    # Check if pwquality is already configured
+    if ! grep -q "pam_pwquality.so" /etc/pam.d/common-password; then
+        # Add pwquality to PAM configuration before pam_unix.so
+        sed -i '/pam_unix.so/i password requisite pam_pwquality.so retry=3' /etc/pam.d/common-password
+        show_yellow "Added pam_pwquality to PAM configuration."
+    else
+        show_yellow "pam_pwquality already configured in PAM."
+    fi
+else
+    show_warn "PAM common-password file not found. Password policies may not be enforced."
+fi
+
+show_yellow "Password quality policies configured successfully."
 
 ##########################################################################################
 ## Configure account lockout policies
@@ -84,107 +116,66 @@ show_yellow "Configuring account lockout policies."
 # Ubuntu 24.04+ uses faillock instead of pam_tally2
 # Configure faillock configuration file
 mkdir -p /etc/security
-cat >/etc/security/faillock.conf <<'EOF'
-# Ubuntu 24.04 faillock configuration
-# Account lockout after 5 failed attempts, 10 minute lockout
+cp "$SCRIPTDIR/../configs/account_security/faillock.conf" /etc/security/faillock.conf
 
-# Number of failed attempts before lockout
-deny = 5
+# Check if pam-auth-update is available for proper PAM configuration
+if command -v pam-auth-update >/dev/null 2>&1; then
+    # Use pam-auth-update for proper Ubuntu 24.04 PAM configuration
+    show_yellow "Configuring PAM using pam-auth-update for Ubuntu 24.04."
 
-# Lockout duration in seconds (600 = 10 minutes)
-unlock_time = 600
+    # Enable faillock module using pam-auth-update
+    pam-auth-update --enable faillock
 
-# Enable audit logging
-audit
+    show_yellow "Account lockout policy configured using pam-auth-update."
+else
+    # Manual PAM configuration fallback
+    show_yellow "Manually configuring PAM files for account lockout."
 
-# Also lock root account
-even_deny_root
+    # Configure account lockout for failed login attempts
+    if [ -f /etc/pam.d/common-auth ]; then
+        # Backup original PAM auth configuration
+        cp /etc/pam.d/common-auth $BACKUPDIR/common-auth_$DATE
 
-# Directory for lock files
-dir = /var/run/faillock
-EOF
+        # Only add faillock if not already present
+        if ! grep -q "pam_faillock.so" /etc/pam.d/common-auth; then
+            # Add faillock preauth before pam_unix
+            sed -i '/pam_unix.so/i auth\trequired\t\t\tpam_faillock.so preauth' /etc/pam.d/common-auth
+            # Add faillock authfail after pam_unix (SAFER CONTROL)
+            sed -i '/pam_unix.so/a auth\t[default=bad success=ok user_unknown=ignore]\tpam_faillock.so authfail' /etc/pam.d/common-auth
+            # Add faillock authsucc after authfail
+            sed -i '/pam_faillock.so authfail/a auth\tsufficient\t\t\tpam_faillock.so authsucc' /etc/pam.d/common-auth
 
-# Configure account lockout for failed login attempts
-if [ -f /etc/pam.d/common-auth ]; then
-    # Backup original PAM auth configuration
-    cp /etc/pam.d/common-auth $BACKUPDIR/common-auth_$DATE
+            show_yellow "Account lockout policy configured (5 attempts, 10 minute lockout)."
+        else
+            show_warn "Account lockout already configured in common-auth."
+        fi
+    fi
 
-    # Add account lockout after failed attempts using faillock (Ubuntu 24.04+)
-    if ! grep -q "pam_faillock.so" /etc/pam.d/common-auth; then
-        # Create a safe common-auth configuration with faillock support
-        cat >/etc/pam.d/common-auth <<'EOF'
-#
-# /etc/pam.d/common-auth - authentication settings common to all services
-#
-# This file is included from other service-specific PAM config files,
-# and should contain a list of the authentication modules that define
-# the central authentication scheme for use on the system
-# (e.g., /etc/shadow, LDAP, Kerberos, etc.).  The default is to use the
-# traditional Unix authentication mechanisms.
-#
-# As of pam 1.0.1-6, this file is managed by pam-auth-update by default.
-# To take advantage of this, it is recommended that you configure any
-# local modules either before or after the default block, and use
-# pam-auth-update to manage selection of other modules.  See
-# pam-auth-update(8) for details.
+    # Configure account module for PAM
+    if [ -f /etc/pam.d/common-account ]; then
+        # Backup original PAM account configuration
+        cp /etc/pam.d/common-account $BACKUPDIR/common-account_$DATE
 
-# here are the per-package modules (the "Primary" block)
-auth	required			pam_faillock.so preauth
-auth	[success=1 default=ignore]	pam_unix.so nullok
-auth	[default=die]			pam_faillock.so authfail
-auth	sufficient			pam_faillock.so authsucc
-# here's the fallback if no module succeeds
-auth	requisite			pam_deny.so
-# prime the stack with a positive return value if there isn't one already;
-# this avoids us returning an error just because nothing sets a success code
-# since the modules above will each just jump around
-auth	required			pam_permit.so
-# and here are more per-package modules (the "Additional" block)
-# end of pam-auth-update config
-EOF
-        show_yellow "Account lockout policy configured (5 attempts, 10 minute lockout)."
-    else
-        show_warn "Account lockout already configured."
+        # Only add faillock if not already present
+        if ! grep -q "pam_faillock.so" /etc/pam.d/common-account; then
+            # Add faillock account checking before pam_unix
+            sed -i '/pam_unix.so/i account\trequired\t\t\tpam_faillock.so' /etc/pam.d/common-account
+
+            show_yellow "Account module configured for lockout checking."
+        else
+            show_warn "Account lockout already configured in common-account."
+        fi
     fi
 fi
 
-# Configure account module for PAM
-if [ -f /etc/pam.d/common-account ]; then
-    # Backup original PAM account configuration
-    cp /etc/pam.d/common-account $BACKUPDIR/common-account_$DATE
+# Ensure faillock directories exist with correct permissions
+mkdir -p /var/run/faillock
+chmod 755 /var/run/faillock
 
-    if ! grep -q "pam_faillock.so" /etc/pam.d/common-account; then
-        # Create a safe common-account configuration with faillock support
-        cat >/etc/pam.d/common-account <<'EOF'
-#
-# /etc/pam.d/common-account - authorization settings common to all services
-#
-# This file is included from other service-specific PAM config files,
-# and should contain a list of the authorization modules that define
-# the central access policy for use on the system.  The default is to
-# only deny service to users whose accounts are expired in /etc/shadow.
-#
-# As of pam 1.0.1-6, this file is managed by pam-auth-update by default.
-# To take advantage of this, it is recommended that you configure any
-# local modules either before or after the default block, and use
-# pam-auth-update to manage selection of other modules.  See
-# pam-auth-update(8) for details.
+# Create systemd tmpfiles configuration to ensure faillock directory persists
+cp "$SCRIPTDIR/../configs/account_security/tmpfiles-faillock.conf" /etc/tmpfiles.d/faillock.conf
 
-# here are the per-package modules (the "Primary" block)
-account	required			pam_faillock.so
-account	[success=1 new_authtok_reqd=done default=ignore]	pam_unix.so 
-# here's the fallback if no module succeeds
-account	requisite			pam_deny.so
-# prime the stack with a positive return value if there isn't one already;
-# this avoids us returning an error just because nothing sets a success code
-# since the modules above will each just jump around
-account	required			pam_permit.so
-# and here are more per-package modules (the "Additional" block)
-# end of pam-auth-update config
-EOF
-        show_yellow "Account module configured for lockout checking."
-    fi
-fi
+show_yellow "Account lockout policies configured for Ubuntu 24.04."
 
 ##########################################################################################
 ## Configure sudo security
@@ -196,41 +187,7 @@ show_yellow "Configuring sudo security policies."
 cp /etc/sudoers $BACKUPDIR/sudoers_$DATE
 
 # Create custom sudoers configuration for enhanced security
-cat >/etc/sudoers.d/security-policies <<'EOF'
-# Enhanced sudo security policies for Ubuntu 24.04
-
-# Password is required by default (this is the standard behavior)
-# NOPASSWD is not used anywhere to ensure passwords are always required
-
-# Log sudo commands to syslog
-Defaults syslog
-
-# Require TTY for sudo (prevents some automated attacks)
-# Note: Disabled for configuration testing, enable manually if needed
-# Defaults requiretty
-
-# Set sudo session timeout (15 minutes)
-Defaults timestamp_timeout=15
-
-# Set maximum number of tries for password
-Defaults passwd_tries=3
-
-# Set secure PATH for sudo
-Defaults secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-
-# Prevent environment variable injection
-Defaults env_reset
-Defaults env_keep="COLORS DISPLAY HOSTNAME HISTSIZE KDEDIR LS_COLORS"
-Defaults env_keep+="MAIL PS1 PS2 QTDIR USERNAME LANG LC_ADDRESS LC_CTYPE"
-Defaults env_keep+="LC_COLLATE LC_IDENTIFICATION LC_MEASUREMENT LC_MESSAGES"
-Defaults env_keep+="LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE"
-Defaults env_keep+="LC_TIME LC_ALL LANGUAGE LINGUAS _XKB_CHARSET XAUTHORITY"
-
-# Log sudo input/output for security auditing
-Defaults log_input, log_output
-Defaults iolog_dir=/var/log/sudo-io
-Defaults logfile=/var/log/sudo.log
-EOF
+cp "$SCRIPTDIR/../configs/account_security/security-policies" /etc/sudoers.d/security-policies
 
 # Create sudo log directory
 mkdir -p /var/log/sudo-io
@@ -282,13 +239,16 @@ if [ -f /etc/login.defs ]; then
     # Backup original configuration
     cp /etc/login.defs $BACKUPDIR/login.defs_$DATE
 
-    # Set password aging policies
-    sed -i $'s/^PASS_MAX_DAYS.*/PASS_MAX_DAYS\t90/' /etc/login.defs
-    sed -i $'s/^PASS_MIN_DAYS.*/PASS_MIN_DAYS\t1/' /etc/login.defs
-    sed -i $'s/^PASS_WARN_AGE.*/PASS_WARN_AGE\t7/' /etc/login.defs
+    # Include sed helpers for safe operations
+    source "$SCRIPTDIR/../utils/helpers/sed_helpers.sh"
+
+    # Set password aging policies using helper functions
+    set_config_with_tabs "/etc/login.defs" "PASS_MAX_DAYS" "90" "login_defs_$DATE"
+    set_config_with_tabs "/etc/login.defs" "PASS_MIN_DAYS" "1" "login_defs_$DATE"
+    set_config_with_tabs "/etc/login.defs" "PASS_WARN_AGE" "7" "login_defs_$DATE"
 
     # Set secure umask
-    sed -i $'s/^UMASK.*/UMASK\t\t027/' /etc/login.defs
+    set_config_with_tabs "/etc/login.defs" "UMASK" "027" "login_defs_$DATE"
 
     # Configure encryption method - SHA512 is still secure for password hashing
     # but modern systems should prefer stronger methods like yescrypt
@@ -324,133 +284,9 @@ fi
 show_yellow "Configuring session security."
 
 # Configure automatic logout for idle sessions
-cat >/etc/profile.d/session-timeout.sh <<'EOF'
-#!/bin/bash
-# Automatic logout for idle sessions (30 minutes)
-TMOUT=1800
-readonly TMOUT
-export TMOUT
-EOF
+cp "$SCRIPTDIR/../utils/generators/session-timeout.sh" /etc/profile.d/session-timeout.sh
 
 chmod 644 /etc/profile.d/session-timeout.sh
-
-# Configure limits for user processes
-if [ -f /etc/security/limits.conf ]; then
-    # Backup original configuration
-    cp /etc/security/limits.conf $BACKUPDIR/limits.conf_$DATE
-
-    # Add security limits
-    cat >>/etc/security/limits.conf <<'EOF'
-
-# Security limits for user processes
-* soft core 0
-* hard core 0
-* soft nproc 1000
-* hard nproc 2000
-* soft nofile 1024
-* hard nofile 2048
-EOF
-
-    show_yellow "Process limits configured for security."
-fi
-
-##########################################################################################
-## Create account management utilities
-##########################################################################################
-
-show_yellow "Creating account management utilities."
-
-# Create script to show account lockout status
-cat >$SCRIPTSDIR/show_locked_accounts.sh <<'EOF'
-#!/bin/bash
-
-# Show locked accounts and failed login attempts
-
-echo "=== Account Lockout Status ==="
-echo
-
-echo "Locked user accounts (using faillock for Ubuntu 24.04+):"
-if command -v faillock >/dev/null 2>&1; then
-    # Show faillock status for all users
-    for user in $(getent passwd | cut -d: -f1); do
-        failed_attempts=$(faillock --user "$user" 2>/dev/null | grep -c "When")
-        if [ "$failed_attempts" -gt 0 ]; then
-            echo "$user - Failed attempts: $failed_attempts"
-        fi
-    done
-else
-    echo "faillock command not available"
-fi
-
-echo
-echo "Recent failed login attempts:"
-journalctl --since "24 hours ago" | grep "authentication failure" | tail -10
-
-echo
-echo "To unlock an account, use: faillock --user=<username> --reset"
-EOF
-
-chmod +x $SCRIPTSDIR/show_locked_accounts.sh
-
-# Create script to reset account lockouts
-cat >$SCRIPTSDIR/unlock_account.sh <<'EOF'
-#!/bin/bash
-
-# Reset account lockout for a specific user
-
-if [ $# -eq 0 ]; then
-    echo "Usage: $0 <username>"
-    echo "Example: $0 john"
-    exit 1
-fi
-
-USERNAME="$1"
-
-# Check if user exists
-if ! id "$USERNAME" &>/dev/null; then
-    echo "Error: User '$USERNAME' does not exist"
-    exit 1
-fi
-
-# Reset the lockout counter using faillock (Ubuntu 24.04+)
-faillock --user="$USERNAME" --reset
-
-if [ $? -eq 0 ]; then
-    echo "Account lockout reset for user: $USERNAME"
-    echo "The user can now attempt to login again."
-else
-    echo "Failed to reset account lockout for user: $USERNAME"
-    exit 1
-fi
-EOF
-
-chmod +x $SCRIPTSDIR/unlock_account.sh
-
-# Create script to show sudo usage
-cat >$SCRIPTSDIR/show_sudo_usage.sh <<'EOF'
-#!/bin/bash
-
-# Show recent sudo usage for auditing
-
-echo "=== Recent Sudo Usage ==="
-echo
-
-if [ -f /var/log/sudo.log ]; then
-    echo "Recent sudo commands (last 20):"
-    tail -20 /var/log/sudo.log
-else
-    echo "Sudo log file not found. Checking syslog..."
-    journalctl --since "24 hours ago" | grep sudo | tail -10
-fi
-
-echo
-echo "Sudo I/O logs location: /var/log/sudo-io/"
-echo "To view detailed command logs: sudo cat /var/log/sudo-io/*/log"
-EOF
-
-chmod +x $SCRIPTSDIR/show_sudo_usage.sh
-
-show_yellow "Account management utilities created."
 
 ##########################################################################################
 ## Test account security configuration
@@ -503,8 +339,7 @@ show_info "✅ Account lockout: Configured (5 attempts, 10 minute lockout)"
 show_info "✅ Sudo security: Enhanced with logging and TTY requirement"
 show_info "✅ Root account: Password locked and secured"
 show_info "✅ Session timeout: 30 minutes for idle sessions"
-show_info "✅ Process limits: Configured for security"
-show_info "✅ Management utilities: Created in $SCRIPTSDIR/"
+
 show_info ""
 show_warn "IMPORTANT SECURITY NOTES:"
 show_info "• Root password login is disabled (SSH key required)"
@@ -512,11 +347,6 @@ show_info "• Users are locked out after 5 failed login attempts"
 show_info "• All sudo commands are logged for auditing"
 show_info "• Sessions timeout after 30 minutes of inactivity"
 show_info "• Strong password requirements are enforced"
-show_info ""
-show_info "Management commands:"
-show_info "• Show locked accounts: $SCRIPTSDIR/show_locked_accounts.sh"
-show_info "• Unlock account: $SCRIPTSDIR/unlock_account.sh <username>"
-show_info "• Show sudo usage: $SCRIPTSDIR/show_sudo_usage.sh"
 
 ##########################################################################################
 ## Done

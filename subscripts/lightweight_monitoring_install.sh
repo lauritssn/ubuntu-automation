@@ -1,6 +1,34 @@
 #!/bin/bash
 
 ##########################################################################################
+## Lightweight Monitoring Install Script
+##########################################################################################
+## This script installs and configures lightweight monitoring tools for Ubuntu 24.04
+##
+## UBUNTU CONFIGURATION FILES MODIFIED:
+## ------------------------------------
+## System Files:
+##   /etc/default/sysstat                    - Modified: Enables sysstat data collection
+##
+## Created Files:
+##   /etc/skel/.bash_aliases                 - Created: Monitoring aliases template for new users
+##   /root/.bash_aliases                     - Created: Monitoring aliases for root user
+##   $SCRIPTSDIR/system_health_check.sh      - Created: System health monitoring script
+##   $SCRIPTSDIR/check_disk_space.sh         - Created: Disk space monitoring script
+##
+## Template Files Used:
+##   configs/script-templates/system_health_check.sh    - Template for system health script
+##   configs/script-templates/check_disk_space.sh       - Template for disk space script
+##
+## Services Modified:
+##   sysstat.service                         - Enabled and restarted for system statistics
+##
+## Packages Installed:
+##   sysstat, nethogs, ncdu, tree           - Lightweight monitoring tools
+##
+##########################################################################################
+
+##########################################################################################
 ## Set variables
 ##########################################################################################
 DATE=$(date +%Y-%m-%d_%H%M)
@@ -15,11 +43,11 @@ fi
 LOGFILE=$SUBSCRIPT-$DATE.log
 
 ##########################################################################################
-## Load script template helper functions
+## Helper functions are available via parent script (install.sh or run_subscript.sh)
 ##########################################################################################
 
-# Source helper functions for script template management
-source "$BASEDIR/configs/script-templates/script_helper_functions.sh"
+# Note: Script template helper functions are available through shared_functions.sh
+# which is already sourced by the parent script (install.sh or run_subscript.sh)
 
 ##########################################################################################
 ## Info
@@ -32,7 +60,6 @@ show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFIL
 
 show_yellow "Installing lightweight monitoring tools."
 
-# htop and iotop are already installed in general_system_settings.sh
 # Install additional lightweight monitoring tools
 apt-get --yes install sysstat nethogs ncdu tree >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of monitoring tools failed. Please check logfile and fix error manually.")
 

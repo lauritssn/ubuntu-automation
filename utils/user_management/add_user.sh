@@ -5,129 +5,39 @@
 ##########################################################################################
 
 ##########################################################################################
+## Source shared helper functions
+##########################################################################################
+
+# Set BASEDIR for shared functions (assuming script is in utils/)
+export BASEDIR="$(dirname "$(dirname "$(realpath "$0")")")"
+
+# Source the shared helper functions
+if [ -f "$BASEDIR/utils/shared_functions.sh" ]; then
+    source "$BASEDIR/utils/shared_functions.sh"
+else
+    echo "❌ ERROR: Shared functions script not found at $BASEDIR/utils/shared_functions.sh"
+    exit 1
+fi
+
+##########################################################################################
 ## Set variables
 ##########################################################################################
 
-DATE=$(date +%Y-%m-%d_%H%M)
 SUBSCRIPT="add_user.sh"
-
-if [ -n "$LOGDIR" ]; then
-    LOGDIR=$LOGDIR
-else
-    LOGDIR=/srv/apps/logs
-fi
-
 LOGFILE=$SUBSCRIPT-$DATE.log
 
-# Default paths (can be overridden by environment)
-SCRIPTSDIR=${SCRIPTSDIR:-"/srv/apps/scripts"}
-
-##########################################################################################
-## Message/logging functions (imported from main install script)
-##########################################################################################
-
-# Yellow
-show_yellow() {
-    echo $(tput bold)$(tput setaf 4) $@ $(tput sgr 0)
-}
-# White
-show_norm() {
-    echo $(tput bold)$(tput setaf 9) $@ $(tput sgr 0)
-}
-# Blue
-show_info() {
-    echo $(tput bold)$(tput setaf 4) $@ $(tput sgr 0)
-}
-# Green
-show_warn() {
-    echo $(tput bold)$(tput setaf 2) $@ $(tput sgr 0)
-}
-# Red
-show_err() {
-    echo $(tput bold)$(tput setaf 1) $@ $(tput sgr 0)
-}
+# Initialize logging
+init_logging "$SUBSCRIPT"
 
 ##########################################################################################
 ## Check if we're running as root
 ##########################################################################################
 
-if [[ $EUID -ne 0 ]]; then
-    show_err "This script must be run as root."
-    exit 1
-fi
+check_root
 
 ##########################################################################################
-## Function to validate username
+## Local helper functions specific to user management
 ##########################################################################################
-
-validate_username() {
-    local username="$1"
-
-    # Check if username is provided
-    if [ -z "$username" ]; then
-        show_err "Username cannot be empty."
-        return 1
-    fi
-
-    # Check username format (alphanumeric, dashes, underscores, 3-32 chars)
-    if ! [[ "$username" =~ ^[a-zA-Z0-9_-]{3,32}$ ]]; then
-        show_err "Username must be 3-32 characters and contain only letters, numbers, dashes, and underscores."
-        return 1
-    fi
-
-    # Check if user already exists
-    if id "$username" &>/dev/null; then
-        show_err "User '$username' already exists."
-        return 1
-    fi
-
-    return 0
-}
-
-##########################################################################################
-## Function to generate secure password
-##########################################################################################
-
-generate_password() {
-    # Generate a 16-character password with mixed case, numbers, and symbols
-    openssl rand -base64 32 | tr -d "=+/" | cut -c1-16
-}
-
-##########################################################################################
-## Function to check if 2FA is configured on the system
-##########################################################################################
-
-check_2fa_available() {
-    if ! command -v google-authenticator >/dev/null 2>&1; then
-        show_warn "Google Authenticator is not installed. 2FA setup will be skipped."
-        return 1
-    fi
-
-    if ! grep -q "pam_google_authenticator.so" /etc/pam.d/sshd 2>/dev/null; then
-        show_warn "SSH 2FA is not configured on this system. 2FA setup will be skipped."
-        return 1
-    fi
-
-    return 0
-}
-
-##########################################################################################
-## Function to check if WireGuard is available
-##########################################################################################
-
-check_wireguard_available() {
-    if ! command -v wg >/dev/null 2>&1; then
-        show_warn "WireGuard is not installed. VPN setup will be skipped."
-        return 1
-    fi
-
-    if [ ! -f /etc/wireguard/wg0.conf ]; then
-        show_warn "WireGuard server configuration not found. VPN setup will be skipped."
-        return 1
-    fi
-
-    return 0
-}
 
 ##########################################################################################
 ## Function to create global WireGuard management scripts if they don't exist
