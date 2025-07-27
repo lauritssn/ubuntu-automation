@@ -43,8 +43,8 @@ fi
 ## - /var/run/clamav/                    : Created with clamav:clamav ownership and 755 permissions
 ##
 ## Files Created/Copied:
-## - /usr/local/bin/clamav-scan.sh       : Copied from configs/clamav/clamav-scan.sh (with email placeholders replaced)
-## - /usr/local/bin/clamav-exclude-helper.sh : Copied from configs/clamav/clamav-exclude-helper.sh
+## - /usr/local/bin/clamav-scan.sh       : Copied from utils/monitoring/scripts/clamav-scan.sh (with email placeholders replaced)
+## - /usr/local/bin/clamav-exclude-helper.sh : Copied from utils/helpers/clamav-exclude-helper.sh
 ## - /var/log/clamav/freshclam_install.log : Created during installation process
 ## - /var/lib/clamav/*.cvd/*.cld         : ClamAV signature database files downloaded
 ##
@@ -80,7 +80,7 @@ LOGFILE=$SUBSCRIPT-$DATE.log
 
 SCRIPT_ORG=/usr/local/bin/clamav-scan.sh
 SCRIPT_BACK=$BACKUPDIR/$(basename $SCRIPT_ORG)_$DATE
-SCRIPT_GIT=$BASEDIR/configs/clamav/clamav-scan.sh
+SCRIPT_GIT=$BASEDIR/utils/monitoring/scripts/clamav-scan.sh
 
 ##########################################################################################
 ## Info
@@ -331,7 +331,7 @@ show_yellow "ClamAV scan script deployed with false positive reduction enabled."
 ##########################################################################################
 
 # Copy the exclusion helper script
-cp $BASEDIR/configs/clamav/clamav-exclude-helper.sh /usr/local/bin/clamav-exclude-helper.sh >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Copying ClamAV exclusion helper failed. Please check logfile and fix error manually.")
+cp $BASEDIR/utils/helpers/clamav-exclude-helper.sh /usr/local/bin/clamav-exclude-helper.sh >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Copying ClamAV exclusion helper failed. Please check logfile and fix error manually.")
 chmod +x /usr/local/bin/clamav-exclude-helper.sh >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Making ClamAV exclusion helper executable failed. Please check logfile and fix error manually.")
 
 show_yellow "ClamAV exclusion helper installed at /usr/local/bin/clamav-exclude-helper.sh"
