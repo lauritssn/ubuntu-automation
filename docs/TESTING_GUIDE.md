@@ -525,14 +525,40 @@ curl http://localhost:19999
 
 ```bash
 # Test WireGuard installation
+# Optional: Set custom subnet (defaults to 10.66.66.0/24 if not provided)
 export WIREGUARD_SUBNET="10.66.66.0/24"
 sudo ./run_subscript.sh wireguard_install.sh
 
-# Verify
+# Or run without setting subnet to use default:
+# sudo ./run_subscript.sh wireguard_install.sh
+
+# Verify installation
 systemctl status wg-quick@wg0
 wg show
+
+# Check configuration
+sudo cat /etc/wireguard/wg0.conf | head -10
+
+# Test client management utilities
 add-wg-client testclient
+
+# Check if client was created
+ls -la /etc/wireguard/clients/
+cat /etc/wireguard/clients/testclient.conf
+
+# Remove test client
+remove-wg-client testclient
 ```
+
+**Expected results:**
+- WireGuard service running and active
+- Server configuration properly created with valid IP addresses
+- Client management utilities functional
+
+**Common issues:**
+- If service fails to start, check `journalctl -xeu wg-quick@wg0.service` for details
+- Ensure WIREGUARD_SUBNET is in correct format (X.X.X.X/XX) if manually specified
+- Check firewall rules if clients can't connect
 
 #### Dokku Installation (`dokku_install.sh`)
 

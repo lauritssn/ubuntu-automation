@@ -113,6 +113,18 @@ show_yellow "Server keys generated."
 
 show_yellow "Creating Wireguard server configuration."
 
+# Set default subnet if not provided
+if [ -z "$WIREGUARD_SUBNET" ]; then
+    WIREGUARD_SUBNET="10.66.66.0/24"
+    show_yellow "No WIREGUARD_SUBNET provided, using default: $WIREGUARD_SUBNET"
+fi
+
+# Validate subnet format
+if [[ ! "$WIREGUARD_SUBNET" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/[0-9]{1,2}$ ]]; then
+    show_err "Invalid WIREGUARD_SUBNET format: $WIREGUARD_SUBNET. Expected format: X.X.X.X/XX"
+    exit 1
+fi
+
 # Extract network details from subnet
 WG_NETWORK=$(echo $WIREGUARD_SUBNET | cut -d'/' -f1)
 WG_CIDR=$(echo $WIREGUARD_SUBNET | cut -d'/' -f2)
