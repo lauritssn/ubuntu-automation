@@ -9,14 +9,14 @@
 ## Source shared helper functions
 ##########################################################################################
 
-# Set BASEDIR for shared functions (assuming script is in utils/)
+# Set BASEDIR for shared functions (script is in utils/monitoring/)
 export BASEDIR="$(dirname "$(dirname "$(realpath "$0")")")"
 
 # Source the shared helper functions
-if [ -f "$BASEDIR/utils/shared_functions.sh" ]; then
-    source "$BASEDIR/utils/shared_functions.sh"
+if [ -f "$BASEDIR/shared_functions.sh" ]; then
+    source "$BASEDIR/shared_functions.sh"
 else
-    echo "❌ ERROR: Shared functions script not found at $BASEDIR/utils/shared_functions.sh"
+    echo "❌ ERROR: Shared functions script not found at $BASEDIR/shared_functions.sh"
     exit 1
 fi
 
