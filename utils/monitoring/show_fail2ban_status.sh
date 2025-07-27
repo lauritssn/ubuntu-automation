@@ -67,7 +67,7 @@ show_recent_bans() {
 
 show_current_banned_ips() {
     echo "=== Currently Banned IPs ==="
-    
+
     # Check SSH jail
     echo "SSH (sshd) jail:"
     if iptables -L f2b-sshd -n 2>/dev/null | grep DROP; then
@@ -75,7 +75,7 @@ show_current_banned_ips() {
     else
         echo "  No currently banned IPs for SSH"
     fi
-    
+
     # Check WireGuard jail
     echo "WireGuard jail:"
     if iptables -L f2b-wireguard -n 2>/dev/null | grep DROP; then
@@ -83,7 +83,7 @@ show_current_banned_ips() {
     else
         echo "  No currently banned IPs for WireGuard"
     fi
-    
+
     # Check Recidive jail
     echo "Recidive (repeat offenders) jail:"
     if iptables -L f2b-recidive -n 2>/dev/null | grep DROP; then
@@ -91,7 +91,7 @@ show_current_banned_ips() {
     else
         echo "  No currently banned IPs for recidive"
     fi
-    
+
     # Check Postfix jail
     echo "Postfix SASL jail:"
     if iptables -L f2b-postfix-sasl-aggressive -n 2>/dev/null | grep DROP; then
@@ -104,7 +104,7 @@ show_current_banned_ips() {
 
 show_fail2ban_config() {
     echo "=== Fail2Ban Configuration Summary ==="
-    
+
     # Check main configuration
     if [ -f /etc/fail2ban/jail.conf ]; then
         echo "Main configuration: /etc/fail2ban/jail.conf"
@@ -117,7 +117,7 @@ show_fail2ban_config() {
     else
         echo "❌ Main configuration file not found"
     fi
-    
+
     # Check enabled jails
     echo ""
     echo "Enabled jails in configuration:"
@@ -131,17 +131,17 @@ show_fail2ban_config() {
 
 show_security_events() {
     echo "=== Security Events Summary ==="
-    
+
     # Count different types of events in the last 24 hours
     local ban_count=$(journalctl -u fail2ban --since "24 hours ago" --no-pager -q | grep -c "Ban " 2>/dev/null || echo "0")
     local unban_count=$(journalctl -u fail2ban --since "24 hours ago" --no-pager -q | grep -c "Unban " 2>/dev/null || echo "0")
     local ssh_attempts=$(journalctl --since "24 hours ago" --no-pager -q | grep -i ssh | grep -c "failed\|invalid" 2>/dev/null || echo "0")
-    
+
     echo "Last 24 hours:"
     echo "  🚫 IPs banned: $ban_count"
     echo "  ✅ IPs unbanned: $unban_count"
     echo "  🔒 Failed SSH attempts: $ssh_attempts"
-    
+
     # Show top attacking IPs
     echo ""
     echo "Top attacking IPs (SSH failures):"
@@ -154,13 +154,13 @@ show_security_events() {
 unban_ip() {
     local ip="$1"
     local jail="$2"
-    
+
     if [ -z "$ip" ]; then
         echo "Usage: unban_ip <ip_address> [jail_name]"
         echo "Example: unban_ip 192.168.1.100 sshd"
         return 1
     fi
-    
+
     if [ -n "$jail" ]; then
         echo "Unbanning IP $ip from jail $jail..."
         fail2ban-client set "$jail" unbanip "$ip"
@@ -172,7 +172,7 @@ unban_ip() {
 
 test_fail2ban_config() {
     echo "=== Testing Fail2Ban Configuration ==="
-    
+
     if fail2ban-client --test; then
         echo "✅ Fail2Ban configuration test passed"
     else
@@ -183,7 +183,7 @@ test_fail2ban_config() {
 }
 
 show_usage() {
-    cat << 'EOF'
+    cat <<'EOF'
 Fail2Ban Status and Management Utility
 
 Usage:
@@ -210,26 +210,27 @@ Examples:
 Jail-specific commands:
     ./show_fail2ban_status.sh ssh                # SSH security overview
     ./show_fail2ban_status.sh wireguard          # WireGuard security status
+    ./show_fail2ban_status.sh portscan           # Port scanning protection status
 
 EOF
 }
 
 show_ssh_security() {
     echo "=== SSH Security Overview ==="
-    
+
     # SSH jail status
     show_jail_details "sshd"
-    
+
     # Recent SSH attacks
     echo "Recent SSH attack patterns (last 24 hours):"
     journalctl --since "24 hours ago" --no-pager -q | grep -i ssh | grep -i "failed\|invalid\|refused" | tail -10
     echo
-    
+
     # SSH attack sources
     echo "Most frequent SSH attack sources:"
     journalctl --since "24 hours ago" --no-pager -q | grep -i ssh | grep -i "failed" | grep -oE 'from [0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | sort | uniq -c | sort -nr | head -10
     echo
-    
+
     # Successful SSH logins
     echo "Recent successful SSH logins:"
     journalctl --since "24 hours ago" --no-pager -q | grep -i ssh | grep -i "accepted" | tail -5
@@ -247,58 +248,68 @@ fi
 
 # Parse command line arguments
 case "${1:-status}" in
-    "status"|"")
-        show_service_status
-        show_active_jails
-        show_jail_details "sshd"
-        show_jail_details "wireguard"
-        show_jail_details "recidive"
-        show_current_banned_ips
-        show_recent_bans
-        ;;
-    "jails")
-        show_active_jails
-        show_jail_details "sshd"
-        show_jail_details "wireguard" 
-        show_jail_details "recidive"
-        show_jail_details "postfix-sasl-aggressive"
-        ;;
-    "bans")
-        show_current_banned_ips
-        ;;
-    "recent")
-        show_recent_bans
-        ;;
-    "events")
-        show_security_events
-        ;;
-    "config")
-        show_fail2ban_config
-        ;;
-    "test")
-        test_fail2ban_config
-        ;;
-    "unban")
-        if [ "$EUID" -ne 0 ]; then
-            show_err "Unban operation requires root privileges. Run with sudo."
-            exit 1
-        fi
-        unban_ip "$2" "$3"
-        ;;
-    "ssh")
-        show_ssh_security
-        ;;
-    "wireguard")
-        show_jail_details "wireguard"
-        echo "WireGuard VPN attack attempts:"
-        journalctl --since "24 hours ago" --no-pager -q | grep -i wireguard | grep -i "invalid\|failed" | tail -10
-        ;;
-    "help"|"-h"|"--help")
-        show_usage
-        ;;
-    *)
-        show_err "Unknown command: $1"
-        show_usage
+"status" | "")
+    show_service_status
+    show_active_jails
+    show_jail_details "sshd"
+    show_jail_details "wireguard"
+    show_jail_details "portscan"
+    show_jail_details "recidive"
+    show_current_banned_ips
+    show_recent_bans
+    ;;
+"jails")
+    show_active_jails
+    show_jail_details "sshd"
+    show_jail_details "wireguard"
+    show_jail_details "portscan"
+    show_jail_details "recidive"
+    show_jail_details "postfix-sasl-aggressive"
+    ;;
+"bans")
+    show_current_banned_ips
+    ;;
+"recent")
+    show_recent_bans
+    ;;
+"events")
+    show_security_events
+    ;;
+"config")
+    show_fail2ban_config
+    ;;
+"test")
+    test_fail2ban_config
+    ;;
+"unban")
+    if [ "$EUID" -ne 0 ]; then
+        show_err "Unban operation requires root privileges. Run with sudo."
         exit 1
-        ;;
-esac 
+    fi
+    unban_ip "$2" "$3"
+    ;;
+"ssh")
+    show_ssh_security
+    ;;
+"wireguard")
+    show_jail_details "wireguard"
+    echo "WireGuard VPN attack attempts:"
+    journalctl --since "24 hours ago" --no-pager -q | grep -i wireguard | grep -i "invalid\|failed" | tail -10
+    ;;
+"portscan")
+    show_jail_details "portscan"
+    echo "Port scanning attempts detected:"
+    journalctl --since "24 hours ago" --no-pager -q | grep -E "PORTSCAN:|STEALTH_SCAN:|NMAP_SCAN:|PORT_PROBE:|SYN_FLOOD:" | tail -20
+    echo
+    echo "Recent iptables log entries:"
+    tail -50 /var/log/kern.log | grep -E "PORTSCAN:|STEALTH_SCAN:|NMAP_SCAN:|PORT_PROBE:|SYN_FLOOD:" | tail -10
+    ;;
+"help" | "-h" | "--help")
+    show_usage
+    ;;
+*)
+    show_err "Unknown command: $1"
+    show_usage
+    exit 1
+    ;;
+esac

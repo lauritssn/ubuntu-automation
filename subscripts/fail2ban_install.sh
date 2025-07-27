@@ -54,6 +54,10 @@ CONF1_GIT=$BASEDIR/configs/fail2ban/jail.conf
 FILTER_WG_ORG=/etc/fail2ban/filter.d/wireguard.conf
 FILTER_WG_GIT=$BASEDIR/configs/fail2ban/filter.d/wireguard.conf
 
+# Port scanning filter configuration
+FILTER_PS_ORG=/etc/fail2ban/filter.d/portscan.conf
+FILTER_PS_GIT=$BASEDIR/configs/fail2ban/filter.d/portscan.conf
+
 ##########################################################################################
 ## Info
 ##########################################################################################
@@ -85,6 +89,13 @@ if [ -f $FILTER_WG_GIT ]; then
     cp $FILTER_WG_GIT $FILTER_WG_ORG && show_yellow "WireGuard fail2ban filter deployed."
 else
     show_warn "WireGuard filter not found, skipping WireGuard protection."
+fi
+
+# Copy port scanning filter if it exists
+if [ -f $FILTER_PS_GIT ]; then
+    cp $FILTER_PS_GIT $FILTER_PS_ORG && show_yellow "Port scanning fail2ban filter deployed."
+else
+    show_warn "Port scanning filter not found, skipping port scan protection."
 fi
 
 ##########################################################################################
@@ -144,9 +155,10 @@ show_info "Fail2Ban installation done."
 show_info "=== Fail2Ban Configuration Summary ==="
 show_info "✅ SSH Protection: ENABLED (aggressive mode, 3 attempts, 2h ban)"
 show_info "✅ WireGuard Protection: ENABLED (5 attempts, 1h ban)"
+show_info "✅ Port Scan Protection: ENABLED (3 attempts, 24h ban)"
 show_info "✅ Recidive Protection: ENABLED (repeat offenders, 1 week ban)"
 show_info "✅ Progressive Ban Times: ENABLED (bans get longer for repeat offenses)"
 show_info "✅ Email Notifications: CONFIGURED"
 show_info ""
 show_info "Use 'sudo $SCRIPTSDIR/show_fail2ban_status.sh' or 'sudo $BASEDIR/utils/show_fail2ban_status.sh' to monitor protection status."
-show_info "Available commands: status, jails, bans, recent, events, config, test, unban, ssh, wireguard"
+show_info "Available commands: status, jails, bans, recent, events, config, test, unban, ssh, wireguard, portscan"

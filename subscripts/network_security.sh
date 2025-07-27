@@ -158,6 +158,64 @@ else
 fi
 
 ##########################################################################################
+## Configure iptables logging for fail2ban port scan detection
+##########################################################################################
+
+show_yellow "Configuring iptables logging for port scan detection."
+
+# Create iptables rules for port scan detection and logging
+# These rules will generate log entries that fail2ban can monitor
+
+# Create PORTSCAN chain for organizing scan detection rules
+iptables -N PORTSCAN 2>/dev/null || true
+
+# Log and detect various types of port scans
+# SYN scans (most common)
+iptables -A INPUT -p tcp --tcp-flags SYN,ACK SYN -m limit --limit 5/min --limit-burst 7 -j LOG --log-prefix "PORTSCAN: " --log-level 4
+
+# Stealth scans - FIN scan
+iptables -A INPUT -p tcp --tcp-flags ALL FIN -m limit --limit 3/min --limit-burst 5 -j LOG --log-prefix "STEALTH_SCAN: " --log-level 4
+
+# Stealth scans - NULL scan  
+iptables -A INPUT -p tcp --tcp-flags ALL NONE -m limit --limit 3/min --limit-burst 5 -j LOG --log-prefix "STEALTH_SCAN: " --log-level 4
+
+# Stealth scans - XMAS scan
+iptables -A INPUT -p tcp --tcp-flags ALL FIN,PSH,URG -m limit --limit 3/min --limit-burst 5 -j LOG --log-prefix "STEALTH_SCAN: " --log-level 4
+
+# Port probing detection - excessive connection attempts to closed ports
+iptables -A INPUT -p tcp --dport 1:1023 -m state --state NEW -m recent --name portscan --set
+iptables -A INPUT -p tcp --dport 1:1023 -m state --state NEW -m recent --name portscan --rcheck --seconds 60 --hitcount 10 -j LOG --log-prefix "PORT_PROBE: " --log-level 4
+
+# Log potential nmap detection attempts
+iptables -A INPUT -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG -j LOG --log-prefix "NMAP_SCAN: " --log-level 4
+
+# Detect SYN flood attempts
+iptables -A INPUT -p tcp --syn -m limit --limit 1/s --limit-burst 3 -j ACCEPT
+iptables -A INPUT -p tcp --syn -j LOG --log-prefix "SYN_FLOOD: " --log-level 4
+
+show_yellow "Iptables logging rules for port scan detection configured."
+
+# Make iptables rules persistent
+if command -v iptables-save >/dev/null 2>&1; then
+    # Create directory for persistent rules if it doesn't exist
+    mkdir -p /etc/iptables
+    
+    # Save current rules
+    iptables-save > /etc/iptables/rules.v4 2>/dev/null || true
+    
+    # Install iptables-persistent if not already installed
+    if ! dpkg -l | grep -q iptables-persistent; then
+        show_yellow "Installing iptables-persistent for rule persistence."
+        export DEBIAN_FRONTEND=noninteractive
+        apt-get --yes install iptables-persistent >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Failed to install iptables-persistent"
+    fi
+    
+    show_yellow "Iptables rules made persistent."
+else
+    show_warn "iptables-save not found, rules may not persist after reboot."
+fi
+
+##########################################################################################
 ## Display network security summary
 ##########################################################################################
 
@@ -170,6 +228,7 @@ show_info "✅ Reverse path filtering: Enabled (anti-spoofing)"
 show_info "✅ Network buffer limits: Configured for security"
 show_info "✅ DNS security: Configured with secure resolvers and DNSSEC"
 show_info "✅ Interface security: Automatic configuration on interface up"
+show_info "✅ Port scan detection: Iptables logging rules configured for fail2ban"
 show_info ""
 show_warn "IMPORTANT NETWORK SECURITY NOTES:"
 show_info "• IP forwarding is disabled by default (VPN services will enable as needed)"
@@ -177,11 +236,13 @@ show_info "• ICMP ping responses are disabled (reduces reconnaissance)"
 show_info "• Source routing and redirects are blocked (prevents routing attacks)"
 show_info "• DNS uses secure resolvers with DNSSEC validation"
 show_info "• Network interfaces are hardened automatically"
+show_info "• Port scanning attempts are logged and detected by fail2ban"
 show_info ""
 show_info "Network monitoring commands:"
 show_info "• Show security status: $SCRIPTSDIR/show_network_security.sh"
 show_info "• Test configuration: $SCRIPTSDIR/test_network_security.sh"
 show_info "• Enable IP forwarding: $SCRIPTSDIR/enable_ip_forwarding.sh (for VPN services)"
+show_info "• Check fail2ban port scan protection: sudo fail2ban-client status portscan"
 
 ##########################################################################################
 ## Done
