@@ -28,52 +28,6 @@ if ! command -v show_info &>/dev/null; then
 fi
 
 ##########################################################################################
-## Systemd Timers Installation and Configuration
-##########################################################################################
-#
-# This script modifies, creates, or copies the following Ubuntu system files:
-#
-# SYSTEMD SERVICE & TIMER FILES (copied to /etc/systemd/system/):
-#   - clamav-scan.service
-#   - clamav-scan.timer
-#   - clamav-update.service
-#   - clamav-update.timer
-#   - rkhunter-scan.service
-#   - rkhunter-scan.timer
-#   - rkhunter-update.service
-#   - rkhunter-update.timer
-#   - maldet-scan.service
-#   - maldet-scan.timer
-#   - maldet-update.service
-#   - maldet-update.timer
-#   - system-health-check.service
-#   - system-health-check.timer
-#   - swap-monitor.service
-#   - swap-monitor.timer
-#   - disk-space-monitor.service
-#   - disk-space-monitor.timer
-#
-# EXECUTABLE SCRIPTS (created/copied to /usr/local/bin/):
-#   - clamav-scan.sh (from script template)
-#   - clamav-update.sh (from script template)
-#   - rkhunter-scan.sh (from script template)
-#   - rkhunter-update.sh (from script template)
-#   - maldet-scan.sh (from script template)
-#   - maldet-update.sh (from script template)
-#
-# DIRECTORIES CREATED:
-#   - /etc/systemd/system/ (if not exists)
-#
-# FILE OWNERSHIP CHANGES:
-#   - /var/lib/clamav/* (set to clamav:clamav)
-#
-# SYSTEMD DAEMON MODIFICATIONS:
-#   - systemctl daemon-reload (reloads systemd configuration)
-#   - Enables and starts all installed timer units
-#
-##########################################################################################
-
-##########################################################################################
 ## Set variables
 ##########################################################################################
 DATE=$(date +%Y-%m-%d_%H%M)

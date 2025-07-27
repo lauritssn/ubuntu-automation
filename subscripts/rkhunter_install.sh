@@ -47,13 +47,6 @@ fi
 LOGFILE=$SUBSCRIPT-$DATE.log
 
 ##########################################################################################
-## Helper functions are available via parent script (install.sh or run_subscript.sh)
-##########################################################################################
-
-# Note: Script template helper functions are available through shared_functions.sh
-# which is already sourced by the parent script (install.sh or run_subscript.sh)
-
-##########################################################################################
 ## RKHunter configuration
 ##########################################################################################
 

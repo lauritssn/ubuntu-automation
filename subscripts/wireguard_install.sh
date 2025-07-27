@@ -28,10 +28,6 @@ if ! command -v show_info &>/dev/null; then
 fi
 
 ##########################################################################################
-## WireGuard VPN Installation and Configuration
-##########################################################################################
-
-##########################################################################################
 ## Set variables
 ##########################################################################################
 DATE=$(date +%Y-%m-%d_%H%M)
@@ -150,19 +146,22 @@ chmod 600 /etc/wireguard/wg0.conf
 show_yellow "Server configuration created."
 
 ##########################################################################################
-## Enable IP forwarding
+## Enable IP forwarding for WireGuard
 ##########################################################################################
 
-show_yellow "Enabling IP forwarding."
+show_yellow "Configuring IP forwarding for WireGuard VPN."
 
-# Enable IP forwarding permanently
-echo 'net.ipv4.ip_forward = 1' >>/etc/sysctl.conf
-echo 'net.ipv6.conf.all.forwarding = 1' >>/etc/sysctl.conf
+# Create WireGuard-specific sysctl configuration following Ubuntu 24.04 conventions
+# Use 40- prefix to override network security settings where needed for VPN functionality
+cp "$SCRIPTDIR/../configs/network_security/40-wireguard.conf" /etc/sysctl.d/40-wireguard.conf
 
-# Apply immediately
-sysctl -p >>$LOGDIR/$LOGFILE 2>&1
+# Apply the WireGuard sysctl configuration
+if ! sysctl -p /etc/sysctl.d/40-wireguard.conf >>$LOGDIR/$LOGFILE 2>&1; then
+    show_err "WireGuard sysctl configuration failed. Please check logfile and fix error manually."
+    exit 1
+fi
 
-show_yellow "IP forwarding enabled."
+show_yellow "IP forwarding enabled for WireGuard VPN."
 
 ##########################################################################################
 ## Create client management functions

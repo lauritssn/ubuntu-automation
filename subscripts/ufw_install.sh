@@ -28,60 +28,6 @@ if ! command -v show_info &>/dev/null; then
 fi
 
 ##########################################################################################
-## Ubuntu UFW (Uncomplicated Firewall) Installation and Configuration Script
-##########################################################################################
-##
-## UBUNTU CONFIGURATION FILES MODIFIED BY THIS SCRIPT:
-##
-## Files DIRECTLY MODIFIED:
-##   • /etc/default/ufw                    - UFW default configuration (IPv6 enabled)
-##
-## Files INDIRECTLY MODIFIED (via ufw commands):
-##   • /etc/ufw/ufw.conf                   - UFW main configuration (enabled status, logging)
-##   • /etc/ufw/user.rules                 - IPv4 user-defined firewall rules
-##   • /etc/ufw/user6.rules                - IPv6 user-defined firewall rules
-##   • /lib/ufw/user.rules                 - Alternative location for user rules on some systems
-##   • /lib/ufw/user6.rules                - Alternative location for IPv6 user rules
-##
-## Files READ BUT NOT MODIFIED:
-##   • /etc/ufw/before.rules               - Default UFW rules applied before user rules
-##   • /etc/ufw/before6.rules              - IPv6 default rules applied before user rules
-##   • /etc/ufw/after.rules                - Default UFW rules applied after user rules
-##   • /etc/ufw/after6.rules               - IPv6 default rules applied after user rules
-##   • /etc/ufw/sysctl.conf                - UFW kernel parameter settings
-##
-## CUSTOM FILES CREATED:
-##   • $SCRIPTSDIR/ufw.sh                  - Custom UFW configuration script (typically configs/ufw/ufw.sh)
-##
-## BACKUP FILES CREATED:
-##   • $BACKUPDIR/ufw.sh_$DATE             - Backup of existing ufw.sh script (if exists)
-##   • $BACKUPDIR/ufw_rules_$DATE          - Backup of active UFW rules before changes
-##
-## SYSTEM CHANGES MADE:
-##   • UFW package installation via apt-get
-##   • UFW firewall enabled and activated
-##   • Default policies: deny incoming, allow outgoing
-##   • IPv6 support enabled
-##   • UFW logging enabled
-##   • Service-specific firewall rules based on installation variables:
-##     - SSH access (rate-limited, optionally restricted to secure subnet)
-##     - HTTP/HTTPS ports (if Dokku is installed)
-##     - WireGuard VPN port and routing (if WireGuard is installed)
-##     - Loopback interface allowed
-##
-## LOG FILES CREATED:
-##   • $LOGDIR/$LOGFILE                    - Installation and configuration log
-##
-## NOTES:
-##   • UFW rules are persistent and survive reboots once enabled
-##   • The generated ufw.sh script can be re-run to reapply rules
-##   • UFW logs firewall activity to /var/log/ufw.log (if logging enabled)
-##   • Changes to /etc/default/ufw require UFW restart to take effect
-##   • User rules files are automatically managed by UFW commands
-##
-##########################################################################################
-
-##########################################################################################
 ## Set variables
 ##########################################################################################
 DATE=$(date +%Y-%m-%d_%H%M)

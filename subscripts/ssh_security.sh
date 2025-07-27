@@ -1,40 +1,6 @@
 #!/bin/bash
 
 ##########################################################################################
-## SSH Security Hardening and 2FA Management Script
-##########################################################################################
-##
-## Description:
-##   Configures comprehensive SSH security hardening including key-only authentication,
-##   connection limits, cipher restrictions, and 2FA management utilities.
-##
-## Ubuntu Config Files Changed/Altered:
-##   - /etc/ssh/sshd_config - Main SSH daemon configuration
-##   - /srv/apps/scripts/setup_user_2fa.sh - 2FA setup utility
-##   - /srv/apps/scripts/disable_user_2fa.sh - 2FA disable utility
-##   - /srv/apps/scripts/show_2fa_qr.sh - 2FA QR code display utility
-##   - /srv/apps/scripts/show_ssh_security.sh - SSH security monitoring
-##   - /srv/apps/scripts/test_ssh_security.sh - SSH security testing
-##
-## Security Features Configured:
-##   - Root login disabled completely
-##   - Password authentication disabled (key-only access)
-##   - Modern SSH algorithms and ciphers only
-##   - Connection rate limiting and timeout controls
-##   - X11 forwarding disabled for security
-##   - Protocol 2 only (modern SSH)
-##   - Comprehensive 2FA management utilities
-##
-## Security Impact:
-##   - Eliminates password-based SSH attacks
-##   - Prevents SSH brute force attempts
-##   - Ensures only secure cryptographic methods
-##   - Provides easy 2FA management for users
-##   - Comprehensive SSH attack monitoring
-##
-##########################################################################################
-
-##########################################################################################
 ## Source shared helper functions
 ##########################################################################################
 

@@ -28,29 +28,6 @@ if ! command -v show_info &>/dev/null; then
 fi
 
 ##########################################################################################
-## UBUNTU CONFIGURATION FILES MODIFIED BY THIS SCRIPT
-##########################################################################################
-#
-# This script modifies the following Ubuntu system configuration files:
-#
-# FILES CREATED/COPIED:
-# • /etc/fail2ban/jail.conf - Main fail2ban configuration (backed up if exists)
-# • /etc/fail2ban/filter.d/wireguard.conf - WireGuard-specific fail2ban filter (optional)
-#
-# FILES MODIFIED IN-PLACE:
-# • /etc/fail2ban/jail.conf - Email addresses are updated via sed substitution:
-#   - INFO_EMAIL placeholder replaced with actual email address
-#   - EMAIL_DOMAIN placeholder replaced with actual domain
-#
-# SERVICES AFFECTED:
-# • fail2ban service - restarted after configuration changes
-#
-# BACKUP LOCATIONS:
-# • Original jail.conf backed up to: $BACKUPDIR/jail.conf_<timestamp>
-#
-##########################################################################################
-
-##########################################################################################
 ## Set variables
 ##########################################################################################
 

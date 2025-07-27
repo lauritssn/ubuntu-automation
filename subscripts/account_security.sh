@@ -1,40 +1,6 @@
 #!/bin/bash
 
 ##########################################################################################
-## Account Security and Password Policy Configuration
-##########################################################################################
-##
-## Description:
-##   Configures comprehensive account security policies including password requirements,
-##   account lockout policies, sudo security enhancements, and session management.
-##
-## Ubuntu Config Files Changed/Altered:
-##   - /etc/security/pwquality.conf - Password complexity requirements
-##   - /etc/security/faillock.conf - Account lockout configuration
-##   - /etc/sudoers.d/security-policies - Enhanced sudo security policies
-##   - /etc/profile.d/session-timeout.sh - Session timeout configuration
-##   - /usr/share/pam-configs/faillock - PAM faillock configuration
-##   - /etc/tmpfiles.d/faillock.conf - Faillock directory configuration
-##   - Root account password locking
-##
-## Security Features Configured:
-##   - Strong password policies (12+ characters, complexity requirements)
-##   - Account lockout after failed attempts (5 attempts, 10 minute lockout)
-##   - Enhanced sudo security with logging and TTY requirement
-##   - Session timeout (30 minutes for idle sessions)
-##   - Root account password disabled (SSH key only access)
-##   - Comprehensive audit logging for sudo commands
-##
-## Security Impact:
-##   - Prevents brute force password attacks
-##   - Enforces strong password creation
-##   - Logs all privileged command execution
-##   - Automatically locks idle sessions
-##   - Secures root account access
-##
-##########################################################################################
-
-##########################################################################################
 ## Source shared helper functions
 ##########################################################################################
 

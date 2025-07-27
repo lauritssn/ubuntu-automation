@@ -28,29 +28,6 @@ if ! command -v show_info &>/dev/null; then
 fi
 
 ##########################################################################################
-## NTP Time Synchronization Configuration
-##########################################################################################
-##
-## Description: Configures NTP time synchronization using systemd-timesyncd
-##
-## Ubuntu Config Files Modified/Altered:
-## - /etc/systemd/timesyncd.conf - Modified to set custom NTP servers (if specified)
-##
-## Ubuntu Config Files Backed Up:
-## - /etc/systemd/timesyncd.conf -> $BACKUPDIR/timesyncd.conf_$DATE
-##
-## System Services Affected:
-## - systemd-timesyncd - Restarted after configuration changes
-## - chrony - Purged if found (to avoid conflicts)
-##
-## System Commands Used:
-## - timedatectl set-ntp true - Enables NTP synchronization
-## - timedatectl status - Verifies NTP configuration
-## - timedatectl show-timesync - Shows current NTP servers
-##
-##########################################################################################
-
-##########################################################################################
 ## Set variables
 ##########################################################################################
 

@@ -28,34 +28,6 @@ if ! command -v show_info &>/dev/null; then
 fi
 
 ##########################################################################################
-## Lightweight Monitoring Install Script
-##########################################################################################
-## This script installs and configures lightweight monitoring tools for Ubuntu 24.04
-##
-## UBUNTU CONFIGURATION FILES MODIFIED:
-## ------------------------------------
-## System Files:
-##   /etc/default/sysstat                    - Modified: Enables sysstat data collection
-##
-## Created Files:
-##   /etc/skel/.bash_aliases                 - Created: Monitoring aliases template for new users
-##   /root/.bash_aliases                     - Created: Monitoring aliases for root user
-##   $SCRIPTSDIR/system_health_check.sh      - Created: System health monitoring script
-##   $SCRIPTSDIR/check_disk_space.sh         - Created: Disk space monitoring script
-##
-## Template Files Used:
-##   configs/script-templates/system_health_check.sh    - Template for system health script
-##   configs/script-templates/check_disk_space.sh       - Template for disk space script
-##
-## Services Modified:
-##   sysstat.service                         - Enabled and restarted for system statistics
-##
-## Packages Installed:
-##   sysstat, nethogs, ncdu, tree           - Lightweight monitoring tools
-##
-##########################################################################################
-
-##########################################################################################
 ## Set variables
 ##########################################################################################
 DATE=$(date +%Y-%m-%d_%H%M)

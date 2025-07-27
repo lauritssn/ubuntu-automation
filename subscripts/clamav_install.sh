@@ -28,38 +28,6 @@ if ! command -v show_info &>/dev/null; then
 fi
 
 ##########################################################################################
-## ClamAV Antivirus Installation and Configuration
-##########################################################################################
-##
-## UBUNTU SYSTEM FILES MODIFIED/CREATED BY THIS SCRIPT:
-##
-## Configuration Files Modified:
-## - /etc/clamav/freshclam.conf          : Modified (Example line commented out, log settings configured)
-## - /etc/clamav/clamd.conf              : Modified (Example line commented out, database dir, log settings, performance tuning)
-##
-## Directories Created/Modified:
-## - /var/log/clamav/                    : Created with clamav:clamav ownership and 755 permissions
-## - /var/lib/clamav/                    : Created with clamav:clamav ownership and 755 permissions
-## - /var/run/clamav/                    : Created with clamav:clamav ownership and 755 permissions
-##
-## Files Created/Copied:
-## - /usr/local/bin/clamav-scan.sh       : Copied from utils/monitoring/scripts/clamav-scan.sh (with email placeholders replaced)
-## - /usr/local/bin/clamav-exclude-helper.sh : Copied from utils/helpers/clamav-exclude-helper.sh
-## - /var/log/clamav/freshclam_install.log : Created during installation process
-## - /var/lib/clamav/*.cvd/*.cld         : ClamAV signature database files downloaded
-##
-## System Services Modified:
-## - clamav-freshclam.service            : Started, enabled, and restarted
-## - clamav-daemon.service               : Started, enabled, and restarted
-##
-## Packages Installed:
-## - clamav                              : Core ClamAV package
-## - clamav-daemon                       : ClamAV daemon package
-## - clamav-freshclam                    : ClamAV signature update service
-##
-##########################################################################################
-
-##########################################################################################
 ## Set variables
 ##########################################################################################
 

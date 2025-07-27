@@ -7,11 +7,13 @@ This directory contains network security configuration files optimized for Ubunt
 ## Files
 
 ### `30-enhanced-network-security.conf`
+
 Enhanced network security sysctl configuration file. Uses the `30-` prefix to load after Ubuntu's system `10-network-security.conf` and complement rather than conflict with system defaults.
 
 **Features configured:**
+
 - IP forwarding disabled (default secure state)
-- Source routing disabled (prevents routing attacks) 
+- Source routing disabled (prevents routing attacks)
 - ICMP responses disabled (reduces attack surface)
 - TCP SYN cookies enabled (SYN flood protection)
 - Reverse path filtering enabled (anti-spoofing)
@@ -20,8 +22,21 @@ Enhanced network security sysctl configuration file. Uses the `30-` prefix to lo
 - ARP security settings
 - Kernel and filesystem security enhancements
 
+### `40-wireguard.conf`
+
+WireGuard VPN sysctl configuration file. Uses the `40-` prefix to load after security settings and enable IP forwarding required for VPN functionality.
+
+**Features configured:**
+
+- IPv4 and IPv6 forwarding enabled for VPN routing
+- Connection tracking optimization for VPN connections
+- Network buffer optimization for VPN traffic
+- TCP MTU probing for tunnel efficiency
+
 ### `resolved-security.conf`
+
 DNS security configuration for systemd-resolved, including:
+
 - Secure DNS servers (Cloudflare and Quad9)
 - DNS over TLS support
 - DNSSEC validation
@@ -44,7 +59,16 @@ Ubuntu 24.04 follows these sysctl configuration conventions:
 ## Load Order
 
 - `10-*`: Early system settings (security, core network)
-- `30-*`: Application-specific settings
-- `99-*`: Override settings (use sparingly)
+- `30-*`: Enhanced security settings (our hardening)
+- `40-*`: Service-specific overrides (VPN, containers)
+- `99-*`: Final overrides (use sparingly)
 
-Settings in higher-numbered files override those in lower-numbered files. 
+Settings in higher-numbered files override those in lower-numbered files.
+
+### Example Load Sequence
+
+1. `10-network-security.conf` (Ubuntu system defaults: rp_filter=2)
+2. `30-enhanced-network-security.conf` (our security hardening: ip_forward=0)
+3. `40-wireguard.conf` (WireGuard requirements: ip_forward=1)
+
+This ensures security hardening is applied first, then service-specific requirements override only what's necessary.

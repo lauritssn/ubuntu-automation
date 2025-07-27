@@ -28,36 +28,6 @@ if ! command -v show_info &>/dev/null; then
 fi
 
 ##########################################################################################
-## Postfix Mail Server Installation and Configuration
-##########################################################################################
-##
-## Files Modified/Altered:
-## - /etc/postfix/main.cf: Main Postfix configuration file
-##   - Sets hostname, domain, origin, network interfaces, destinations
-##   - Configures security settings (banner, VRFY command, HELO requirement)
-##   - Sets up local mail delivery and alias configuration
-##
-## - /etc/aliases: System mail aliases file
-##   - Adds/updates root mail redirection to INFO_EMAIL
-##   - Regenerated alias database with newaliases command
-##
-## Files Backed Up:
-## - /etc/postfix/main.cf: Backed up to $BACKUPDIR/main.cf_$DATE before modification
-##
-## Services Modified:
-## - postfix: Restarted and enabled for automatic startup
-##
-## Packages Installed:
-## - postfix: Mail Transfer Agent
-## - mailutils: Mail utilities for sending/reading mail
-##
-## Debconf Settings Applied:
-## - postfix/mailname: Set to system FQDN
-## - postfix/main_mailer_type: Set to 'Internet Site'
-##
-##########################################################################################
-
-##########################################################################################
 ## Set variables
 ##########################################################################################
 

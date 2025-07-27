@@ -1,40 +1,6 @@
 #!/bin/bash
 
 ##########################################################################################
-## Network Security Hardening Script for Ubuntu 24.04
-##########################################################################################
-##
-## Description:
-##   Configures comprehensive network security settings including sysctl parameters,
-##   DNS security, and interface-specific hardening.
-##
-## Ubuntu Config Files Changed/Altered:
-##   - /etc/sysctl.d/30-enhanced-network-security.conf - Enhanced network security sysctl settings
-##   - /etc/systemd/resolved.conf.d/resolved-security.conf - DNS security settings
-##   - /etc/NetworkManager/dispatcher.d/99-network-security - Interface security script
-##   - /srv/apps/scripts/show_network_security.sh - Network monitoring script
-##   - /srv/apps/scripts/test_network_security.sh - Network testing script
-##   - /usr/local/bin/network-interface-security.sh - Interface security helper
-##
-## Features Configured:
-##   - IP forwarding disabled (default secure state)
-##   - Source routing disabled (prevents routing attacks)
-##   - ICMP responses disabled (reduces attack surface)
-##   - TCP SYN cookies enabled (SYN flood protection)
-##   - Reverse path filtering enabled (anti-spoofing)
-##   - Network buffer limits configured for security
-##   - DNS security with secure resolvers and DNSSEC
-##   - Automatic interface hardening on network changes
-##
-## Security Impact:
-##   - Blocks network-based reconnaissance attempts
-##   - Prevents common network attack vectors
-##   - Hardens DNS resolution against attacks
-##   - Automatically secures new network interfaces
-##
-##########################################################################################
-
-##########################################################################################
 ## Source shared helper functions
 ##########################################################################################
 
@@ -196,7 +162,7 @@ fi
 ##########################################################################################
 
 show_info "=== Network Security Configuration Summary ==="
-show_info "✅ IP forwarding: Disabled (default secure state)"
+show_info "✅ IP forwarding: Disabled by default (VPN services can enable via 40-*.conf)"
 show_info "✅ Source routing: Disabled (prevents routing attacks)"
 show_info "✅ ICMP responses: Disabled (reduces attack surface)"
 show_info "✅ TCP SYN cookies: Enabled (SYN flood protection)"
