@@ -87,7 +87,7 @@ chmod a+r /etc/apt/keyrings/docker.asc
 
 # Verify GPG key fingerprint (updated method)
 show_yellow "Verifying Docker GPG key fingerprint."
-GPG_FINGERPRINT=$(gpg --show-keys --with-fingerprint /etc/apt/keyrings/docker.asc 2>/dev/null | grep -E "Key fingerprint" | sed 's/.*= //' | tr -d ' ')
+GPG_FINGERPRINT=$(gpg --show-keys --with-fingerprint /etc/apt/keyrings/docker.asc 2>/dev/null | grep -E "Key fingerprint" | sed 's/.*= //' | tr -d ' ' || true)
 if [ -n "$GPG_FINGERPRINT" ]; then
     show_yellow "Docker GPG key fingerprint found: $GPG_FINGERPRINT"
     show_yellow "Please verify this matches Docker's official fingerprint."
