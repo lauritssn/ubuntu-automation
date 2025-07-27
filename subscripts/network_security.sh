@@ -54,7 +54,10 @@ fi
 if ! command -v show_info &>/dev/null; then
     show_info() { echo "INFO: $1"; }
     show_warn() { echo "WARN: $1"; }
-    show_err() { echo "ERROR: $1"; exit 1; }
+    show_err() {
+        echo "ERROR: $1"
+        exit 1
+    }
     show_yellow() { echo "STATUS: $1"; }
 fi
 
@@ -137,17 +140,17 @@ show_yellow "DNS security configuration applied."
 show_yellow "Creating network monitoring utilities."
 
 # Create script to show network security status
-cp "$SCRIPTDIR/../utils/show_network_security.sh" $SCRIPTSDIR/show_network_security.sh
+cp "$SCRIPTDIR/../utils/monitoring/show_network_security.sh" $SCRIPTSDIR/show_network_security.sh
 
 chmod +x $SCRIPTSDIR/show_network_security.sh
 
 # Create script to test network security
-cp "$SCRIPTDIR/../utils/test_network_security.sh" $SCRIPTSDIR/test_network_security.sh
+cp "$SCRIPTDIR/../utils/monitoring/test_network_security.sh" $SCRIPTSDIR/test_network_security.sh
 
 chmod +x $SCRIPTSDIR/test_network_security.sh
 
 # Create script to temporarily enable IP forwarding (for VPN services)
-cp "$SCRIPTDIR/../utils/enable_ip_forwarding.sh" $SCRIPTSDIR/enable_ip_forwarding.sh
+cp "$SCRIPTDIR/../utils/network/enable_ip_forwarding.sh" $SCRIPTSDIR/enable_ip_forwarding.sh
 
 chmod +x $SCRIPTSDIR/enable_ip_forwarding.sh
 

@@ -187,12 +187,12 @@ show_yellow "Wireguard service started successfully."
 show_yellow "Creating global WireGuard management scripts."
 
 # Create global add-wg-client script
-cp "$SCRIPTDIR/../utils/add-wg-client" /usr/local/bin/add-wg-client
+cp "$SCRIPTDIR/../utils/network/add-wg-client" /usr/local/bin/add-wg-client
 
 chmod +x /usr/local/bin/add-wg-client
 
 # Create global remove-wg-client script
-cp "$SCRIPTDIR/../utils/remove-wg-client" /usr/local/bin/remove-wg-client
+cp "$SCRIPTDIR/../utils/network/remove-wg-client" /usr/local/bin/remove-wg-client
 
 chmod +x /usr/local/bin/remove-wg-client
 

@@ -9,6 +9,11 @@
 ## Global Variables and Constants
 ##########################################################################################
 
+# Ensure BASEDIR is set - this should be set by the calling script
+if [ -z "$BASEDIR" ]; then
+    export BASEDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+fi
+
 # Set default paths if not already set
 export AUTOMATION_ROOT="${AUTOMATION_ROOT:-/srv/apps}"
 export LOGDIR="${LOGDIR:-/srv/apps/logs}"
@@ -16,6 +21,10 @@ export BACKUPDIR="${BACKUPDIR:-/srv/apps/backups}"
 export SCRIPTSDIR="${SCRIPTSDIR:-/srv/apps/scripts}"
 export DATE="${DATE:-$(date +%Y-%m-%d_%H%M)}"
 export DEBIAN_FRONTEND="${DEBIAN_FRONTEND:-noninteractive}"
+
+# Set SCRIPTDIR to point to the subscripts directory
+# This is used by subscripts to access config files and utilities
+export SCRIPTDIR="${BASEDIR}/subscripts"
 
 # Default email settings
 export EMAIL_DOMAIN="${EMAIL_DOMAIN:-example.com}"

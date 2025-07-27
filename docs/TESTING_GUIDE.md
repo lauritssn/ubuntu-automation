@@ -47,17 +47,13 @@ This guide provides detailed instructions for testing each subscript individuall
 
 ## Testing Individual Subscripts
 
-**Note:** All subscripts have been updated to properly source the shared functions and can now be run directly. You can use either method:
+**Note:** All subscripts should be executed using the `run_subscript.sh` wrapper to ensure proper sourcing of shared functions:
 
 ```bash
-# Method 1: Direct execution (recommended for individual testing)
-sudo ./subscripts/<script_name>
-
-# Method 2: Using run_subscript.sh wrapper (alternative method)
+# Use run_subscript.sh wrapper (recommended method)
 sudo ./run_subscript.sh <script_name>
 
-# Examples:
-sudo ./subscripts/system_update.sh
+# Example:
 sudo ./run_subscript.sh system_update.sh
 ```
 
@@ -70,7 +66,7 @@ sudo ./run_subscript.sh system_update.sh
 
 ```bash
 # Test system update
-sudo ./subscripts/system_update.sh
+sudo ./run_subscript.sh system_update.sh
 
 # Verify
 apt list --upgradable
@@ -93,7 +89,7 @@ uname -r  # Check kernel version
 
 ```bash
 # Test package installation
-sudo ./subscripts/packages_install.sh
+sudo ./run_subscript.sh packages_install.sh
 
 # Verify installations
 htop --version
@@ -118,7 +114,7 @@ curl --version
 
 ```bash
 # Test network security
-sudo ./subscripts/network_security.sh
+sudo ./run_subscript.sh network_security.sh
 
 # Verify sysctl settings
 sudo sysctl net.ipv4.tcp_syncookies
@@ -147,7 +143,7 @@ sudo /srv/apps/scripts/test_network_security.sh
 
 ```bash
 # Test account security
-sudo ./subscripts/account_security.sh
+sudo ./run_subscript.sh account_security.sh
 
 # Verify password policies
 sudo cat /etc/security/pwquality.conf
@@ -175,7 +171,7 @@ ls -la /var/log/sudo-io/
 
 ```bash
 # Test SSH security
-sudo ./subscripts/ssh_security.sh
+sudo ./run_subscript.sh ssh_security.sh
 
 # Verify SSH configuration
 sudo cat /etc/ssh/sshd_config | grep -E "(PermitRootLogin|PasswordAuthentication|PubkeyAuthentication)"
@@ -205,7 +201,7 @@ sudo /srv/apps/scripts/setup_user_2fa.sh testuser
 
 ```bash
 # Test NTP installation
-sudo ./subscripts/ntp_install.sh
+sudo ./run_subscript.sh ntp_install.sh
 
 # Verify time synchronization
 timedatectl status
@@ -226,7 +222,7 @@ systemctl status systemd-timesyncd
 
 ```bash
 # Test secure shared memory
-sudo ./subscripts/secure_shared_memory_install.sh
+sudo ./run_subscript.sh secure_shared_memory_install.sh
 
 # Verify
 mount | grep tmpfs
@@ -243,7 +239,7 @@ export EMAIL_DOMAIN="yourdomain.com"
 export INFO_EMAIL="admin@yourdomain.com"
 
 # Test Maldet installation
-sudo ./subscripts/maldet_install.sh
+sudo ./run_subscript.sh maldet_install.sh
 
 # Verify
 maldet --version
@@ -256,7 +252,7 @@ ls -la /usr/local/maldetect/
 
 ```bash
 # Test ClamAV installation
-sudo ./subscripts/clamav_install.sh
+sudo ./run_subscript.sh clamav_install.sh
 
 # Verify
 clamscan --version
@@ -270,7 +266,7 @@ sudo /usr/local/bin/clamav-scan.sh  # Test scan
 
 ```bash
 # Test RKHunter installation
-sudo ./subscripts/rkhunter_install.sh
+sudo ./run_subscript.sh rkhunter_install.sh
 
 # Verify
 rkhunter --version
@@ -283,7 +279,7 @@ sudo rkhunter --check --sk  # Quick test
 
 ```bash
 # Test Fail2Ban installation
-sudo ./subscripts/fail2ban_install.sh
+sudo ./run_subscript.sh fail2ban_install.sh
 
 # Verify
 systemctl status fail2ban
@@ -297,7 +293,7 @@ sudo /srv/apps/scripts/show_fail2ban_status.sh
 
 ```bash
 # Test Postfix installation
-sudo ./subscripts/postfix_install.sh
+sudo ./run_subscript.sh postfix_install.sh
 
 # Verify
 systemctl status postfix
@@ -315,7 +311,7 @@ echo "Test email" | mail -s "Test" root
 
 ```bash
 # Test swap installation
-sudo ./subscripts/swap_install.sh
+sudo ./run_subscript.sh swap_install.sh
 
 # Verify
 swapon --show
@@ -339,7 +335,7 @@ cat /proc/swaps
 
 ```bash
 # Test monitoring installation
-sudo ./subscripts/lightweight_monitoring_install.sh
+sudo ./run_subscript.sh lightweight_monitoring_install.sh
 
 # Verify
 sudo /usr/local/bin/check_disk_space.sh
@@ -362,7 +358,7 @@ sudo /usr/local/bin/system_health_check.sh
 
 ```bash
 # Test systemd timers
-sudo ./subscripts/systemd_timers_install.sh
+sudo ./run_subscript.sh systemd_timers_install.sh
 
 # Verify
 systemctl list-timers | grep -E "(clamav|maldet|rkhunter)"
@@ -385,7 +381,7 @@ systemctl status clamav-scan.timer
 
 ```bash
 # Test UFW installation (run last!)
-sudo ./subscripts/ufw_install.sh
+sudo ./run_subscript.sh ufw_install.sh
 
 # Verify
 sudo ufw status verbose
@@ -410,7 +406,7 @@ sudo ufw status numbered
 # Test Docker installation
 export DOCKER_DATA_ROOT="/var/lib/docker"
 export DOCKER_ROOTLESS="N"
-sudo ./subscripts/docker_install.sh
+sudo ./run_subscript.sh docker_install.sh
 
 # Verify
 docker --version
@@ -424,7 +420,7 @@ docker run hello-world
 
 ```bash
 # Test Netdata installation
-sudo ./subscripts/netdata_install.sh
+sudo ./run_subscript.sh netdata_install.sh
 
 # Verify
 systemctl status netdata
@@ -438,7 +434,7 @@ curl http://localhost:19999
 ```bash
 # Test WireGuard installation
 export WIREGUARD_SUBNET="10.66.66.0/24"
-sudo ./subscripts/wireguard_install.sh
+sudo ./run_subscript.sh wireguard_install.sh
 
 # Verify
 systemctl status wg-quick@wg0
@@ -452,7 +448,7 @@ add-wg-client testclient
 
 ```bash
 # Test Dokku installation
-sudo ./subscripts/dokku_install.sh
+sudo ./run_subscript.sh dokku_install.sh
 
 # Verify
 dokku version
