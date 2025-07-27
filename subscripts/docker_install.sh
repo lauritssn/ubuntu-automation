@@ -106,6 +106,9 @@ apt-get --yes install docker-ce docker-ce-cli containerd.io docker-buildx-plugin
 show_yellow "Stop Docker service."
 systemctl stop docker
 
+# Debug: Show Docker configuration variables
+show_yellow "Docker configuration: DOCKER_ROOTLESS=$DOCKER_ROOTLESS, DOCKER_DATA_ROOT=$DOCKER_DATA_ROOT"
+
 if [[ $DOCKER_ROOTLESS =~ [Yy]$ ]]; then
     show_yellow "Setting up Docker rootless mode."
 
@@ -197,11 +200,11 @@ else
     ##########################################################################################
 
     # Update data directory if custom path specified
-    if [[ "$DOCKER_DATA_ROOT" != "/var/lib/docker" ]]; then
+    if [[ -n "$DOCKER_DATA_ROOT" && "$DOCKER_DATA_ROOT" != "/var/lib/docker" ]]; then
         show_yellow "Configuring custom Docker data directory: $DOCKER_DATA_ROOT"
-        mkdir -p $DOCKER_DATA_ROOT
-        chown root:root $DOCKER_DATA_ROOT
-        chmod 755 $DOCKER_DATA_ROOT
+        mkdir -p "$DOCKER_DATA_ROOT"
+        chown root:root "$DOCKER_DATA_ROOT"
+        chmod 755 "$DOCKER_DATA_ROOT"
 
         # Add data-root to daemon.json using proper JSON handling
         if command -v safe_json_insert >/dev/null 2>&1; then
