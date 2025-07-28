@@ -116,10 +116,6 @@ KbdInteractiveAuthentication yes
 # Authentication methods (require public key + 2FA)
 AuthenticationMethods publickey publickey,keyboard-interactive
 
-# Special user for sensitive operations
-# Match User sensitive_user
-#     AuthenticationMethods publickey
-
 ##########################################################################################
 ## Connection Security
 ##########################################################################################
@@ -212,6 +208,14 @@ DebianBanner no
 
 # SFTP subsystem (secure file transfer)
 Subsystem sftp /usr/lib/openssh/sftp-server
+
+##########################################################################################
+## User-Specific Overrides (Keep at bottom)
+##########################################################################################
+
+# Special user for sensitive operations
+# Match User sensitive_user
+#     AuthenticationMethods publickey
 
 EOF
 

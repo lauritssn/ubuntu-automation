@@ -67,6 +67,7 @@ export DO_LIGHTWEIGHT_MONITORING=M  # MANDATORY
 export DO_NETDATA_INSTALL=N
 export DO_SYSTEMD_TIMERS=M # MANDATORY
 export DO_DOCKER_INSTALL=N
+export DO_PODMAN_INSTALL=N
 export DO_UFW_INSTALL=M  # MANDATORY
 export DO_SWAP_INSTALL=M # MANDATORY
 export DO_DOKKU_INSTALL=N
@@ -248,6 +249,7 @@ if is_resuming && load_user_choices; then
         echo "• DOCKER_ROOTLESS: $DOCKER_ROOTLESS"
         echo "• DOCKER_DATA_ROOT: $DOCKER_DATA_ROOT"
     fi
+    echo "• DO_PODMAN_INSTALL: $DO_PODMAN_INSTALL"
     echo "• DO_UFW_INSTALL: $DO_UFW_INSTALL (Mandatory)"
     echo "• DO_DOKKU_INSTALL: $DO_DOKKU_INSTALL"
     echo "• DO_WIREGUARD_INSTALL: $DO_WIREGUARD_INSTALL"
@@ -390,6 +392,24 @@ else
     fi
 
     echo "DO_DOCKER_INSTALL: "$DO_DOCKER_INSTALL
+
+    # Podman install
+    while true; do
+        read -p "Do You want to install Podman in rootless mode (Y/N)? " yn
+        case $yn in
+        [Yy]*)
+            DO_PODMAN_INSTALL=Y
+            break
+            ;;
+        [Nn]*)
+            DO_PODMAN_INSTALL=N
+            break
+            ;;
+        *) echo "Please answer yes or no." ;;
+        esac
+    done
+
+    echo "DO_PODMAN_INSTALL: "$DO_PODMAN_INSTALL
 
     # UFW install is MANDATORY (M) - no user prompts needed
 
@@ -597,6 +617,11 @@ printf "\n--------------------\n"
 
 # Docker install
 execute_module "Docker_Installation" "$BASEDIR/subscripts/docker_install.sh" "$DO_DOCKER_INSTALL"
+
+printf "\n--------------------\n"
+
+# Podman install
+execute_module "Podman_Installation" "$BASEDIR/subscripts/podman_install.sh" "$DO_PODMAN_INSTALL"
 
 printf "\n--------------------\n"
 
