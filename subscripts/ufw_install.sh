@@ -181,8 +181,8 @@ ufw allow 51820/udp comment 'WireGuard VPN'
 ufw allow from $WIREGUARD_SUBNET comment 'WireGuard VPN clients to local services'
 
 # Allow VPN clients to access internet through this server (routing)
-ufw route allow in on wg0 out on any
-ufw route allow in on any out on wg0
+ufw route allow in on wg0 out on any comment 'WireGuard to Any'
+ufw route allow in on any out on wg0 comment 'Any to WireGuard'
 
 show_info "WireGuard VPN configured with subnet: $WIREGUARD_SUBNET and routing enabled"
 

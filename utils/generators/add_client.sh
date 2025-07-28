@@ -30,7 +30,7 @@ cat > /etc/wireguard/clients/${CLIENT_NAME}.conf << EOL
 [Interface]
 PrivateKey = $CLIENT_PRIVATE_KEY
 Address = $CLIENT_IP/$WG_CIDR
-DNS = $WG_SERVER_IP
+DNS = 1.1.1.1
 
 [Peer]
 PublicKey = $SERVER_PUBLIC_KEY
