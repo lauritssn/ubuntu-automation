@@ -191,11 +191,6 @@ mount_program = \"/usr/bin/fuse-overlayfs\"
 [storage.options.overlay]
 # Simplified overlay configuration - let fuse-overlayfs handle defaults
 mount_program = \"/usr/bin/fuse-overlayfs\"
-
-[storage.options.thinpool]
-# Enable deferred operations for better performance
-use_deferred_removal = true
-use_deferred_deletion = true
 EOF"
 
 ##########################################################################################
@@ -279,8 +274,17 @@ show_yellow "Initializing Podman for user $PODMAN_USER."
 
 # Initialize Podman and start services as the podman user
 sudo -u "$PODMAN_USER" bash -c '
+    # Set proper environment
+    export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+    
+    # Create runtime directory if it doesn't exist
+    mkdir -p "$XDG_RUNTIME_DIR/podman"
+    
     # Generate systemd user directory
     mkdir -p ~/.config/systemd/user
+    
+    # Initialize podman to create necessary files
+    podman system migrate 2>/dev/null || true
     
     # Reload systemd user daemon
     systemctl --user daemon-reload 2>/dev/null || true
@@ -289,12 +293,27 @@ sudo -u "$PODMAN_USER" bash -c '
     if systemctl --user start podman.socket 2>/dev/null; then
         systemctl --user enable podman.socket 2>/dev/null || true
         echo "✅ Podman socket started successfully"
+        
+        # Test socket connectivity
+        sleep 2
+        if podman version >/dev/null 2>&1; then
+            echo "✅ Podman socket connectivity confirmed"
+        else
+            echo "⚠️ Socket started but connectivity test failed"
+        fi
     else
-        echo "⚠️  Podman socket start failed - will retry after user session restart"
+        echo "⚠️ Socket start failed, trying manual service"
+        
+        # Try manual service start
+        podman system service --time=0 unix:///run/user/$(id -u)/podman/podman.sock &
+        sleep 3
+        
+        if podman version >/dev/null 2>&1; then
+            echo "✅ Podman manual service started successfully"
+        else
+            echo "❌ Manual service start also failed"
+        fi
     fi
-    
-    # Initialize Podman to create necessary directories
-    podman info --format="{{.Version.Version}}" >/dev/null 2>&1 || echo "Podman initialization deferred until first use"
 '
 
 ##########################################################################################
@@ -314,7 +333,27 @@ if [ "$#" -eq 0 ]; then
     exit 1
 fi
 
-sudo -u podman podman "$@"
+# Ensure podman socket is running before executing commands
+sudo -u podman bash -c '
+    export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+    
+    # Try to start socket if not running
+    if ! systemctl --user is-active --quiet podman.socket 2>/dev/null; then
+        systemctl --user daemon-reload 2>/dev/null || true
+        systemctl --user start podman.socket 2>/dev/null || true
+        sleep 2
+    fi
+    
+    # If socket still not working, try manual service
+    if ! podman version >/dev/null 2>&1; then
+        pkill -f "podman system service" 2>/dev/null || true
+        podman system service --time=0 unix:///run/user/$(id -u)/podman/podman.sock &
+        sleep 2
+    fi
+'
+
+# Execute the podman command with proper environment
+sudo -u podman bash -c "export XDG_RUNTIME_DIR=/run/user/\$(id -u); podman \$*" -- "$@"
 EOF
 
 chmod +x /usr/local/bin/podman-user
@@ -325,22 +364,36 @@ cat >/usr/local/bin/podman-status <<'EOF'
 echo "=== Podman User Status ==="
 echo "User: podman"
 echo "Home: /home/podman"
+echo "Runtime Dir: /run/user/$(id -u podman 2>/dev/null || echo 'N/A')"
+echo ""
+
+echo "=== Environment Test ==="
+sudo -u podman bash -c 'export XDG_RUNTIME_DIR="/run/user/$(id -u)"; echo "XDG_RUNTIME_DIR: $XDG_RUNTIME_DIR"'
 echo ""
 
 echo "=== Podman Service Status ==="
-sudo -u podman systemctl --user status podman.socket --no-pager -l 2>/dev/null || echo "Socket not running"
+sudo -u podman bash -c 'export XDG_RUNTIME_DIR="/run/user/$(id -u)"; systemctl --user status podman.socket --no-pager -l' 2>/dev/null || echo "Socket not running"
 echo ""
 
-echo "=== Running Containers ==="
-sudo -u podman podman ps 2>/dev/null || echo "No containers or podman not accessible"
+echo "=== Socket File Check ==="
+SOCKET_PATH="/run/user/$(id -u podman 2>/dev/null || echo '0')/podman/podman.sock"
+if [ -S "$SOCKET_PATH" ]; then
+    echo "✅ Socket file exists: $SOCKET_PATH"
+else
+    echo "❌ Socket file missing: $SOCKET_PATH"
+fi
 echo ""
 
 echo "=== Podman Version ==="
-sudo -u podman podman version 2>/dev/null || echo "Podman not accessible"
+sudo -u podman bash -c 'export XDG_RUNTIME_DIR="/run/user/$(id -u)"; podman version --format "{{.Client.Version}}"' 2>/dev/null || echo "Version check failed"
+echo ""
+
+echo "=== Running Containers ==="
+sudo -u podman bash -c 'export XDG_RUNTIME_DIR="/run/user/$(id -u)"; podman ps' 2>/dev/null || echo "No containers or podman not accessible"
 echo ""
 
 echo "=== Network Configuration ==="
-sudo -u podman podman network ls 2>/dev/null || echo "Network info not accessible"
+sudo -u podman bash -c 'export XDG_RUNTIME_DIR="/run/user/$(id -u)"; podman network ls' 2>/dev/null || echo "Network info not accessible"
 EOF
 
 chmod +x /usr/local/bin/podman-status
@@ -412,24 +465,46 @@ show_yellow "Testing Podman installation..."
 
 # Test basic functionality
 TEST_PASSED="false"
-if sudo -u "$PODMAN_USER" timeout 30 podman run --rm hello-world >/dev/null 2>&1; then
+
+# First ensure the socket is running with proper environment
+sudo -u "$PODMAN_USER" bash -c '
+    export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+    
+    # Try to start socket if not running
+    if ! systemctl --user is-active --quiet podman.socket; then
+        systemctl --user daemon-reload 2>/dev/null || true
+        systemctl --user start podman.socket 2>/dev/null || true
+        sleep 3
+    fi
+    
+    # If socket still not working, try manual service
+    if ! podman version >/dev/null 2>&1; then
+        pkill -f "podman system service" 2>/dev/null || true
+        podman system service --time=0 unix:///run/user/$(id -u)/podman/podman.sock &
+        sleep 3
+    fi
+'
+
+# Test hello-world container
+if sudo -u "$PODMAN_USER" bash -c 'export XDG_RUNTIME_DIR="/run/user/$(id -u)"; timeout 60 podman run --rm hello-world' >/dev/null 2>&1; then
     show_info "✅ Podman installation test successful"
     TEST_PASSED="true"
 else
-    show_warn "⚠️  Podman hello-world test failed - may require user session restart"
+    show_warn "⚠️  Podman hello-world test failed - trying version check"
     # Try a simpler test
-    if sudo -u "$PODMAN_USER" podman version >/dev/null 2>&1; then
+    if sudo -u "$PODMAN_USER" bash -c 'export XDG_RUNTIME_DIR="/run/user/$(id -u)"; podman version' >/dev/null 2>&1; then
         show_info "✅ Podman version check successful"
-        show_warn "Container execution will work after user logs in"
+        show_warn "Container execution may work after user session restart or reboot"
         TEST_PASSED="partial"
     else
         show_warn "❌ Podman basic functionality test failed"
+        show_warn "Try running the fix script: ./utils/podman_fix.sh"
     fi
 fi
 
 # Test socket connectivity
 show_yellow "Testing Podman socket..."
-if sudo -u "$PODMAN_USER" podman system connection list >/dev/null 2>&1; then
+if sudo -u "$PODMAN_USER" bash -c 'export XDG_RUNTIME_DIR="/run/user/$(id -u)"; podman system connection list' >/dev/null 2>&1; then
     show_info "✅ Podman socket connectivity test successful"
 else
     show_warn "⚠️  Podman socket test failed - service may start on first use"
