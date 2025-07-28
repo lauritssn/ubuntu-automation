@@ -65,7 +65,9 @@ The automation includes a robust status tracking system that prevents re-install
 - **Skip successful:** Successfully installed modules are automatically skipped on subsequent runs
 - **Status log location:** `/srv/apps/scripts/installation_status.log`
 
-### Viewing Installation Status```bash
+### Viewing Installation Status
+
+```bash
 
 # View current installation status
 
@@ -75,16 +77,17 @@ The automation includes a robust status tracking system that prevents re-install
 
 ./view_install_status.sh help
 
-````
+```
 
 ### Managing Module Status
+
 ```bash
 # Reset specific module (force reinstall)
 ./view_install_status.sh reset-module Docker_Installation
 
 # Reset all modules (force complete reinstall)
 ./view_install_status.sh reset
-````
+```
 
 ### Status Indicators
 
@@ -472,48 +475,57 @@ External access limited to: 22 (SSH), 80 (HTTP), 443 (HTTPS), 51820 (Wireguard)
 The automation installs comprehensive utility scripts to `/srv/apps/scripts/` for system management:
 
 #### System Management
+
 - **`view_install_log.sh`** - View installation logs with filtering options
 - **`view_install_status.sh`** - Check module installation status and reset failed modules
 - **`system_health_check.sh`** - Comprehensive system health monitoring with Slack alerts
 
 #### User & Account Management
+
 - **`add_user.sh`** - Create users with sudo, 2FA, and VPN access (interactive/CLI modes)
 - **`unlock_account.sh`** - Reset account lockouts using faillock
 - **`show_locked_accounts.sh`** - Display locked accounts and failed login attempts
 - **`show_sudo_usage.sh`** - Audit recent sudo command usage
 
 #### SSH & 2FA Management
+
 - **`setup_user_2fa.sh`** - Configure 2FA for existing users
 - **`show_2fa_qr.sh`** - Display 2FA QR codes for mobile setup
 - **`disable_user_2fa.sh`** - Remove 2FA from user accounts
 
 #### Security Monitoring
+
 - **`show_fail2ban_status.sh`** - Comprehensive Fail2Ban monitoring and IP management
 - **`show_ssh_attacks.sh`** - Display recent SSH attack attempts
 - **`show_ssh_security.sh`** - SSH security configuration overview
 - **`show_network_security.sh`** - Network security status and firewall rules
 
 #### Antivirus & Malware
+
 - **`clamav-scan.sh`** - Manual/scheduled ClamAV system scans with Slack alerts
 - **`clamav-update.sh`** - Update ClamAV signatures with notification
 - **`maldet-scan.sh`** - Linux Malware Detect scans with reporting
 - **`maldet-update.sh`** - Update Maldet signatures and configuration
 
 #### Intrusion Detection
+
 - **`rkhunter-scan.sh`** - Manual/scheduled rootkit scans with alerts
 - **`rkhunter-update.sh`** - Update RKHunter database and signatures
 
 #### Resource Monitoring
+
 - **`check_disk_space.sh`** - Monitor disk usage with threshold alerts
 - **`check_swap_usage.sh`** - Track memory pressure and swap utilization
 
 #### Network & VPN Tools
+
 - **`add-wg-client`** - Add new WireGuard VPN clients
 - **`remove-wg-client`** - Remove WireGuard VPN clients
 - **`enable_ip_forwarding.sh`** - Configure IP forwarding for VPN
 - **`ufw.sh`** - Firewall rule management script
 
 #### Testing & Validation
+
 - **`test_services.sh`** - Validate all installed services and configurations
 - **`test_ssh_security.sh`** - Test SSH security configuration
 - **`test_network_security.sh`** - Validate network security settings
