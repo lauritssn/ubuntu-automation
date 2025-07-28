@@ -8,8 +8,8 @@
 ## Source shared helper functions
 ##########################################################################################
 
-# Set BASEDIR for shared functions (assuming script is in utils/)
-export BASEDIR="$(dirname "$(dirname "$(realpath "$0")")")"
+# Set BASEDIR for shared functions (script is in utils/user_management/)
+export BASEDIR="$(dirname "$(dirname "$(dirname "$(realpath "$0")")")")"
 
 # Source the shared helper functions
 if [ -f "$BASEDIR/utils/shared_functions.sh" ]; then
