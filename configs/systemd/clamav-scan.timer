@@ -1,0 +1,11 @@
+[Unit]
+Description=Weekly ClamAV System Scan
+Documentation=man:clamscan(1)
+
+[Timer]
+OnCalendar=Sun 02:00
+RandomizedDelaySec=1h
+Persistent=true
+
+[Install]
+WantedBy=timers.target

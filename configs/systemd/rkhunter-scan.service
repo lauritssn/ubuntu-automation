@@ -1,0 +1,18 @@
+[Unit]
+Description=RKHunter Daily Security Scan
+Documentation=man:rkhunter(8)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+# Send service start notification
+ExecStartPre=/bin/bash -c 'logger -p user.info -t rkhunter-scan "RKHunter scan service starting on $(hostname)"'
+ExecStart=/usr/local/bin/rkhunter-scan.sh
+# Send service completion notification
+ExecStartPost=/bin/bash -c 'logger -p user.info -t rkhunter-scan "RKHunter scan service completed on $(hostname)"'
+StandardOutput=journal
+StandardError=journal
+TimeoutSec=10800
+Nice=19

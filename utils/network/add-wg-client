@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Global WireGuard client management script
+# Wrapper for the local add_client.sh script
+
+if [ $# -ne 1 ]; then
+    echo "Usage: $0 <client_name>"
+    echo "Example: $0 john"
+    exit 1
+fi
+
+if [ ! -f /etc/wireguard/add_client.sh ]; then
+    echo "Error: WireGuard add_client.sh script not found."
+    echo "Make sure WireGuard is properly installed."
+    exit 1
+fi
+
+# Run the local script
+/etc/wireguard/add_client.sh "$1"

@@ -1,0 +1,15 @@
+# Ubuntu Automation Project Rules
+
+## Testing and Development Guidelines
+
+- **Never test scripts locally** - Installation scripts are designed to run on Ubuntu servers and will not work in local development environments
+- **Never create fix scripts** - When installation scripts have issues, fix the source scripts directly rather than creating temporary fix scripts
+- **Focus on source script fixes** - Users will rerun corrected installation scripts rather than attempting to fix existing installations
+- **No local execution** - Do not attempt to run installation commands or scripts in the development environment
+
+## Code Standards
+
+- Always use proper bash scripting practices with error handling
+- Maintain consistent logging to `/srv/apps/logs/`
+- Use shared functions from `utils/shared_functions.sh`
+- Follow existing patterns for email configuration and systemd service management 

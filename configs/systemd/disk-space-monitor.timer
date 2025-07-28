@@ -1,0 +1,11 @@
+[Unit]
+Description=Run disk space monitor every 5 minutes
+Requires=disk-space-monitor.service
+
+[Timer]
+OnCalendar=*:0/5
+RandomizedDelaySec=60
+Persistent=true
+
+[Install]
+WantedBy=timers.target

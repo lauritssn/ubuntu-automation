@@ -1,6 +1,33 @@
 #!/bin/bash
 
 ##########################################################################################
+## Source shared helper functions
+##########################################################################################
+
+# Set BASEDIR early for shared functions to use
+export BASEDIR="${BASEDIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+
+# Source the shared helper functions
+if [ -f "$BASEDIR/utils/shared_functions.sh" ]; then
+    source "$BASEDIR/utils/shared_functions.sh"
+else
+    echo "❌ ERROR: Shared functions script not found at $BASEDIR/utils/shared_functions.sh"
+    echo "Please run this script from the ubuntu-automation directory or set BASEDIR environment variable"
+    exit 1
+fi
+
+# Fallback function definitions if shared functions aren't available
+if ! command -v show_info &>/dev/null; then
+    show_info() { echo "INFO: $1"; }
+    show_warn() { echo "WARN: $1"; }
+    show_err() {
+        echo "ERROR: $1"
+        exit 1
+    }
+    show_yellow() { echo "STATUS: $1"; }
+fi
+
+##########################################################################################
 ## Set variables
 ##########################################################################################
 
@@ -10,7 +37,7 @@ SUBSCRIPT="system_update.sh"
 if [ -n "$LOGDIR" ]; then
     LOGDIR=$LOGDIR
 else
-    LOGDIR=/tmp
+    LOGDIR=/srv/apps/logs
 fi
 
 LOGFILE=$SUBSCRIPT-$DATE.log

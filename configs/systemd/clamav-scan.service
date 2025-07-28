@@ -1,0 +1,23 @@
+[Unit]
+Description=ClamAV System Scan
+Documentation=man:clamscan(1)
+After=network-online.target clamav-daemon.service clamav-freshclam.service
+Wants=network-online.target
+Requires=clamav-freshclam.service
+
+[Service]
+Type=oneshot
+User=root
+# Send service start notification
+ExecStartPre=/bin/bash -c 'logger -p user.info -t clamav-scan "ClamAV scan service starting on $(hostname)"'
+ExecStart=/usr/local/bin/clamav-scan.sh
+StandardOutput=journal
+StandardError=journal
+IOSchedulingClass=3
+Nice=19
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/log/clamav /tmp /var/lib/clamav
+TimeoutSec=21600
+# Send service completion notification and restart daemon after scan
+ExecStartPost=/bin/bash -c 'logger -p user.info -t clamav-scan "ClamAV scan service completed on $(hostname)"; systemctl is-active --quiet clamav-daemon.service || systemctl restart clamav-daemon.service'

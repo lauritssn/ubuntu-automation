@@ -1,0 +1,176 @@
+#!/bin/bash
+
+##########################################################################################
+## Source shared helper functions
+##########################################################################################
+
+# Set BASEDIR early for shared functions to use
+export BASEDIR="${BASEDIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+
+# Source the shared helper functions
+if [ -f "$BASEDIR/utils/shared_functions.sh" ]; then
+    source "$BASEDIR/utils/shared_functions.sh"
+else
+    echo "❌ ERROR: Shared functions script not found at $BASEDIR/utils/shared_functions.sh"
+    echo "Please run this script from the ubuntu-automation directory or set BASEDIR environment variable"
+    exit 1
+fi
+
+# Fallback function definitions if shared functions aren't available
+if ! command -v show_info &>/dev/null; then
+    show_info() { echo "INFO: $1"; }
+    show_warn() { echo "WARN: $1"; }
+    show_err() {
+        echo "ERROR: $1"
+        exit 1
+    }
+    show_yellow() { echo "STATUS: $1"; }
+fi
+
+##########################################################################################
+## Set variables
+##########################################################################################
+DATE=$(date +%Y-%m-%d_%H%M)
+SUBSCRIPT="lightweight_monitoring_install.sh"
+
+if [ -n "$LOGDIR" ]; then
+    LOGDIR=$LOGDIR
+else
+    LOGDIR=/srv/apps/logs
+fi
+
+LOGFILE=$SUBSCRIPT-$DATE.log
+
+##########################################################################################
+## Helper functions are available via parent script (install.sh or run_subscript.sh)
+##########################################################################################
+
+# Note: Script template helper functions are available through shared_functions.sh
+# which is already sourced by the parent script (install.sh or run_subscript.sh)
+
+##########################################################################################
+## Info
+##########################################################################################
+show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFILE."
+
+##########################################################################################
+## Install lightweight monitoring tools
+##########################################################################################
+
+show_yellow "Installing lightweight monitoring tools."
+
+# Install additional lightweight monitoring tools
+apt-get --yes install sysstat nethogs ncdu tree >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of monitoring tools failed. Please check logfile and fix error manually.")
+
+show_yellow "Lightweight monitoring tools installed successfully."
+
+##########################################################################################
+## Configure system monitoring scripts
+##########################################################################################
+
+show_yellow "Creating system monitoring utilities."
+
+# Copy system health check script from utils/monitoring/scripts/
+SOURCE_HEALTH_SCRIPT="$BASEDIR/utils/monitoring/scripts/system_health_check.sh"
+DEST_HEALTH_SCRIPT="$SCRIPTSDIR/system_health_check.sh"
+
+if [ -f "$SOURCE_HEALTH_SCRIPT" ]; then
+    show_yellow "Installing system health check script from $SOURCE_HEALTH_SCRIPT"
+    cp "$SOURCE_HEALTH_SCRIPT" "$DEST_HEALTH_SCRIPT"
+
+    # Replace template variables if they exist
+    if [ -f "$DEST_HEALTH_SCRIPT" ]; then
+        sed -i "s|{{SLACK_WEBHOOK_URL}}|${SLACK_WEBHOOK_URL:-}|g" "$DEST_HEALTH_SCRIPT"
+        chmod +x "$DEST_HEALTH_SCRIPT"
+        show_yellow "System health check script installed at $DEST_HEALTH_SCRIPT"
+    fi
+else
+    show_warn "Source system health check script not found at $SOURCE_HEALTH_SCRIPT"
+fi
+
+##########################################################################################
+## Create disk space monitoring script
+##########################################################################################
+
+show_yellow "Creating disk space monitoring script."
+
+# Copy disk space monitoring script from utils/monitoring/scripts/
+SOURCE_DISK_SCRIPT="$BASEDIR/utils/monitoring/scripts/check_disk_space.sh"
+DEST_DISK_SCRIPT="$SCRIPTSDIR/check_disk_space.sh"
+
+if [ -f "$SOURCE_DISK_SCRIPT" ]; then
+    show_yellow "Installing disk space monitoring script from $SOURCE_DISK_SCRIPT"
+    cp "$SOURCE_DISK_SCRIPT" "$DEST_DISK_SCRIPT"
+
+    # Replace template variables if they exist
+    if [ -f "$DEST_DISK_SCRIPT" ]; then
+        sed -i "s|{{SLACK_WEBHOOK_URL}}|${SLACK_WEBHOOK_URL:-}|g" "$DEST_DISK_SCRIPT"
+        chmod +x "$DEST_DISK_SCRIPT"
+        show_yellow "Disk space monitoring script installed at $DEST_DISK_SCRIPT"
+    fi
+else
+    show_warn "Source disk space monitoring script not found at $SOURCE_DISK_SCRIPT"
+fi
+
+##########################################################################################
+## Configure disk space monitoring script
+##########################################################################################
+
+show_yellow "Configuring disk space monitoring script with Slack integration."
+
+# Note: Slack webhook configuration is now handled automatically by the
+# copy_and_configure_script function using script templates
+if [[ "$ENABLE_SLACK_MONITORING" =~ [Yy]$ ]] && [ -n "$SLACK_WEBHOOK_URL" ]; then
+    show_yellow "Disk space monitoring script configured with Slack notifications enabled"
+else
+    show_yellow "Disk space monitoring script configured (Slack notifications disabled)"
+fi
+
+##########################################################################################
+## Create monitoring aliases and shortcuts
+##########################################################################################
+
+show_yellow "Creating monitoring aliases."
+
+# Create .bash_aliases file for monitoring shortcuts
+cat >/etc/skel/.bash_aliases <<'EOF'
+# System monitoring aliases for Ubuntu 24.04
+alias sysstatus='systemctl status'
+alias syslog='journalctl -f'
+alias syserr='journalctl -p err --since "1 hour ago"'
+alias sysload='systemd-cgtop'
+alias netstat='ss -tulpn'
+alias processes='ps aux --sort=-%cpu | head -20'
+alias diskuse='df -h && echo && ncdu /'
+alias memuse='free -h && echo && ps aux --sort=-%mem | head -10'
+alias syshealth='/srv/apps/scripts/system_health_check.sh'
+alias diskcheck='/srv/apps/scripts/check_disk_space.sh'
+EOF
+
+# Apply to root user
+cp /etc/skel/.bash_aliases /root/.bash_aliases
+
+show_yellow "Monitoring aliases created:"
+show_info "  syshealth  - Full system health report"
+show_info "  diskcheck  - Manual disk space check with Slack notifications"
+
+##########################################################################################
+## Configure sysstat for historical data
+##########################################################################################
+
+show_yellow "Configuring system statistics collection."
+
+# Enable sysstat data collection
+sed -i 's/ENABLED="false"/ENABLED="true"/' /etc/default/sysstat 2>/dev/null || true
+
+# Start and enable sysstat
+systemctl enable sysstat >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Failed to enable sysstat service."
+systemctl restart sysstat >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Failed to restart sysstat service."
+
+show_yellow "System statistics collection enabled. Use 'sar' command for historical data."
+
+##########################################################################################
+## Done
+##########################################################################################
+
+show_info "$SUBSCRIPT done. Use 'syshealth' command for system overview."

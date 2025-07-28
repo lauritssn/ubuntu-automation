@@ -1,0 +1,16 @@
+[Unit]
+Description=Run ClamAV Signature Update Daily
+Requires=clamav-update.service
+
+[Timer]
+# Run daily at 3:30 AM (before the weekly scan at 4:00 AM)
+OnCalendar=*-*-* 03:30:00
+# Run 15 minutes after boot if we missed the scheduled time (allows ClamAV daemon to fully initialize)
+OnBootSec=15min
+# Add some randomization to avoid all servers updating at exactly the same time
+RandomizedDelaySec=600
+# Ensure the timer persists across reboots
+Persistent=true
+
+[Install]
+WantedBy=timers.target 

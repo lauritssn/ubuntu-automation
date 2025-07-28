@@ -1,0 +1,24 @@
+[Unit]
+Description=ClamAV Signature Update
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+# Send service start notification
+ExecStartPre=/bin/bash -c 'logger -p user.info -t clamav-update "ClamAV update service starting on $(hostname)"'
+ExecStart=/usr/local/bin/clamav-update.sh
+# Send service completion notification
+ExecStartPost=/bin/bash -c 'logger -p user.info -t clamav-update "ClamAV update service completed on $(hostname)"'
+StandardOutput=journal
+StandardError=journal
+
+# Timeout after 30 minutes to prevent hanging
+TimeoutStartSec=1800
+
+# Only run if network is available
+ConditionPathExists=/usr/bin/freshclam
+
+[Install]
+WantedBy=multi-user.target 

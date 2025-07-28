@@ -1,0 +1,33 @@
+# Enhanced sudo security policies for Ubuntu 24.04
+
+# Password is required by default (this is the standard behavior)
+# NOPASSWD is not used anywhere to ensure passwords are always required
+
+# Log sudo commands to syslog
+Defaults syslog
+
+# Require TTY for sudo (prevents some automated attacks)
+# Note: Disabled for configuration testing, enable manually if needed
+# Defaults requiretty
+
+# Set sudo session timeout (15 minutes)
+Defaults timestamp_timeout=15
+
+# Set maximum number of tries for password
+Defaults passwd_tries=3
+
+# Set secure PATH for sudo
+Defaults secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+# Prevent environment variable injection
+Defaults env_reset
+Defaults env_keep="COLORS DISPLAY HOSTNAME HISTSIZE KDEDIR LS_COLORS"
+Defaults env_keep+="MAIL PS1 PS2 QTDIR USERNAME LANG LC_ADDRESS LC_CTYPE"
+Defaults env_keep+="LC_COLLATE LC_IDENTIFICATION LC_MEASUREMENT LC_MESSAGES"
+Defaults env_keep+="LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE"
+Defaults env_keep+="LC_TIME LC_ALL LANGUAGE LINGUAS _XKB_CHARSET XAUTHORITY"
+
+# Log sudo input/output for security auditing
+Defaults log_input, log_output
+Defaults iolog_dir=/var/log/sudo-io
+Defaults logfile=/var/log/sudo.log
