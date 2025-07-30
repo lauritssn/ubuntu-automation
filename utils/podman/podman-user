@@ -1,0 +1,63 @@
+#!/bin/bash
+# Script to run podman commands as the podman user
+
+if [ "$#" -eq 0 ]; then
+    echo "Usage: podman-user <podman-command>"
+    echo "Example: podman-user ps -a"
+    echo "Example: podman-user run -d --name traefik ..."
+    exit 1
+fi
+
+# Function to ensure socket is running
+ensure_socket() {
+    export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+
+    # Try to start socket if not running
+    if ! systemctl --user is-active --quiet podman.socket 2>/dev/null; then
+        systemctl --user daemon-reload 2>/dev/null || true
+        systemctl --user start podman.socket 2>/dev/null || true
+        sleep 2
+    fi
+
+    # If socket still not working, try manual service
+    if ! podman version >/dev/null 2>&1; then
+        pkill -f "podman system service" 2>/dev/null || true
+        podman system service --time=0 unix:///run/user/$(id -u)/podman/podman.sock &
+        sleep 2
+    fi
+}
+
+# Function to execute podman command
+execute_podman() {
+    export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+    podman "$@"
+}
+
+# Check if we're running as podman user
+if [ "$(whoami)" = "podman" ]; then
+    # Running as podman user - execute directly
+    ensure_socket
+    execute_podman "$@"
+else
+    # Running as different user - use sudo
+    sudo -u podman bash -c '
+        export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+        
+        # Try to start socket if not running
+        if ! systemctl --user is-active --quiet podman.socket 2>/dev/null; then
+            systemctl --user daemon-reload 2>/dev/null || true
+            systemctl --user start podman.socket 2>/dev/null || true
+            sleep 2
+        fi
+        
+        # If socket still not working, try manual service
+        if ! podman version >/dev/null 2>&1; then
+            pkill -f "podman system service" 2>/dev/null || true
+            podman system service --time=0 unix:///run/user/$(id -u)/podman/podman.sock &
+            sleep 2
+        fi
+        
+        # Execute the podman command
+        podman "$@"
+    ' -- "$@"
+fi
