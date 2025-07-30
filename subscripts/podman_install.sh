@@ -760,6 +760,7 @@ TEST_PASSED="false"
 
 # First ensure the socket is running with proper environment
 sudo -u "podman" bash -c '
+    cd /tmp
     export XDG_RUNTIME_DIR="/run/user/$(id -u)"
     
     # Try to start socket if not running
@@ -778,13 +779,13 @@ sudo -u "podman" bash -c '
 '
 
 # Test hello-world container
-if sudo -u "podman" bash -c 'export XDG_RUNTIME_DIR="/run/user/$(id -u)"; timeout 60 podman run --rm hello-world' >/dev/null 2>&1; then
+if sudo -u "podman" bash -c 'cd /tmp && export XDG_RUNTIME_DIR="/run/user/$(id -u)"; timeout 60 podman run --rm hello-world' >/dev/null 2>&1; then
     show_info "✅ Podman installation test successful"
     TEST_PASSED="true"
 else
     show_warn "⚠️  Podman hello-world test failed - trying version check"
     # Try a simpler test
-    if sudo -u "podman" bash -c 'export XDG_RUNTIME_DIR="/run/user/$(id -u)"; podman version' >/dev/null 2>&1; then
+    if sudo -u "podman" bash -c 'cd /tmp && export XDG_RUNTIME_DIR="/run/user/$(id -u)"; podman version' >/dev/null 2>&1; then
         show_info "✅ Podman version check successful"
         show_warn "Container execution may work after user session restart or reboot"
         TEST_PASSED="partial"
@@ -796,7 +797,7 @@ fi
 
 # Test socket connectivity
 show_yellow "Testing Podman socket..."
-if sudo -u "podman" bash -c 'export XDG_RUNTIME_DIR="/run/user/$(id -u)"; podman system connection list' >/dev/null 2>&1; then
+if sudo -u "podman" bash -c 'cd /tmp && export XDG_RUNTIME_DIR="/run/user/$(id -u)"; podman system connection list' >/dev/null 2>&1; then
     show_info "✅ Podman socket connectivity test successful"
 else
     show_warn "⚠️  Podman socket test failed - service may start on first use"
