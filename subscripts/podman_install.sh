@@ -375,6 +375,7 @@ show_yellow "Creating Podman management scripts."
 cat >/usr/local/bin/podman-user <<'EOF'
 #!/bin/bash
 # Script to run podman commands as the podman user
+
 if [ "$#" -eq 0 ]; then
     echo "Usage: podman-user <podman-command>"
     echo "Example: podman-user ps -a"
@@ -382,8 +383,8 @@ if [ "$#" -eq 0 ]; then
     exit 1
 fi
 
-# Ensure podman socket is running before executing commands
-sudo -u podman bash -c '
+# Function to ensure socket is running
+ensure_socket() {
     export XDG_RUNTIME_DIR="/run/user/$(id -u)"
     
     # Try to start socket if not running
@@ -399,10 +400,42 @@ sudo -u podman bash -c '
         podman system service --time=0 unix:///run/user/$(id -u)/podman/podman.sock &
         sleep 2
     fi
-'
+}
 
-# Execute the podman command with proper environment
-sudo -u podman bash -c "export XDG_RUNTIME_DIR=/run/user/\$(id -u); podman \$*" -- "$@"
+# Function to execute podman command
+execute_podman() {
+    export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+    podman "$@"
+}
+
+# Check if we're running as podman user
+if [ "$(whoami)" = "podman" ]; then
+    # Running as podman user - execute directly
+    ensure_socket
+    execute_podman "$@"
+else
+    # Running as different user - use sudo
+    sudo -u podman bash -c '
+        export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+        
+        # Try to start socket if not running
+        if ! systemctl --user is-active --quiet podman.socket 2>/dev/null; then
+            systemctl --user daemon-reload 2>/dev/null || true
+            systemctl --user start podman.socket 2>/dev/null || true
+            sleep 2
+        fi
+        
+        # If socket still not working, try manual service
+        if ! podman version >/dev/null 2>&1; then
+            pkill -f "podman system service" 2>/dev/null || true
+            podman system service --time=0 unix:///run/user/$(id -u)/podman/podman.sock &
+            sleep 2
+        fi
+        
+        # Execute the podman command
+        podman "$@"
+    ' -- "$@"
+fi
 EOF
 
 chmod +x /usr/local/bin/podman-user
@@ -410,22 +443,43 @@ chmod +x /usr/local/bin/podman-user
 # Create a status check script
 cat >/usr/local/bin/podman-status <<'EOF'
 #!/bin/bash
+
+# Function to run commands as podman user or directly if already podman user
+run_as_podman() {
+    if [ "$(whoami)" = "podman" ]; then
+        # Already running as podman user
+        export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+        bash -c "$1"
+    else
+        # Running as different user, use sudo
+        sudo -u podman bash -c "export XDG_RUNTIME_DIR=\"/run/user/\$(id -u)\"; $1"
+    fi
+}
+
 echo "=== Podman User Status ==="
-echo "User: podman"
-echo "Home: /home/podman"
-echo "Runtime Dir: /run/user/$(id -u podman 2>/dev/null || echo 'N/A')"
+echo "Current user: $(whoami)"
+echo "Podman user home: /home/podman"
+if [ "$(whoami)" = "podman" ]; then
+    echo "Runtime Dir: /run/user/$(id -u)"
+else
+    echo "Runtime Dir: /run/user/$(id -u podman 2>/dev/null || echo 'N/A')"
+fi
 echo ""
 
 echo "=== Environment Test ==="
-sudo -u podman bash -c 'export XDG_RUNTIME_DIR="/run/user/$(id -u)"; echo "XDG_RUNTIME_DIR: $XDG_RUNTIME_DIR"'
+run_as_podman 'echo "XDG_RUNTIME_DIR: $XDG_RUNTIME_DIR"'
 echo ""
 
 echo "=== Podman Service Status ==="
-sudo -u podman bash -c 'export XDG_RUNTIME_DIR="/run/user/$(id -u)"; systemctl --user status podman.socket --no-pager -l' 2>/dev/null || echo "Socket not running"
+run_as_podman 'systemctl --user status podman.socket --no-pager -l' 2>/dev/null || echo "Socket not running"
 echo ""
 
 echo "=== Socket File Check ==="
-SOCKET_PATH="/run/user/$(id -u podman 2>/dev/null || echo '0')/podman/podman.sock"
+if [ "$(whoami)" = "podman" ]; then
+    SOCKET_PATH="/run/user/$(id -u)/podman/podman.sock"
+else
+    SOCKET_PATH="/run/user/$(id -u podman 2>/dev/null || echo '0')/podman/podman.sock"
+fi
 if [ -S "$SOCKET_PATH" ]; then
     echo "✅ Socket file exists: $SOCKET_PATH"
 else
@@ -434,15 +488,15 @@ fi
 echo ""
 
 echo "=== Podman Version ==="
-sudo -u podman bash -c 'export XDG_RUNTIME_DIR="/run/user/$(id -u)"; podman version --format "{{.Client.Version}}"' 2>/dev/null || echo "Version check failed"
+run_as_podman 'podman version --format "{{.Client.Version}}"' 2>/dev/null || echo "Version check failed"
 echo ""
 
 echo "=== Running Containers ==="
-sudo -u podman bash -c 'export XDG_RUNTIME_DIR="/run/user/$(id -u)"; podman ps' 2>/dev/null || echo "No containers or podman not accessible"
+run_as_podman 'podman ps' 2>/dev/null || echo "No containers or podman not accessible"
 echo ""
 
 echo "=== Network Configuration ==="
-sudo -u podman bash -c 'export XDG_RUNTIME_DIR="/run/user/$(id -u)"; podman network ls' 2>/dev/null || echo "Network info not accessible"
+run_as_podman 'podman network ls' 2>/dev/null || echo "Network info not accessible"
 EOF
 
 chmod +x /usr/local/bin/podman-status
@@ -471,6 +525,18 @@ show_usage() {
     echo "  podman-socket logs traefik"
 }
 
+# Function to run systemctl commands as podman user or directly
+run_systemctl() {
+    if [ "$(whoami)" = "podman" ]; then
+        # Running as podman user - execute directly
+        export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+        eval "$1"
+    else
+        # Running as different user - use sudo
+        sudo -u podman bash -c "export XDG_RUNTIME_DIR=\"/run/user/\$(id -u)\"; $1"
+    fi
+}
+
 if [ "$#" -lt 1 ]; then
     show_usage
     exit 1
@@ -482,19 +548,19 @@ SERVICE="$2"
 case "$COMMAND" in
     "list")
         echo "=== Socket Units ==="
-        sudo -u podman bash -c 'export XDG_RUNTIME_DIR="/run/user/$(id -u)"; systemctl --user list-units --type=socket --state=loaded'
+        run_systemctl 'systemctl --user list-units --type=socket --state=loaded'
         echo ""
         echo "=== Container Services ==="
-        sudo -u podman bash -c 'export XDG_RUNTIME_DIR="/run/user/$(id -u)"; systemctl --user list-units --type=service --state=loaded | grep -E "\.(service|container)"'
+        run_systemctl 'systemctl --user list-units --type=service --state=loaded | grep -E "\.(service|container)"'
         ;;
     "status")
         if [ -z "$SERVICE" ]; then
             echo "=== All Socket Services Status ==="
-            sudo -u podman bash -c 'export XDG_RUNTIME_DIR="/run/user/$(id -u)"; systemctl --user status --no-pager -l *.socket' 2>/dev/null || echo "No active socket services found"
+            run_systemctl 'systemctl --user status --no-pager -l *.socket' 2>/dev/null || echo "No active socket services found"
         else
             echo "=== Status for $SERVICE ==="
-            sudo -u podman bash -c "export XDG_RUNTIME_DIR=\"/run/user/\$(id -u)\"; systemctl --user status --no-pager -l $SERVICE.socket" 2>/dev/null || \
-            sudo -u podman bash -c "export XDG_RUNTIME_DIR=\"/run/user/\$(id -u)\"; systemctl --user status --no-pager -l $SERVICE.service" 2>/dev/null || \
+            run_systemctl "systemctl --user status --no-pager -l $SERVICE.socket" 2>/dev/null || \
+            run_systemctl "systemctl --user status --no-pager -l $SERVICE.service" 2>/dev/null || \
             echo "Service $SERVICE not found"
         fi
         ;;
@@ -505,7 +571,7 @@ case "$COMMAND" in
             exit 1
         fi
         echo "Starting socket service: $SERVICE"
-        sudo -u podman bash -c "export XDG_RUNTIME_DIR=\"/run/user/\$(id -u)\"; systemctl --user start $SERVICE.socket"
+        run_systemctl "systemctl --user start $SERVICE.socket"
         ;;
     "stop")
         if [ -z "$SERVICE" ]; then
@@ -514,7 +580,7 @@ case "$COMMAND" in
             exit 1
         fi
         echo "Stopping socket service: $SERVICE"
-        sudo -u podman bash -c "export XDG_RUNTIME_DIR=\"/run/user/\$(id -u)\"; systemctl --user stop $SERVICE.socket $SERVICE.service" 2>/dev/null || true
+        run_systemctl "systemctl --user stop $SERVICE.socket $SERVICE.service" 2>/dev/null || true
         ;;
     "restart")
         if [ -z "$SERVICE" ]; then
@@ -523,7 +589,7 @@ case "$COMMAND" in
             exit 1
         fi
         echo "Restarting socket service: $SERVICE"
-        sudo -u podman bash -c "export XDG_RUNTIME_DIR=\"/run/user/\$(id -u)\"; systemctl --user restart $SERVICE.socket"
+        run_systemctl "systemctl --user restart $SERVICE.socket"
         ;;
     "logs")
         if [ -z "$SERVICE" ]; then
@@ -532,8 +598,8 @@ case "$COMMAND" in
             exit 1
         fi
         echo "Showing logs for: $SERVICE"
-        sudo -u podman bash -c "export XDG_RUNTIME_DIR=\"/run/user/\$(id -u)\"; journalctl --user -u $SERVICE.service -f" 2>/dev/null || \
-        sudo -u podman bash -c "export XDG_RUNTIME_DIR=\"/run/user/\$(id -u)\"; journalctl --user -u $SERVICE.socket -f"
+        run_systemctl "journalctl --user -u $SERVICE.service -f" 2>/dev/null || \
+        run_systemctl "journalctl --user -u $SERVICE.socket -f"
         ;;
     "enable")
         if [ -z "$SERVICE" ]; then
@@ -542,7 +608,7 @@ case "$COMMAND" in
             exit 1
         fi
         echo "Enabling socket service: $SERVICE"
-        sudo -u podman bash -c "export XDG_RUNTIME_DIR=\"/run/user/\$(id -u)\"; systemctl --user enable $SERVICE.socket"
+        run_systemctl "systemctl --user enable $SERVICE.socket"
         ;;
     "disable")
         if [ -z "$SERVICE" ]; then
@@ -551,7 +617,7 @@ case "$COMMAND" in
             exit 1
         fi
         echo "Disabling socket service: $SERVICE"
-        sudo -u podman bash -c "export XDG_RUNTIME_DIR=\"/run/user/\$(id -u)\"; systemctl --user disable $SERVICE.socket"
+        run_systemctl "systemctl --user disable $SERVICE.socket"
         ;;
     *)
         echo "Error: Unknown command '$COMMAND'"
@@ -633,6 +699,7 @@ TEST_PASSED="false"
 
 # First ensure the socket is running with proper environment
 sudo -u "$PODMAN_USER" bash -c '
+    cd /tmp
     export XDG_RUNTIME_DIR="/run/user/$(id -u)"
     
     # Try to start socket if not running
@@ -651,13 +718,13 @@ sudo -u "$PODMAN_USER" bash -c '
 '
 
 # Test hello-world container
-if sudo -u "$PODMAN_USER" bash -c 'export XDG_RUNTIME_DIR="/run/user/$(id -u)"; timeout 60 podman run --rm hello-world' >/dev/null 2>&1; then
+if sudo -u "$PODMAN_USER" bash -c 'cd /tmp && export XDG_RUNTIME_DIR="/run/user/$(id -u)"; timeout 60 podman run --rm hello-world' >/dev/null 2>&1; then
     show_info "✅ Podman installation test successful"
     TEST_PASSED="true"
 else
     show_warn "⚠️  Podman hello-world test failed - trying version check"
     # Try a simpler test
-    if sudo -u "$PODMAN_USER" bash -c 'export XDG_RUNTIME_DIR="/run/user/$(id -u)"; podman version' >/dev/null 2>&1; then
+    if sudo -u "$PODMAN_USER" bash -c 'cd /tmp && export XDG_RUNTIME_DIR="/run/user/$(id -u)"; podman version' >/dev/null 2>&1; then
         show_info "✅ Podman version check successful"
         show_warn "Container execution may work after user session restart or reboot"
         TEST_PASSED="partial"
@@ -669,7 +736,7 @@ fi
 
 # Test socket connectivity
 show_yellow "Testing Podman socket..."
-if sudo -u "$PODMAN_USER" bash -c 'export XDG_RUNTIME_DIR="/run/user/$(id -u)"; podman system connection list' >/dev/null 2>&1; then
+if sudo -u "$PODMAN_USER" bash -c 'cd /tmp && export XDG_RUNTIME_DIR="/run/user/$(id -u)"; podman system connection list' >/dev/null 2>&1; then
     show_info "✅ Podman socket connectivity test successful"
 else
     show_warn "⚠️  Podman socket test failed - service may start on first use"

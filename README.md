@@ -188,25 +188,34 @@ The automation suite is modular, allowing you to choose which components to inst
 
 **Recommended:** ✅ Yes - Prevents out-of-memory crashes
 
-### 🐳 Docker Support
+### 🐳 Container Support (Docker & Podman)
 
-**Components:** Docker CE with modern Ubuntu 24.04 setup
+**Components:** Docker CE and Podman with modern Ubuntu 24.04 setup
 
 **What it does:**
 
-- **Installation:** Latest Docker CE with proper GPG verification
+- **Docker Installation:** Latest Docker CE with proper GPG verification
+- **Podman Installation:** Rootless container engine (Docker-compatible alternative)
 - **Docker Compose:** v2 plugin installation
-- **Rootless mode:** Optional rootless Docker for enhanced security
-- **Custom storage:** Configurable Docker data directory
+- **Rootless mode:** Enhanced security for both Docker and Podman
+- **Custom storage:** Configurable container data directories
 - **Security:** Proper user permissions and group management
 
-**Configuration options:**
+**Docker Configuration options:**
 
 - **Root mode:** Traditional Docker (requires root privileges)
 - **Rootless mode:** User-space Docker (enhanced security, some limitations)
 - **Data directory:** Custom location for Docker images/containers
 
-**Recommended:** 🤔 Optional - Only if you plan to use containers
+**Podman Configuration:**
+
+- **Rootless by default:** Enhanced security with user namespaces
+- **Docker compatibility:** Drop-in replacement for most Docker commands
+- **Systemd integration:** Native systemd socket activation and service management
+- **No daemon:** Direct container execution without background daemon
+- **Pod support:** Kubernetes-style pod management capabilities
+
+**Recommended:** 🤔 Optional - Choose Docker for maximum compatibility or Podman for enhanced security
 
 ### 📊 System Monitoring
 
@@ -344,6 +353,28 @@ Root Docker: Full functionality, requires root privileges
 # Custom data directory
 Default: /var/lib/docker
 Custom: /mnt/docker (or your preferred location)
+```
+
+#### Podman Configuration
+
+```bash
+# Podman is installed in rootless mode by default
+# Runs as dedicated 'podman' user for enhanced security
+# No daemon required - containers run directly
+
+# Using Podman
+podman-user ps -a                    # List containers
+podman-user run hello-world          # Run test container
+podman-user pull nginx               # Pull container image
+podman-user images                   # List images
+
+# Check Podman status
+podman-status                        # Comprehensive status check
+
+# Socket management (for systemd integration)
+podman-socket list                   # List socket services
+podman-socket status                 # Check socket status
+podman-socket start traefik-http     # Start socket service
 ```
 
 #### Wireguard VPN Configuration
@@ -523,6 +554,12 @@ The automation installs comprehensive utility scripts to `/srv/apps/scripts/` fo
 - **`remove-wg-client`** - Remove WireGuard VPN clients
 - **`enable_ip_forwarding.sh`** - Configure IP forwarding for VPN
 - **`ufw.sh`** - Firewall rule management script
+
+#### Container Management (Podman)
+
+- **`podman-user`** - Execute Podman commands as the podman user with proper environment setup
+- **`podman-status`** - Comprehensive Podman installation and service status check
+- **`podman-socket`** - Manage socket-activated containers and services
 
 #### Testing & Validation
 
