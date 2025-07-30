@@ -43,20 +43,42 @@ SERVICE="$2"
 case "$COMMAND" in
 "list")
     echo "=== Socket Units ==="
-    run_systemctl 'systemctl --user list-units --type=socket --state=loaded'
+    if [ "$(whoami)" = "podman" ]; then
+        export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+        systemctl --user list-units --type=socket --state=loaded
+    else
+        run_systemctl 'systemctl --user list-units --type=socket --state=loaded'
+    fi
     echo ""
     echo "=== Container Services ==="
-    run_systemctl 'systemctl --user list-units --type=service --state=loaded | grep -E "\.(service|container)"'
+    if [ "$(whoami)" = "podman" ]; then
+        export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+        systemctl --user list-units --type=service --state=loaded | grep -E "\.(service|container)"
+    else
+        run_systemctl 'systemctl --user list-units --type=service --state=loaded | grep -E "\.(service|container)"'
+    fi
     ;;
 "status")
     if [ -z "$SERVICE" ]; then
         echo "=== All Socket Services Status ==="
-        run_systemctl 'systemctl --user status --no-pager -l *.socket' 2>/dev/null || echo "No active socket services found"
+        if [ "$(whoami)" = "podman" ]; then
+            export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+            systemctl --user status --no-pager -l *.socket 2>/dev/null || echo "No active socket services found"
+        else
+            run_systemctl 'systemctl --user status --no-pager -l *.socket' 2>/dev/null || echo "No active socket services found"
+        fi
     else
         echo "=== Status for $SERVICE ==="
-        run_systemctl "systemctl --user status --no-pager -l $SERVICE.socket" 2>/dev/null ||
-            run_systemctl "systemctl --user status --no-pager -l $SERVICE.service" 2>/dev/null ||
-            echo "Service $SERVICE not found"
+        if [ "$(whoami)" = "podman" ]; then
+            export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+            systemctl --user status --no-pager -l $SERVICE.socket 2>/dev/null ||
+                systemctl --user status --no-pager -l $SERVICE.service 2>/dev/null ||
+                echo "Service $SERVICE not found"
+        else
+            run_systemctl "systemctl --user status --no-pager -l $SERVICE.socket" 2>/dev/null ||
+                run_systemctl "systemctl --user status --no-pager -l $SERVICE.service" 2>/dev/null ||
+                echo "Service $SERVICE not found"
+        fi
     fi
     ;;
 "start")
@@ -66,7 +88,12 @@ case "$COMMAND" in
         exit 1
     fi
     echo "Starting socket service: $SERVICE"
-    run_systemctl "systemctl --user start $SERVICE.socket"
+    if [ "$(whoami)" = "podman" ]; then
+        export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+        systemctl --user start $SERVICE.socket
+    else
+        run_systemctl "systemctl --user start $SERVICE.socket"
+    fi
     ;;
 "stop")
     if [ -z "$SERVICE" ]; then
@@ -75,7 +102,12 @@ case "$COMMAND" in
         exit 1
     fi
     echo "Stopping socket service: $SERVICE"
-    run_systemctl "systemctl --user stop $SERVICE.socket $SERVICE.service" 2>/dev/null || true
+    if [ "$(whoami)" = "podman" ]; then
+        export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+        systemctl --user stop $SERVICE.socket $SERVICE.service 2>/dev/null || true
+    else
+        run_systemctl "systemctl --user stop $SERVICE.socket $SERVICE.service" 2>/dev/null || true
+    fi
     ;;
 "restart")
     if [ -z "$SERVICE" ]; then
@@ -84,7 +116,12 @@ case "$COMMAND" in
         exit 1
     fi
     echo "Restarting socket service: $SERVICE"
-    run_systemctl "systemctl --user restart $SERVICE.socket"
+    if [ "$(whoami)" = "podman" ]; then
+        export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+        systemctl --user restart $SERVICE.socket
+    else
+        run_systemctl "systemctl --user restart $SERVICE.socket"
+    fi
     ;;
 "logs")
     if [ -z "$SERVICE" ]; then
@@ -93,8 +130,14 @@ case "$COMMAND" in
         exit 1
     fi
     echo "Showing logs for: $SERVICE"
-    run_systemctl "journalctl --user -u $SERVICE.service -f" 2>/dev/null ||
-        run_systemctl "journalctl --user -u $SERVICE.socket -f"
+    if [ "$(whoami)" = "podman" ]; then
+        export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+        journalctl --user -u $SERVICE.service -f 2>/dev/null ||
+            journalctl --user -u $SERVICE.socket -f
+    else
+        run_systemctl "journalctl --user -u $SERVICE.service -f" 2>/dev/null ||
+            run_systemctl "journalctl --user -u $SERVICE.socket -f"
+    fi
     ;;
 "enable")
     if [ -z "$SERVICE" ]; then
@@ -103,7 +146,12 @@ case "$COMMAND" in
         exit 1
     fi
     echo "Enabling socket service: $SERVICE"
-    run_systemctl "systemctl --user enable $SERVICE.socket"
+    if [ "$(whoami)" = "podman" ]; then
+        export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+        systemctl --user enable $SERVICE.socket
+    else
+        run_systemctl "systemctl --user enable $SERVICE.socket"
+    fi
     ;;
 "disable")
     if [ -z "$SERVICE" ]; then
@@ -112,7 +160,12 @@ case "$COMMAND" in
         exit 1
     fi
     echo "Disabling socket service: $SERVICE"
-    run_systemctl "systemctl --user disable $SERVICE.socket"
+    if [ "$(whoami)" = "podman" ]; then
+        export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+        systemctl --user disable $SERVICE.socket
+    else
+        run_systemctl "systemctl --user disable $SERVICE.socket"
+    fi
     ;;
 *)
     echo "Error: Unknown command '$COMMAND'"

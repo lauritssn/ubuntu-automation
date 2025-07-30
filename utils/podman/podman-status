@@ -13,8 +13,8 @@ run_as_podman() {
 }
 
 echo "=== Podman User Status ==="
-echo "Current user: $(whoami)"
-echo "Podman user home: /home/podman"
+echo "User: $(whoami)"
+echo "Home: $(eval echo ~$(whoami))"
 if [ "$(whoami)" = "podman" ]; then
     echo "Runtime Dir: /run/user/$(id -u)"
 else
@@ -23,11 +23,21 @@ fi
 echo ""
 
 echo "=== Environment Test ==="
-run_as_podman 'echo "XDG_RUNTIME_DIR: $XDG_RUNTIME_DIR"'
+if [ "$(whoami)" = "podman" ]; then
+    export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+    echo "XDG_RUNTIME_DIR: $XDG_RUNTIME_DIR"
+else
+    run_as_podman 'echo "XDG_RUNTIME_DIR: $XDG_RUNTIME_DIR"'
+fi
 echo ""
 
 echo "=== Podman Service Status ==="
-run_as_podman 'systemctl --user status podman.socket --no-pager -l' 2>/dev/null || echo "Socket not running"
+if [ "$(whoami)" = "podman" ]; then
+    export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+    systemctl --user status podman.socket --no-pager -l 2>/dev/null || echo "Socket not running"
+else
+    run_as_podman 'systemctl --user status podman.socket --no-pager -l' 2>/dev/null || echo "Socket not running"
+fi
 echo ""
 
 echo "=== Socket File Check ==="
@@ -44,12 +54,27 @@ fi
 echo ""
 
 echo "=== Podman Version ==="
-run_as_podman 'podman version --format "{{.Client.Version}}"' 2>/dev/null || echo "Version check failed"
+if [ "$(whoami)" = "podman" ]; then
+    export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+    podman version --format "{{.Client.Version}}" 2>/dev/null || echo "Version check failed"
+else
+    run_as_podman 'podman version --format "{{.Client.Version}}"' 2>/dev/null || echo "Version check failed"
+fi
 echo ""
 
 echo "=== Running Containers ==="
-run_as_podman 'podman ps' 2>/dev/null || echo "No containers or podman not accessible"
+if [ "$(whoami)" = "podman" ]; then
+    export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+    podman ps 2>/dev/null || echo "No containers or podman not accessible"
+else
+    run_as_podman 'podman ps' 2>/dev/null || echo "No containers or podman not accessible"
+fi
 echo ""
 
 echo "=== Network Configuration ==="
-run_as_podman 'podman network ls' 2>/dev/null || echo "Network info not accessible"
+if [ "$(whoami)" = "podman" ]; then
+    export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+    podman network ls 2>/dev/null || echo "Network info not accessible"
+else
+    run_as_podman 'podman network ls' 2>/dev/null || echo "Network info not accessible"
+fi
