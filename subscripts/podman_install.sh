@@ -159,8 +159,13 @@ init = true
 # Use netavark for better networking (default in newer versions)
 network_backend = \"netavark\"
 
-# Configure for real IP passthrough (important for reverse proxies like Traefik)
-default_rootless_network_cmd = \"pasta\"
+# Configure for socket activation and real IP passthrough
+# Socket activation preserves original client IPs without NAT
+# This is optimal for Traefik to log real user IP addresses
+default_network = \"netavark\"
+
+# Enable IPv6 for full socket activation support
+enable_ipv6 = true
 
 [engine]
 # Runtime configuration
@@ -169,11 +174,19 @@ runtime = \"crun\"
 # Enable user namespace mapping
 enable_fuse_overlayfs = true
 
-# Disable seccomp for better compatibility (can be re-enabled if needed)
-seccomp_profile = \"\"
-
 # Set events logger
 events_logger = \"journald\"
+
+# Socket activation configuration
+# These settings optimize for socket-activated containers
+service_timeout = 0
+
+# Enable proper signal handling for socket activation
+stop_timeout = 10
+
+# Network settings for real IP preservation
+# When using socket activation, containers receive direct connections
+# which preserves the original client IP addresses
 EOF"
 
 # Create storage.conf for optimized storage
@@ -213,22 +226,58 @@ fi
 # Apply sysctl changes immediately
 sysctl -p >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Failed to apply sysctl changes"
 
-# Create a custom pasta configuration for better real IP handling
-sudo -u "$PODMAN_USER" bash -c "mkdir -p /home/$PODMAN_USER/.config/containers/networks"
+# Create systemd directories for socket activation
+sudo -u "$PODMAN_USER" bash -c "mkdir -p /home/$PODMAN_USER/.config/systemd/user"
+sudo -u "$PODMAN_USER" bash -c "mkdir -p /home/$PODMAN_USER/.config/containers/systemd"
 
-# Configure pasta networking for optimal Traefik integration
-sudo -u "$PODMAN_USER" bash -c "cat > /home/$PODMAN_USER/.config/containers/networks/pasta.json << 'EOF'
-{
-    \"name\": \"pasta\",
-    \"driver\": \"pasta\",
-    \"network_interface\": \"pasta0\",
-    \"options\": {
-        \"isolate\": \"false\",
-        \"no_copy_routes\": \"false\",
-        \"no_copy_addrs\": \"false\"
-    }
-}
+# Configure socket activation support for containers
+show_yellow "Configuring socket activation for containers."
+
+# Create helper script for socket-activated container management
+sudo -u "$PODMAN_USER" bash -c "cat > /home/$PODMAN_USER/.config/containers/socket-setup.sh << 'EOF'
+#!/bin/bash
+# Helper script to set up socket-activated containers
+# Usage: ./socket-setup.sh <service-name> <port> [additional-ports...]
+
+if [ \$# -lt 2 ]; then
+    echo \"Usage: \$0 <service-name> <port> [additional-ports...]\"
+    echo \"Example: \$0 traefik 80 443\"
+    exit 1
+fi
+
+SERVICE_NAME=\"\$1\"
+shift
+PORTS=(\"\$@\")
+
+# Create socket unit
+cat > ~/.config/systemd/user/\${SERVICE_NAME}.socket << EOL
+[Unit]
+Description=\${SERVICE_NAME} socket
+Requires=\${SERVICE_NAME}.service
+
+[Socket]
+EOL
+
+# Add listening ports
+for port in \"\${PORTS[@]}\"; do
+    echo \"ListenStream=0.0.0.0:\$port\" >> ~/.config/systemd/user/\${SERVICE_NAME}.socket
+done
+
+cat >> ~/.config/systemd/user/\${SERVICE_NAME}.socket << EOL
+
+[Install]
+WantedBy=sockets.target
+EOL
+
+echo \"Socket unit created: ~/.config/systemd/user/\${SERVICE_NAME}.socket\"
+echo \"Next steps:\"
+echo \"1. Create your \${SERVICE_NAME}.container file in ~/.config/containers/systemd/\"
+echo \"2. Run: systemctl --user daemon-reload\"
+echo \"3. Run: systemctl --user enable \${SERVICE_NAME}.socket\"
+echo \"4. Run: systemctl --user start \${SERVICE_NAME}.socket\"
 EOF"
+
+chmod +x "/home/$PODMAN_USER/.config/containers/socket-setup.sh"
 
 ##########################################################################################
 ## Set up environment and aliases
@@ -277,7 +326,7 @@ sudo -u "$PODMAN_USER" bash -c '
     # Set proper environment
     export XDG_RUNTIME_DIR="/run/user/$(id -u)"
     
-    # Create runtime directory if it doesn't exist
+    # Create runtime directory if it does not exist
     mkdir -p "$XDG_RUNTIME_DIR/podman"
     
     # Generate systemd user directory
@@ -397,6 +446,122 @@ sudo -u podman bash -c 'export XDG_RUNTIME_DIR="/run/user/$(id -u)"; podman netw
 EOF
 
 chmod +x /usr/local/bin/podman-status
+
+# Create socket activation management script
+cat >/usr/local/bin/podman-socket <<'EOF'
+#!/bin/bash
+# Script to manage socket-activated containers
+
+show_usage() {
+    echo "Usage: podman-socket <command> [service-name]"
+    echo "Commands:"
+    echo "  list              - List all socket units"
+    echo "  status [service]  - Show status of socket service(s)" 
+    echo "  start [service]   - Start specific socket service"
+    echo "  stop [service]    - Stop specific socket service"
+    echo "  restart [service] - Restart specific socket service"
+    echo "  logs [service]    - Show logs for specific service"
+    echo "  enable [service]  - Enable socket service to start on boot"
+    echo "  disable [service] - Disable socket service from starting on boot"
+    echo ""
+    echo "Examples:"
+    echo "  podman-socket list"
+    echo "  podman-socket status traefik-http"
+    echo "  podman-socket start traefik-http"
+    echo "  podman-socket logs traefik"
+}
+
+if [ "$#" -lt 1 ]; then
+    show_usage
+    exit 1
+fi
+
+COMMAND="$1"
+SERVICE="$2"
+
+case "$COMMAND" in
+    "list")
+        echo "=== Socket Units ==="
+        sudo -u podman bash -c 'export XDG_RUNTIME_DIR="/run/user/$(id -u)"; systemctl --user list-units --type=socket --state=loaded'
+        echo ""
+        echo "=== Container Services ==="
+        sudo -u podman bash -c 'export XDG_RUNTIME_DIR="/run/user/$(id -u)"; systemctl --user list-units --type=service --state=loaded | grep -E "\.(service|container)"'
+        ;;
+    "status")
+        if [ -z "$SERVICE" ]; then
+            echo "=== All Socket Services Status ==="
+            sudo -u podman bash -c 'export XDG_RUNTIME_DIR="/run/user/$(id -u)"; systemctl --user status --no-pager -l *.socket' 2>/dev/null || echo "No active socket services found"
+        else
+            echo "=== Status for $SERVICE ==="
+            sudo -u podman bash -c "export XDG_RUNTIME_DIR=\"/run/user/\$(id -u)\"; systemctl --user status --no-pager -l $SERVICE.socket" 2>/dev/null || \
+            sudo -u podman bash -c "export XDG_RUNTIME_DIR=\"/run/user/\$(id -u)\"; systemctl --user status --no-pager -l $SERVICE.service" 2>/dev/null || \
+            echo "Service $SERVICE not found"
+        fi
+        ;;
+    "start")
+        if [ -z "$SERVICE" ]; then
+            echo "Error: Service name required for start command"
+            show_usage
+            exit 1
+        fi
+        echo "Starting socket service: $SERVICE"
+        sudo -u podman bash -c "export XDG_RUNTIME_DIR=\"/run/user/\$(id -u)\"; systemctl --user start $SERVICE.socket"
+        ;;
+    "stop")
+        if [ -z "$SERVICE" ]; then
+            echo "Error: Service name required for stop command"
+            show_usage
+            exit 1
+        fi
+        echo "Stopping socket service: $SERVICE"
+        sudo -u podman bash -c "export XDG_RUNTIME_DIR=\"/run/user/\$(id -u)\"; systemctl --user stop $SERVICE.socket $SERVICE.service" 2>/dev/null || true
+        ;;
+    "restart")
+        if [ -z "$SERVICE" ]; then
+            echo "Error: Service name required for restart command"
+            show_usage
+            exit 1
+        fi
+        echo "Restarting socket service: $SERVICE"
+        sudo -u podman bash -c "export XDG_RUNTIME_DIR=\"/run/user/\$(id -u)\"; systemctl --user restart $SERVICE.socket"
+        ;;
+    "logs")
+        if [ -z "$SERVICE" ]; then
+            echo "Error: Service name required for logs command"
+            show_usage
+            exit 1
+        fi
+        echo "Showing logs for: $SERVICE"
+        sudo -u podman bash -c "export XDG_RUNTIME_DIR=\"/run/user/\$(id -u)\"; journalctl --user -u $SERVICE.service -f" 2>/dev/null || \
+        sudo -u podman bash -c "export XDG_RUNTIME_DIR=\"/run/user/\$(id -u)\"; journalctl --user -u $SERVICE.socket -f"
+        ;;
+    "enable")
+        if [ -z "$SERVICE" ]; then
+            echo "Error: Service name required for enable command"
+            show_usage
+            exit 1
+        fi
+        echo "Enabling socket service: $SERVICE"
+        sudo -u podman bash -c "export XDG_RUNTIME_DIR=\"/run/user/\$(id -u)\"; systemctl --user enable $SERVICE.socket"
+        ;;
+    "disable")
+        if [ -z "$SERVICE" ]; then
+            echo "Error: Service name required for disable command"
+            show_usage
+            exit 1
+        fi
+        echo "Disabling socket service: $SERVICE"
+        sudo -u podman bash -c "export XDG_RUNTIME_DIR=\"/run/user/\$(id -u)\"; systemctl --user disable $SERVICE.socket"
+        ;;
+    *)
+        echo "Error: Unknown command '$COMMAND'"
+        show_usage
+        exit 1
+        ;;
+esac
+EOF
+
+chmod +x /usr/local/bin/podman-socket
 
 ##########################################################################################
 ## Security and permissions setup
@@ -529,23 +694,25 @@ show_info "📋 PODMAN USAGE INFORMATION:"
 show_info "• Switch to podman user: sudo su - podman"
 show_info "• Run commands as podman user: podman-user <command>"
 show_info "• Check status: podman-status"
+show_info "• Manage socket services: podman-socket <command>"
 show_info "• Test installation: podman-user run --rm hello-world"
 show_info ""
-show_info "🌐 NETWORKING FOR TRAEFIK:"
-show_info "• Real IP forwarding is configured"
-show_info "• Use --network=pasta for containers that need real IPs"
-show_info "• Bind to host ports with: -p <host-port>:<container-port>"
-show_info "• Example Traefik command:"
-show_info "  podman-user run -d --name traefik \\"
-show_info "    --network=pasta \\"
-show_info "    -p 80:80 -p 443:443 \\"
-show_info "    -v /home/podman/traefik:/etc/traefik:ro \\"
-show_info "    traefik:latest"
+show_info "🌐 SOCKET ACTIVATION FOR CONTAINERS:"
+show_info "• Socket activation preserves real client IP addresses"
+show_info "• No NAT layer means applications see true user IPs in logs"
+show_info "• Use systemd socket units for automatic container startup"
+show_info "• Create socket-activated services with the helper script"
+show_info "• Example socket activation setup:"
+show_info "  sudo su - podman"
+show_info "  ~/.config/containers/socket-setup.sh myapp 80 443"
+show_info "• Then create myapp.container file in ~/.config/containers/systemd/"
 show_info ""
 show_info "🔧 CONFIGURATION FILES:"
 show_info "• Containers config: /home/podman/.config/containers/containers.conf"
 show_info "• Storage config: /home/podman/.config/containers/storage.conf"
-show_info "• Network config: /home/podman/.config/containers/networks/"
+show_info "• Socket setup script: /home/podman/.config/containers/socket-setup.sh"
+show_info "• Systemd user units: /home/podman/.config/systemd/user/"
+show_info "• Container units: /home/podman/.config/containers/systemd/"
 show_info ""
 
 ##########################################################################################
