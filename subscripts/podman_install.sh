@@ -230,181 +230,24 @@ sudo -u "podman" bash -c "mkdir -p /home/podman/.config/systemd/user"
 sudo -u "podman" bash -c "mkdir -p /home/podman/.config/containers/systemd"
 
 # Configure socket activation support for containers
-show_yellow "Configuring socket activation for containers."
+show_yellow "Installing socket activation helper script."
 
-# Create helper script for socket-activated container management
-sudo -u "podman" bash -c "cat > /home/podman/.config/containers/socket-setup.sh << 'EOF'
-#!/bin/bash
-# Helper script to set up socket-activated containers
-# Usage: ./socket-setup.sh <service-name> <port> [additional-ports...]
+# # Copy the socket setup script from utils to the podman user's local bin
+# sudo -u "podman" bash -c "mkdir -p /home/podman/.local/bin"
+# cp "$BASEDIR/utils/podman/socket-setup.sh" "/home/podman/.local/bin/"
+# chown "podman:podman" "/home/podman/.local/bin/socket-setup.sh"
+# chmod +x "/home/podman/.local/bin/socket-setup.sh"
 
-if [ \$# -lt 2 ]; then
-    echo \"Usage: \$0 <service-name> <port> [additional-ports...]\"
-    echo \"Example: \$0 traefik 80 443\"
-    exit 1
+# Copy to system-wide script directory for global access
+if [ -n "$SCRIPTSDIR" ] && [ -d "$SCRIPTSDIR" ]; then
+    cp "$BASEDIR/utils/podman/socket-setup.sh" "$SCRIPTSDIR/"
+    chmod +x "$SCRIPTSDIR/socket-setup.sh"
+    show_yellow "Socket setup script installed globally at $SCRIPTSDIR/socket-setup.sh"
 fi
 
-SERVICE_NAME=\"\$1\"
-shift
-PORTS=(\"\$@\")
-
-# Create socket unit
-cat > ~/.config/systemd/user/\${SERVICE_NAME}.socket << EOL
-[Unit]
-Description=\${SERVICE_NAME} socket
-Requires=\${SERVICE_NAME}.service
-
-[Socket]
-EOL
-
-# Add listening ports
-for port in \"\${PORTS[@]}\"; do
-    echo \"ListenStream=0.0.0.0:\$port\" >> ~/.config/systemd/user/\${SERVICE_NAME}.socket
-done
-
-cat >> ~/.config/systemd/user/\${SERVICE_NAME}.socket << EOL
-
-[Install]
-WantedBy=sockets.target
-EOL
-
-echo \"Socket unit created: ~/.config/systemd/user/\${SERVICE_NAME}.socket\"
-echo \"Next steps:\"
-echo \"1. Create your \${SERVICE_NAME}.container file in ~/.config/containers/systemd/\"
-echo \"2. Run: systemctl --user daemon-reload\"
-echo \"3. Run: systemctl --user enable \${SERVICE_NAME}.socket\"
-echo \"4. Run: systemctl --user start \${SERVICE_NAME}.socket\"
-EOF"
-
-chmod +x "/home/podman/.config/containers/socket-setup.sh"
-
-# Create example Traefik socket activation configuration
-show_yellow "Creating Traefik socket activation example."
-
-sudo -u "podman" bash -c "cat > /home/podman/.config/containers/traefik-example.md << 'EOF'
-# Traefik Socket Activation Example
-
-This example shows how to set up Traefik with socket activation to preserve real client IP addresses.
-
-## 1. Create socket units for Traefik
-
-\`\`\`bash
-# Create socket unit for HTTP (port 80)
-cat > ~/.config/systemd/user/traefik-http.socket << EOL
-[Unit]
-Description=Traefik HTTP socket
-Requires=traefik.service
-
-[Socket]
-ListenStream=0.0.0.0:80
-
-[Install]
-WantedBy=sockets.target
-EOL
-
-# Create socket unit for HTTPS (port 443)  
-cat > ~/.config/systemd/user/traefik-https.socket << EOL
-[Unit]
-Description=Traefik HTTPS socket
-Requires=traefik.service
-
-[Socket]
-ListenStream=0.0.0.0:443
-
-[Install]
-WantedBy=sockets.target
-EOL
-\`\`\`
-
-## 2. Create Traefik container unit
-
-\`\`\`bash
-cat > ~/.config/containers/systemd/traefik.container << EOL
-[Unit]
-Description=Traefik reverse proxy
-Requires=traefik-http.socket traefik-https.socket
-After=traefik-http.socket traefik-https.socket
-
-[Container]
-Image=traefik:latest
-Network=host
-Volume=/home/podman/traefik:/etc/traefik:ro
-Volume=/home/podman/traefik/acme.json:/acme.json:rw
-
-# Socket activation environment
-Environment=TRAEFIK_ENTRYPOINTS_WEB_ADDRESS=:80
-Environment=TRAEFIK_ENTRYPOINTS_WEBSECURE_ADDRESS=:443
-Environment=TRAEFIK_LOG_LEVEL=INFO
-Environment=TRAEFIK_ACCESSLOG=true
-
-[Install]
-WantedBy=default.target
-EOL
-\`\`\`
-
-## 3. Enable and start the services
-
-\`\`\`bash
-# Reload systemd
-systemctl --user daemon-reload
-
-# Enable socket activation
-systemctl --user enable traefik-http.socket
-systemctl --user enable traefik-https.socket
-
-# Start the sockets (container will start automatically on first connection)
-systemctl --user start traefik-http.socket
-systemctl --user start traefik-https.socket
-
-# Check status
-systemctl --user status traefik-http.socket
-systemctl --user status traefik-https.socket
-\`\`\`
-
-## Benefits for Real IP Logging
-
-- Socket activation bypasses NAT layers
-- Traefik receives connections directly from clients
-- Real client IP addresses are preserved in logs
-- No additional configuration needed in Traefik for IP forwarding
-- Better performance than network namespace isolation
-
-## Example Traefik Configuration
-
-Create \`/home/podman/traefik/traefik.yml\`:
-
-\`\`\`yaml
-entryPoints:
-  web:
-    address: \":80\"
-  websecure:
-    address: \":443\"
-
-providers:
-  file:
-    directory: /etc/traefik/dynamic
-    watch: true
-
-log:
-  level: INFO
-
-accessLog:
-  format: json
-  fields:
-    defaultMode: keep
-    names:
-      ClientUsername: drop
-    headers:
-      defaultMode: keep
-      names:
-        Authorization: drop
-        Cookie: drop
-        Set-Cookie: drop
-
-# Real IP configuration (socket activation preserves original IPs)
-# No need for additional IP forwarding headers
-\`\`\`
-EOF"
+# # Also create a symlink for backwards compatibility
+# sudo -u "podman" bash -c "mkdir -p /home/podman/.config/containers"
+# sudo -u "podman" ln -sf "/home/podman/.local/bin/socket-setup.sh" "/home/podman/.config/containers/socket-setup.sh"
 
 ##########################################################################################
 ## Set up environment and aliases
@@ -745,6 +588,28 @@ if command -v rkhunter >/dev/null 2>&1 && [ -f /etc/rkhunter.conf ]; then
     else
         show_yellow "Podman already whitelisted in RKHunter configuration."
     fi
+
+    # Whitelist Podman-specific shared memory files in /dev/shm
+    if ! grep -q "ALLOWDEVFILE=/dev/shm/libpod_lock" /etc/rkhunter.conf; then
+        echo "ALLOWDEVFILE=/dev/shm/libpod_lock" >>/etc/rkhunter.conf
+        show_yellow "Added libpod_lock to RKHunter ALLOWDEVFILE."
+    fi
+
+    if ! grep -q "ALLOWDEVFILE=/dev/shm/libpod_rootless_lock_" /etc/rkhunter.conf; then
+        echo "ALLOWDEVFILE=/dev/shm/libpod_rootless_lock_*" >>/etc/rkhunter.conf
+        show_yellow "Added libpod_rootless_lock_* to RKHunter ALLOWDEVFILE."
+    fi
+
+    # Whitelist container-related hidden files
+    if ! grep -q "ALLOWHIDDENFILE=/usr/share/man/man5/.containerignore.5.gz" /etc/rkhunter.conf; then
+        echo "ALLOWHIDDENFILE=/usr/share/man/man5/.containerignore.5.gz" >>/etc/rkhunter.conf
+        show_yellow "Added .containerignore.5.gz to RKHunter ALLOWHIDDENFILE."
+    fi
+
+    # Update RKHunter file properties after adding all whitelist entries
+    show_yellow "Updating RKHunter file properties for all Podman-related files."
+    rkhunter --propupd --cronjob >/dev/null 2>&1 || show_warn "RKHunter property update failed - this may cause warnings during scans."
+
 else
     show_yellow "RKHunter not detected. Skipping RKHunter configuration update."
 fi
@@ -825,23 +690,28 @@ show_info "• Check status: podman-status"
 show_info "• Manage socket services: podman-socket <command>"
 show_info "• Test installation: podman-user run --rm hello-world"
 show_info ""
-show_info "🌐 SOCKET ACTIVATION FOR TRAEFIK:"
+show_info "🌐 SOCKET ACTIVATION:"
 show_info "• Socket activation preserves real client IP addresses"
-show_info "• No NAT layer means Traefik sees true user IPs in logs"
+show_info "• No NAT layer means containers see true user IPs in logs"
 show_info "• Use systemd socket units for automatic container startup"
 show_info "• Create socket-activated services with the helper script"
 show_info "• Example socket activation setup:"
 show_info "  sudo su - podman"
-show_info "  ~/.config/containers/socket-setup.sh traefik 80 443"
-show_info "• Then create traefik.container file in ~/.config/containers/systemd/"
+show_info "  ~/.local/bin/socket-setup.sh myservice 80 443"
+show_info "• IPv4 and IPv6 listeners created automatically"
 show_info ""
 show_info "🔧 CONFIGURATION FILES:"
 show_info "• Containers config: /home/podman/.config/containers/containers.conf"
 show_info "• Storage config: /home/podman/.config/containers/storage.conf"
-show_info "• Socket setup script: /home/podman/.config/containers/socket-setup.sh"
-show_info "• Traefik example: /home/podman/.config/containers/traefik-example.md"
+show_info "• Socket setup script: /home/podman/.local/bin/socket-setup.sh"
+show_info "• Documentation: /home/podman/.config/containers/README-socket-activation.md"
 show_info "• Systemd user units: /home/podman/.config/systemd/user/"
 show_info "• Container units: /home/podman/.config/containers/systemd/"
+show_info ""
+show_info "📖 TRAEFIK SETUP GUIDE:"
+show_info "• For complete Traefik setup with socket activation, see:"
+show_info "  SETUP_TRAEFIK.md in the project root"
+show_info "• Covers real IP forwarding, dual-stack networking, and security"
 show_info ""
 
 ##########################################################################################

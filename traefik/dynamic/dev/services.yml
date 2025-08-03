@@ -1,0 +1,59 @@
+http:
+  routers:
+    monitor-dev:
+      rule: "Host(`monitor.localhost`)"
+      service: "monitor-dev"
+      entryPoints:
+        - "web"
+      priority: 90
+      middlewares:
+        - "dev-headers"
+        - "dev-rate-limit"
+    
+    vaultwarden-dev:
+      rule: "Host(`vaultwarden.localhost`)"
+      service: "vaultwarden-dev"
+      entryPoints:
+        - "web"
+      priority: 90
+      middlewares:
+        - "dev-headers"
+    
+    strapi-dev:
+      rule: "Host(`strapi.localhost`)"
+      service: "strapi-dev"
+      entryPoints:
+        - "web"
+      priority: 90
+      middlewares:
+        - "dev-headers"
+    
+    strapiadminer-dev:
+      rule: "Host(`strapiadminer.localhost`)"
+      service: "strapiadminer-dev"
+      entryPoints:
+        - "web"
+      priority: 90
+      middlewares:
+        - "dev-headers"
+  
+  services:
+    monitor-dev:
+      loadBalancer:
+        servers:
+          - url: "http://monitor-dev:3001"
+    
+    vaultwarden-dev:
+      loadBalancer:
+        servers:
+          - url: "http://vaultwarden-dev:80"
+    
+    strapi-dev:
+      loadBalancer:
+        servers:
+          - url: "http://strapi-dev:1337"
+    
+    strapiadminer-dev:
+      loadBalancer:
+        servers:
+          - url: "http://strapiAdminer-dev:8080" 

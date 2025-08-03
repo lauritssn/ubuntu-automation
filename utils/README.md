@@ -487,6 +487,42 @@ podman-socket start traefik-http     # Start socket service
 podman-socket logs traefik           # View service logs
 ```
 
+### `socket-setup.sh`
+
+**Purpose**: Create systemd socket units for socket-activated containers with dual-stack IPv4/IPv6 support
+
+**Features**:
+
+- Automatic IPv4 and IPv6 listener configuration
+- Service name validation (alphanumeric, hyphens, underscores)
+- Port number validation (1-65535 range)
+- User verification (must run as podman user)
+- Multiple port support for complex services
+- Comprehensive usage instructions and next steps
+
+**Installation**: Available in multiple locations:
+- User-specific: `/home/podman/.local/bin/socket-setup.sh`
+- System-wide: `/srv/apps/scripts/socket-setup.sh`
+- Compatibility symlink: `/home/podman/.config/containers/socket-setup.sh`
+
+**Usage**:
+
+```bash
+# Must be run as podman user
+sudo su - podman
+
+# Create socket for single port service
+socket-setup.sh nginx 80
+
+# Create socket for multi-port service (like Traefik)
+socket-setup.sh traefik 80 443 8080
+
+# Get help and examples
+socket-setup.sh --help
+```
+
+**Output**: Creates `~/.config/systemd/user/<service-name>.socket` with IPv4 and IPv6 listeners
+
 ## Testing & Validation
 
 ### `test_services.sh`

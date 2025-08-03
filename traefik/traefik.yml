@@ -1,0 +1,102 @@
+api:
+  dashboard: true
+  insecure: true
+
+ping: {}
+
+entryPoints:
+  web:
+    address: ":80"
+    # Socket activation handles both IPv4 and IPv6
+    forwardedHeaders:
+      trustedIPs:
+        - "172.18.0.0/16"
+        - "172.19.0.0/16"
+        - "172.20.0.0/16"
+        - "127.0.0.1/32"
+        - "::1/128"
+  websecure:
+    address: ":443"
+    forwardedHeaders:
+      trustedIPs:
+        - "172.18.0.0/16"
+        - "172.19.0.0/16"
+        - "172.20.0.0/16"
+        - "127.0.0.1/32"
+        - "::1/128"
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: "traefik"
+
+  # Dynamic configuration files
+  file:
+    directory: /etc/traefik/dynamic
+    watch: true
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: "tools@werktoej.dk" # Update with your email
+      storage: /data/acme.json
+      httpChallenge:
+        entryPoint: web
+
+log:
+  level: INFO
+
+accessLog:
+  format: json
+  fields:
+    defaultMode: keep
+    names:
+      ClientUsername: drop
+    headers:
+      defaultMode: keep
+      names:
+        Authorization: drop
+        Cookie: drop
+        Set-Cookie: drop
+
+metrics:
+  prometheus:
+    addEntryPointsLabels: true
+    addServicesLabels: true
+    addRoutersLabels: true
+
+# Global middlewares
+http:
+  middlewares:
+    # Security headers for all services
+    security-headers:
+      headers:
+        frameDeny: true
+        sslRedirect: true
+        browserXssFilter: true
+        contentTypeNosniff: true
+        forceSTSHeader: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000
+        customFrameOptionsValue: "SAMEORIGIN"
+        customRequestHeaders:
+          X-Forwarded-Proto: "https"
+        customResponseHeaders:
+          X-Frame-Options: "SAMEORIGIN"
+          X-Content-Type-Options: "nosniff"
+          Referrer-Policy: "strict-origin-when-cross-origin"
+          Permissions-Policy: "camera=(), microphone=(), geolocation=()"
+
+    # Rate limiting
+    rate-limit:
+      rateLimit:
+        average: 100
+        burst: 200
+
+    # Compression
+    compress:
+      compress:
+        excludedContentTypes:
+          - "text/event-stream"

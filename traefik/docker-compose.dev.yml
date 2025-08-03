@@ -1,0 +1,40 @@
+services:
+  traefik:
+    image: docker.io/traefik:v3.0
+    container_name: traefik-dev
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080" # Dashboard port for development
+    volumes:
+      - ${XDG_RUNTIME_DIR}/podman/podman.sock:/var/run/docker.sock:ro
+      - ./traefik-dev.yml:/etc/traefik/traefik.yml:ro
+      - ./dynamic/dev:/etc/traefik/dynamic/dev:ro
+      - ./data:/data
+    environment:
+      - TRAEFIK_LOG_LEVEL=${TRAEFIK_LOG_LEVEL:-DEBUG}
+    labels:
+      - "traefik.enable=true"
+      # Dashboard routing (optional - can also be accessed via :8080)
+      - "traefik.http.routers.dashboard-dev.rule=Host(`traefik.localhost`)"
+      - "traefik.http.routers.dashboard-dev.service=api@internal"
+      - "traefik.http.routers.dashboard-dev.entrypoints=web"
+      - "traefik.http.routers.dashboard-dev.priority=100"
+    networks:
+      - traefik
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+networks:
+  traefik:
+    name: traefik
+    driver: bridge
+
+volumes:
+  traefik-data:
+    driver: local

@@ -1,0 +1,31 @@
+http:
+  routers:
+    monitor-prod:
+      rule: "Host(`${MONITOR_URL}`)"
+      service: "monitor-prod"
+      entryPoints:
+        - "websecure"
+      tls:
+        certResolver: "letsencrypt"
+      priority: 90
+      middlewares:
+        - "security-headers"
+        - "monitor-auth"
+        - "rate-limit"
+  
+  services:
+    monitor-prod:
+      loadBalancer:
+        servers:
+          - url: "http://monitor-prod:3001"
+        healthCheck:
+          path: "/health"
+          interval: "30s"
+          timeout: "5s"
+  
+  middlewares:
+    monitor-auth:
+      basicAuth:
+        users:
+          # Generate with: htpasswd -nb admin password
+          - "admin:$2y$10$..." # Replace with actual hash 
