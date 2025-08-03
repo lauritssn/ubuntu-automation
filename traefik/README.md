@@ -192,6 +192,37 @@ Add the domain to your `.env` file:
 MY_SERVICE_DOMAIN=service.yourdomain.com
 ```
 
+### Hello World Example (Production)
+
+The production configuration includes a hello world example service that demonstrates proper production patterns:
+
+**Features:**
+- **HTTPS by default** with automatic Let's Encrypt certificates
+- **Security headers** (HSTS, frame protection, XSS protection)
+- **Rate limiting** to prevent abuse
+- **Health checks** for reliability
+- **Compression** for better performance
+
+**Configuration:**
+- Service: `traefik/dynamic/prod/hello-world.yml`
+- Domain: `${HELLO_WORLD_DOMAIN:-hello.${APP_DOMAIN}}`
+- Container: `hello-world-prod` (Traefik whoami image)
+
+**To test the hello world service:**
+
+```bash
+# Set your domain in .env file
+HELLO_WORLD_DOMAIN=hello.yourdomain.com
+
+# Test HTTP (will redirect to HTTPS in production)
+curl -H "Host: hello.yourdomain.com" http://localhost
+
+# Test HTTPS
+curl -H "Host: hello.yourdomain.com" https://localhost
+```
+
+The hello world service shows your request details including headers, which is useful for debugging reverse proxy configuration.
+
 ## 🔍 Monitoring and Debugging
 
 ### Check Service Status

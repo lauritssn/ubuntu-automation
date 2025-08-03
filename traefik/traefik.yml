@@ -1,10 +1,11 @@
 api:
   dashboard: true
-  insecure: true
+  insecure: false  # Secure dashboard for production
 
 ping: {}
 
-# EntryPoints are configured via environment variables for socket activation
+# EntryPoints configured via environment variables for socket activation
+# Socket activation provides these ports: 80, 443, 8080
 # TRAEFIK_ENTRYPOINTS_WEB_ADDRESS=:80
 # TRAEFIK_ENTRYPOINTS_WEBSECURE_ADDRESS=:443  
 # TRAEFIK_ENTRYPOINTS_TRAEFIK_ADDRESS=:8080
@@ -23,15 +24,17 @@ providers:
 certificatesResolvers:
   letsencrypt:
     acme:
-      email: "${LETSENCRYPT_EMAIL}" # Updated to use environment variable
+      email: "${LETSENCRYPT_EMAIL}"
       storage: /data/acme.json
       httpChallenge:
         entryPoint: web
 
 log:
   level: ${TRAEFIK_LOG_LEVEL:-INFO}
+  filePath: "/var/log/traefik/traefik.log"
 
 accessLog:
+  filePath: "/var/log/traefik/access.log"
   format: json
   fields:
     defaultMode: keep

@@ -1,6 +1,6 @@
 services:
   traefik:
-    image: docker.io/traefik:${TRAEFIK_VERSION:-v3.0}
+    image: docker.io/traefik:${TRAEFIK_VERSION:-v3.5.0}
     container_name: traefik-prod
     restart: unless-stopped
     # NO port mappings - socket activation handles port binding for client IP preservation
@@ -8,7 +8,8 @@ services:
       - ${XDG_RUNTIME_DIR}/podman/podman.sock:/var/run/docker.sock:ro
       - ./traefik.yml:/etc/traefik/traefik.yml:ro
       - ./dynamic:/etc/traefik/dynamic:ro
-      - ./data:/data
+      - ./data:/data:Z
+      - ./logs:/var/log/traefik:Z
     networks:
       - traefik
     environment:
@@ -18,6 +19,8 @@ services:
       - DEFAULT_RATE_LIMIT_BURST=${DEFAULT_RATE_LIMIT_BURST:-100}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
       - TRAEFIK_DASHBOARD_USERS=${TRAEFIK_DASHBOARD_USERS}
+      - APP_DOMAIN=${APP_DOMAIN}
+      - HELLO_WORLD_DOMAIN=${HELLO_WORLD_DOMAIN:-hello.${APP_DOMAIN}}
       # Socket activation entrypoint configuration
       - TRAEFIK_ENTRYPOINTS_WEB_ADDRESS=:80
       - TRAEFIK_ENTRYPOINTS_WEBSECURE_ADDRESS=:443
@@ -36,23 +39,47 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    labels:
+      - "traefik.enable=true"
+      # Dashboard routing
+      - "traefik.http.routers.dashboard-prod.rule=Host(`${TRAEFIK_DASHBOARD_DOMAIN}`)"
+      - "traefik.http.routers.dashboard-prod.service=api@internal"
+      - "traefik.http.routers.dashboard-prod.entrypoints=websecure"
+      - "traefik.http.routers.dashboard-prod.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.dashboard-prod.middlewares=basic-auth@file,security-headers@file"
+      - "traefik.http.routers.dashboard-prod.priority=100"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  # Example service - remove if not needed
+  # Example service - hello world
   hello-world:
     image: docker.io/traefik/whoami:${WHOAMI_VERSION:-latest}
     container_name: hello-world-prod
     restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.hello.rule=Host(`${HELLO_WORLD_DOMAIN:-hello.${APP_DOMAIN}}`)"
-      - "traefik.http.routers.hello.entrypoints=web,websecure"
-      - "traefik.http.routers.hello.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.hello.middlewares=security-headers,rate-limit"
-      - "traefik.http.services.hello.loadbalancer.server.port=80"
     networks:
       - traefik
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    # Configuration via dynamic files - see dynamic/prod/hello-world.yml
 
 networks:
   traefik:
     name: ${TRAEFIK_NETWORK:-traefik}
     external: true
+
+volumes:
+  traefik-logs:
+    driver: local

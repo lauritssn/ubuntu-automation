@@ -1,0 +1,27 @@
+http:
+  routers:
+    hello-world-prod:
+      rule: "Host(`${HELLO_WORLD_DOMAIN:-hello.${APP_DOMAIN}}`)"
+      service: "hello-world-prod"
+      entryPoints:
+        - "web"
+        - "websecure"
+      priority: 90
+      middlewares:
+        - "security-headers"
+        - "rate-limit"
+        - "compress"
+      tls:
+        certResolver: "letsencrypt"
+
+  services:
+    hello-world-prod:
+      loadBalancer:
+        servers:
+          - url: "http://hello-world-prod:80"
+        healthCheck:
+          path: "/"
+          interval: "30s"
+          timeout: "5s"
+          headers:
+            Host: "${HELLO_WORLD_DOMAIN:-hello.${APP_DOMAIN}}" 

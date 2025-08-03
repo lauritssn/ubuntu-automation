@@ -1,14 +1,17 @@
 api:
   dashboard: true
-  insecure: true
+  insecure: true  # Simplified dashboard for development
 
 ping: {}
 
-# EntryPoints are configured via environment variables for local development
-# Development uses direct port mapping (no socket activation)
-# TRAEFIK_ENTRYPOINTS_WEB_ADDRESS=:80
-# TRAEFIK_ENTRYPOINTS_WEBSECURE_ADDRESS=:443
-# TRAEFIK_ENTRYPOINTS_TRAEFIK_ADDRESS=:8080
+# EntryPoints for development - direct port binding
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+  traefik:
+    address: ":8080"
 
 providers:
   docker:
@@ -21,10 +24,18 @@ providers:
     directory: /etc/traefik/dynamic
     watch: true
 
-# Development-specific settings
+# Development-specific settings - no HTTPS complexity
 log:
   level: ${TRAEFIK_LOG_LEVEL:-DEBUG}
+  filePath: "/var/log/traefik/traefik.log"
 
 accessLog:
+  filePath: "/var/log/traefik/access.log"
   format: common
+
+metrics:
+  prometheus:
+    addEntryPointsLabels: true
+    addServicesLabels: true
+    addRoutersLabels: true
 
