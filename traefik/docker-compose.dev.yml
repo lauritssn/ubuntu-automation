@@ -1,23 +1,36 @@
 services:
   traefik:
-    image: docker.io/traefik:v3.0
+    image: docker.io/traefik:${TRAEFIK_VERSION:-v3.0}
     container_name: traefik-dev
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
-      - "8080:8080" # Dashboard port for development
+      - "${TRAEFIK_WEB_PORT:-80}:80"
+      - "${TRAEFIK_WEBSECURE_PORT:-443}:443"
+      - "${TRAEFIK_DASHBOARD_PORT:-8080}:8080" # Dashboard port for development
     volumes:
       - ${XDG_RUNTIME_DIR}/podman/podman.sock:/var/run/docker.sock:ro
       - ./traefik-dev.yml:/etc/traefik/traefik.yml:ro
-      - ./dynamic/dev:/etc/traefik/dynamic/dev:ro
+      - ./dynamic:/etc/traefik/dynamic:ro
       - ./data:/data
     environment:
       - TRAEFIK_LOG_LEVEL=${TRAEFIK_LOG_LEVEL:-DEBUG}
+      - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL}
+      - DEFAULT_RATE_LIMIT_AVERAGE=${DEFAULT_RATE_LIMIT_AVERAGE:-50}
+      - DEFAULT_RATE_LIMIT_BURST=${DEFAULT_RATE_LIMIT_BURST:-100}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      - TRAEFIK_DASHBOARD_USERS=${TRAEFIK_DASHBOARD_USERS}
+      # Local development entrypoint configuration (no socket activation)
+      - TRAEFIK_ENTRYPOINTS_WEB_ADDRESS=:80
+      - TRAEFIK_ENTRYPOINTS_WEBSECURE_ADDRESS=:443
+      - TRAEFIK_ENTRYPOINTS_TRAEFIK_ADDRESS=:8080
+      # Docker provider configuration
+      - TRAEFIK_PROVIDERS_DOCKER=true
+      - TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT=false
+      - TRAEFIK_PROVIDERS_DOCKER_NETWORK=${TRAEFIK_NETWORK:-traefik}
     labels:
       - "traefik.enable=true"
       # Dashboard routing (optional - can also be accessed via :8080)
-      - "traefik.http.routers.dashboard-dev.rule=Host(`traefik.localhost`)"
+      - "traefik.http.routers.dashboard-dev.rule=Host(`${TRAEFIK_DASHBOARD_DOMAIN:-traefik.localhost}`)"
       - "traefik.http.routers.dashboard-dev.service=api@internal"
       - "traefik.http.routers.dashboard-dev.entrypoints=web"
       - "traefik.http.routers.dashboard-dev.priority=100"
@@ -30,9 +43,29 @@ services:
       retries: 3
       start_period: 30s
 
+  # Hello world example service for development
+  hello-world:
+    image: docker.io/traefik/whoami:${WHOAMI_VERSION:-latest}
+    container_name: hello-world-dev
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.hello-dev.rule=Host(`${HELLO_WORLD_DOMAIN:-hello.localhost}`)"
+      - "traefik.http.routers.hello-dev.entrypoints=web"
+      - "traefik.http.routers.hello-dev.middlewares=dev-headers,dev-rate-limit"
+      - "traefik.http.services.hello-dev.loadbalancer.server.port=80"
+    networks:
+      - traefik
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
 networks:
   traefik:
-    name: traefik
+    name: ${TRAEFIK_NETWORK:-traefik}
     driver: bridge
 
 volumes:

@@ -1,17 +1,35 @@
 services:
   traefik:
-    image: docker.io/traefik:v3.0
+    image: docker.io/traefik:${TRAEFIK_VERSION:-v3.0}
     container_name: traefik-prod
     restart: unless-stopped
+    # NO port mappings - socket activation handles port binding for client IP preservation
     volumes:
       - ${XDG_RUNTIME_DIR}/podman/podman.sock:/var/run/docker.sock:ro
       - ./traefik.yml:/etc/traefik/traefik.yml:ro
-      - ./dynamic/prod:/etc/traefik/dynamic:ro
+      - ./dynamic:/etc/traefik/dynamic:ro
       - ./data:/data
     networks:
       - traefik
     environment:
       - TRAEFIK_LOG_LEVEL=${TRAEFIK_LOG_LEVEL:-INFO}
+      - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL}
+      - DEFAULT_RATE_LIMIT_AVERAGE=${DEFAULT_RATE_LIMIT_AVERAGE:-50}
+      - DEFAULT_RATE_LIMIT_BURST=${DEFAULT_RATE_LIMIT_BURST:-100}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      - TRAEFIK_DASHBOARD_USERS=${TRAEFIK_DASHBOARD_USERS}
+      # Socket activation entrypoint configuration
+      - TRAEFIK_ENTRYPOINTS_WEB_ADDRESS=:80
+      - TRAEFIK_ENTRYPOINTS_WEBSECURE_ADDRESS=:443
+      - TRAEFIK_ENTRYPOINTS_TRAEFIK_ADDRESS=:8080
+      # Forwarded headers for client IP preservation
+      - TRAEFIK_ENTRYPOINTS_WEB_FORWARDEDHEADERS_TRUSTEDIPS=${TRUSTED_IPS:-172.18.0.0/16,172.19.0.0/16,172.20.0.0/16,127.0.0.1/32,::1/128}
+      - TRAEFIK_ENTRYPOINTS_WEBSECURE_FORWARDEDHEADERS_TRUSTEDIPS=${TRUSTED_IPS:-172.18.0.0/16,172.19.0.0/16,172.20.0.0/16,127.0.0.1/32,::1/128}
+      - TRAEFIK_ENTRYPOINTS_TRAEFIK_FORWARDEDHEADERS_TRUSTEDIPS=${TRUSTED_IPS:-172.18.0.0/16,172.19.0.0/16,172.20.0.0/16,127.0.0.1/32,::1/128}
+      # Docker provider configuration
+      - TRAEFIK_PROVIDERS_DOCKER=true
+      - TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT=false
+      - TRAEFIK_PROVIDERS_DOCKER_NETWORK=${TRAEFIK_NETWORK:-traefik}
     healthcheck:
       test: ["CMD", "traefik", "healthcheck", "--ping"]
       interval: 30s
@@ -21,12 +39,12 @@ services:
 
   # Example service - remove if not needed
   hello-world:
-    image: docker.io/traefik/whoami
+    image: docker.io/traefik/whoami:${WHOAMI_VERSION:-latest}
     container_name: hello-world-prod
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.hello.rule=Host(`hello.werktoej.dk`)"
+      - "traefik.http.routers.hello.rule=Host(`${HELLO_WORLD_DOMAIN:-hello.${APP_DOMAIN}}`)"
       - "traefik.http.routers.hello.entrypoints=web,websecure"
       - "traefik.http.routers.hello.tls.certresolver=letsencrypt"
       - "traefik.http.routers.hello.middlewares=security-headers,rate-limit"
@@ -36,5 +54,5 @@ services:
 
 networks:
   traefik:
-    name: traefik
+    name: ${TRAEFIK_NETWORK:-traefik}
     external: true

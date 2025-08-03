@@ -4,26 +4,10 @@ api:
 
 ping: {}
 
-entryPoints:
-  web:
-    address: ":80"
-    # Socket activation handles both IPv4 and IPv6
-    forwardedHeaders:
-      trustedIPs:
-        - "172.18.0.0/16"
-        - "172.19.0.0/16"
-        - "172.20.0.0/16"
-        - "127.0.0.1/32"
-        - "::1/128"
-  websecure:
-    address: ":443"
-    forwardedHeaders:
-      trustedIPs:
-        - "172.18.0.0/16"
-        - "172.19.0.0/16"
-        - "172.20.0.0/16"
-        - "127.0.0.1/32"
-        - "::1/128"
+# EntryPoints are configured via environment variables for socket activation
+# TRAEFIK_ENTRYPOINTS_WEB_ADDRESS=:80
+# TRAEFIK_ENTRYPOINTS_WEBSECURE_ADDRESS=:443  
+# TRAEFIK_ENTRYPOINTS_TRAEFIK_ADDRESS=:8080
 
 providers:
   docker:
@@ -39,13 +23,13 @@ providers:
 certificatesResolvers:
   letsencrypt:
     acme:
-      email: "tools@werktoej.dk" # Update with your email
+      email: "${LETSENCRYPT_EMAIL}" # Updated to use environment variable
       storage: /data/acme.json
       httpChallenge:
         entryPoint: web
 
 log:
-  level: INFO
+  level: ${TRAEFIK_LOG_LEVEL:-INFO}
 
 accessLog:
   format: json
@@ -65,38 +49,3 @@ metrics:
     addEntryPointsLabels: true
     addServicesLabels: true
     addRoutersLabels: true
-
-# Global middlewares
-http:
-  middlewares:
-    # Security headers for all services
-    security-headers:
-      headers:
-        frameDeny: true
-        sslRedirect: true
-        browserXssFilter: true
-        contentTypeNosniff: true
-        forceSTSHeader: true
-        stsIncludeSubdomains: true
-        stsPreload: true
-        stsSeconds: 31536000
-        customFrameOptionsValue: "SAMEORIGIN"
-        customRequestHeaders:
-          X-Forwarded-Proto: "https"
-        customResponseHeaders:
-          X-Frame-Options: "SAMEORIGIN"
-          X-Content-Type-Options: "nosniff"
-          Referrer-Policy: "strict-origin-when-cross-origin"
-          Permissions-Policy: "camera=(), microphone=(), geolocation=()"
-
-    # Rate limiting
-    rate-limit:
-      rateLimit:
-        average: 100
-        burst: 200
-
-    # Compression
-    compress:
-      compress:
-        excludedContentTypes:
-          - "text/event-stream"

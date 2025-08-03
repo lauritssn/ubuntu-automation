@@ -268,6 +268,7 @@ else
 fi
 
 # Environment variables for optimal operation
+export XDG_RUNTIME_DIR="/run/user/$UID"
 export BUILDAH_ISOLATION=chroot
 export CONTAINER_HOST="unix:///run/user/$UID/podman/podman.sock"
 
@@ -698,7 +699,7 @@ show_info "• Create socket-activated services with the helper script"
 show_info "• Example socket activation setup:"
 show_info "  sudo su - podman"
 show_info "  ~/.local/bin/socket-setup.sh myservice 80 443"
-show_info "• IPv4 and IPv6 listeners created automatically"
+show_info "• IPv4 listeners created automatically (IPv6 commented out due to kernel limitations)"
 show_info ""
 show_info "🔧 CONFIGURATION FILES:"
 show_info "• Containers config: /home/podman/.config/containers/containers.conf"

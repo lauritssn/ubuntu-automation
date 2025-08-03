@@ -1,0 +1,83 @@
+http:
+  middlewares:
+    # Production security headers
+    security-headers:
+      headers:
+        frameDeny: true
+        sslRedirect: true
+        browserXssFilter: true
+        contentTypeNosniff: true
+        forceSTSHeader: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000
+        customFrameOptionsValue: "SAMEORIGIN"
+        customRequestHeaders:
+          X-Forwarded-Proto: "https"
+        customResponseHeaders:
+          X-Frame-Options: "SAMEORIGIN"
+          X-Content-Type-Options: "nosniff"
+          Referrer-Policy: "strict-origin-when-cross-origin"
+          Permissions-Policy: "camera=(), microphone=(), geolocation=()"
+
+    # Development security headers (relaxed)
+    dev-headers:
+      headers:
+        frameDeny: false
+        browserXssFilter: true
+        contentTypeNosniff: true
+        customRequestHeaders:
+          X-Forwarded-Proto: "http"
+
+    # Production rate limiting
+    rate-limit:
+      rateLimit:
+        average: ${DEFAULT_RATE_LIMIT_AVERAGE:-100}
+        burst: ${DEFAULT_RATE_LIMIT_BURST:-200}
+
+    # Development rate limiting (relaxed)
+    dev-rate-limit:
+      rateLimit:
+        average: 1000
+        burst: 2000
+
+    # Compression middleware
+    compress:
+      compress:
+        excludedContentTypes:
+          - "text/event-stream"
+
+    # CORS middleware for APIs
+    cors-api:
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        accessControlMaxAge: 100
+        hostsProxyHeaders:
+          - "X-Forwarded-Host"
+        accessControlAllowOriginList:
+          - "${ALLOWED_ORIGINS}"
+
+    # Basic auth template (override users in specific services)
+    basic-auth:
+      basicAuth:
+        users:
+          - "${TRAEFIK_DASHBOARD_USERS}"
+
+    # Cache headers for static content
+    cache-headers:
+      headers:
+        customResponseHeaders:
+          Cache-Control: "public, max-age=3600"
+
+    # No-cache headers for dynamic content
+    no-cache-headers:
+      headers:
+        customResponseHeaders:
+          Cache-Control: "no-cache, no-store, must-revalidate"
+          Pragma: "no-cache" 
+          Expires: "0" 

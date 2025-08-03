@@ -1,0 +1,21 @@
+http:
+  routers:
+    hello-world-dev:
+      rule: "Host(`hello.localhost`)"
+      service: "hello-world-dev"
+      entryPoints:
+        - "web"
+      priority: 90
+      middlewares:
+        - "dev-headers"
+        - "dev-rate-limit"
+
+  services:
+    hello-world-dev:
+      loadBalancer:
+        servers:
+          - url: "http://hello-world-dev:80"
+        healthCheck:
+          path: "/"
+          interval: "30s"
+          timeout: "5s" 
