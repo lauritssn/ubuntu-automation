@@ -5,7 +5,7 @@ run_as_podman() {
     if [ "$(whoami)" = "podman" ]; then
         # Already running as podman user
         export XDG_RUNTIME_DIR="/run/user/$(id -u)"
-        bash -c "$1"
+        eval "$1"
     else
         # Running as different user, use sudo
         sudo -u podman bash -c "export XDG_RUNTIME_DIR=\"/run/user/\$(id -u)\"; $1"

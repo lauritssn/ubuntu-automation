@@ -39,6 +39,12 @@ if [ "$(whoami)" = "podman" ]; then
     ensure_socket
     execute_podman "$@"
 else
+    # Check if podman user exists
+    if ! id -u podman >/dev/null 2>&1; then
+        echo "Error: podman user does not exist"
+        exit 1
+    fi
+    
     # Running as different user - use sudo
     sudo -u podman bash -c '
         export XDG_RUNTIME_DIR="/run/user/$(id -u)"
