@@ -1,0 +1,85 @@
+services:
+  traefik:
+    image: docker.io/traefik:${TRAEFIK_VERSION:-v3.5.0}
+    container_name: traefik-test
+    restart: unless-stopped
+    # NO port mappings - socket activation handles port binding for client IP preservation
+    volumes:
+      - ${XDG_RUNTIME_DIR}/podman/podman.sock:/var/run/docker.sock:ro
+      - ./traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./dynamic:/etc/traefik/dynamic:ro
+      - ./data:/data:Z
+      - ./logs:/var/log/traefik:Z
+    networks:
+      - traefik
+    environment:
+      - TRAEFIK_LOG_LEVEL=${TRAEFIK_LOG_LEVEL:-INFO}
+      - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL}
+      - DEFAULT_RATE_LIMIT_AVERAGE=${DEFAULT_RATE_LIMIT_AVERAGE:-50}
+      - DEFAULT_RATE_LIMIT_BURST=${DEFAULT_RATE_LIMIT_BURST:-100}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      - TRAEFIK_DASHBOARD_USERS=${TRAEFIK_DASHBOARD_USERS}
+      - APP_DOMAIN=${APP_DOMAIN}
+      - HELLO_WORLD_DOMAIN=${HELLO_WORLD_DOMAIN:-hello.${APP_DOMAIN}}
+      # Socket activation entrypoint configuration
+      - TRAEFIK_ENTRYPOINTS_WEB_ADDRESS=:80
+      - TRAEFIK_ENTRYPOINTS_WEBSECURE_ADDRESS=:443
+      - TRAEFIK_ENTRYPOINTS_TRAEFIK_ADDRESS=:8080
+      # Forwarded headers for client IP preservation
+      - TRAEFIK_ENTRYPOINTS_WEB_FORWARDEDHEADERS_TRUSTEDIPS=${TRUSTED_IPS:-172.18.0.0/16,172.19.0.0/16,172.20.0.0/16,127.0.0.1/32,::1/128}
+      - TRAEFIK_ENTRYPOINTS_WEBSECURE_FORWARDEDHEADERS_TRUSTEDIPS=${TRUSTED_IPS:-172.18.0.0/16,172.19.0.0/16,172.20.0.0/16,127.0.0.1/32,::1/128}
+      - TRAEFIK_ENTRYPOINTS_TRAEFIK_FORWARDEDHEADERS_TRUSTEDIPS=${TRUSTED_IPS:-172.18.0.0/16,172.19.0.0/16,172.20.0.0/16,127.0.0.1/32,::1/128}
+      # Docker provider configuration
+      - TRAEFIK_PROVIDERS_DOCKER=true
+      - TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT=false
+      - TRAEFIK_PROVIDERS_DOCKER_NETWORK=${TRAEFIK_NETWORK:-traefik}
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    labels:
+      - "traefik.enable=true"
+      # Dashboard routing
+      - "traefik.http.routers.dashboard-test.rule=Host(`${TRAEFIK_DASHBOARD_DOMAIN}`)"
+      - "traefik.http.routers.dashboard-test.service=api@internal"
+      - "traefik.http.routers.dashboard-test.entrypoints=websecure"
+      - "traefik.http.routers.dashboard-test.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.dashboard-test.middlewares=basic-auth@file,security-headers@file"
+      - "traefik.http.routers.dashboard-test.priority=100"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Example service - hello world
+  hello-world:
+    image: docker.io/traefik/whoami:${WHOAMI_VERSION:-latest}
+    container_name: hello-world-test
+    restart: unless-stopped
+    networks:
+      - traefik
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    # Configuration via dynamic files - see dynamic/test/hello-world.yml
+
+networks:
+  traefik:
+    name: ${TRAEFIK_NETWORK:-traefik}
+    external: true
+
+volumes:
+  traefik-logs:
+    driver: local

@@ -1,0 +1,21 @@
+http:
+  routers:
+    hello-world-test:
+      rule: "Host(`hello.localhost`)"
+      service: "hello-world-test"
+      entryPoints:
+        - "web"
+      priority: 90
+      middlewares:
+        - "test-headers"
+        - "test-rate-limit"
+
+  services:
+    hello-world-test: 
+      loadBalancer:
+        servers:
+          - url: "http://hello-world-test:80"
+        healthCheck:
+          path: "/"
+          interval: "30s"
+          timeout: "5s" 

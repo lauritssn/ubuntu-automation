@@ -29,6 +29,15 @@ http:
         customRequestHeaders:
           X-Forwarded-Proto: "http"
 
+    # Test security headers (relaxed)
+    test-headers:
+      headers:
+        frameDeny: false
+        browserXssFilter: true
+        contentTypeNosniff: true
+        customRequestHeaders:
+          X-Forwarded-Proto: "http"
+
     # Production rate limiting
     rate-limit:
       rateLimit:
@@ -37,6 +46,12 @@ http:
 
     # Development rate limiting (relaxed)
     dev-rate-limit:
+      rateLimit:
+        average: 1000
+        burst: 2000
+
+    # Test rate limiting (relaxed)
+    test-rate-limit:
       rateLimit:
         average: 1000
         burst: 2000
@@ -79,5 +94,5 @@ http:
       headers:
         customResponseHeaders:
           Cache-Control: "no-cache, no-store, must-revalidate"
-          Pragma: "no-cache" 
-          Expires: "0" 
+          Pragma: "no-cache"
+          Expires: "0"
