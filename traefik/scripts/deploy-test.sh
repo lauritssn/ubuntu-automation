@@ -30,8 +30,8 @@ chmod 600 data/acme.json
 systemctl --user daemon-reload
 
 # Enable and start network first
-systemctl --user enable traefik.service
-systemctl --user start traefik.service
+systemctl --user enable traefik-network.service
+systemctl --user start traefik-network.service
 
 # Enable and start socket
 systemctl --user enable traefik-test.socket
