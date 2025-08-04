@@ -29,20 +29,16 @@ chmod 600 data/acme.json
 # Reload systemd to pick up new Quadlet files
 systemctl --user daemon-reload
 
-# Enable and start network first
-systemctl --user enable traefik-network.service
+# Start network first
 systemctl --user start traefik-network.service
 
-# Enable and start socket
-systemctl --user enable traefik-test.socket
+# Start socket
 systemctl --user start traefik-test.socket
 
-# Enable and start Traefik container
-systemctl --user enable traefik-test.service
+# Start Traefik container
 systemctl --user start traefik-test.service
 
-# Enable and start hello-world service
-systemctl --user enable hello-world-test.service
+# Start hello-world service
 systemctl --user start hello-world-test.service
 
 echo "Test environment deployed successfully!"
