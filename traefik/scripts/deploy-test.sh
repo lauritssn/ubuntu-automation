@@ -27,23 +27,31 @@ touch data/acme.json
 chmod 600 data/acme.json
 
 # Reload systemd to pick up new Quadlet files
+echo "Reloading systemd configuration..."
 systemctl --user daemon-reload
 
 # Start network first
+echo "Starting Traefik network..."
+systemctl --user enable traefik-network.service
 systemctl --user start traefik-network.service
 
-# Start socket
+# Enable and start socket (this will start the service on first connection)
+echo "Starting Traefik socket..."
+systemctl --user enable traefik-test.socket
 systemctl --user start traefik-test.socket
 
-# Start Traefik container
-systemctl --user start traefik-test.service
-
 # Start hello-world service
+echo "Starting hello-world service..."
+systemctl --user enable hello-world-test.service
 systemctl --user start hello-world-test.service
 
-echo "Test environment deployed successfully!"
-echo "Traefik dashboard should be available at: http://$(hostname):8080"
-echo "Hello world service available at: http://hello.${APP_DOMAIN:-localhost}"
+echo "✅ Test environment deployed successfully!"
+
+# Get the actual IP address
+LOCAL_IP=$(ip route get 1.1.1.1 | awk '{print $7; exit}' 2>/dev/null || echo "localhost")
+echo "📊 Traefik dashboard should be available at: http://${LOCAL_IP}:8080"
+echo "🌍 Hello world service available at: http://hello.${APP_DOMAIN:-localhost}"
 
 # Show status
-systemctl --user --no-pager status traefik-test.service hello-world-test.service
+echo "📋 Service status:"
+systemctl --user --no-pager status traefik-test.socket hello-world-test.service
