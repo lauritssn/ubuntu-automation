@@ -9,7 +9,6 @@ AutoUpdate=registry
 ContainerName=hello-world-test
 Image=docker.io/traefik/whoami:latest
 SecurityLabelDisable=true
-User=podman:podman
 
 # Network
 Network=traefik

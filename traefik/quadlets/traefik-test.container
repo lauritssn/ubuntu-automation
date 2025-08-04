@@ -10,7 +10,6 @@ AutoUpdate=registry
 ContainerName=traefik-test
 Image=docker.io/traefik:v3.5.0
 SecurityLabelDisable=true
-User=podman:podman
 
 # Volumes
 Volume=%h/NoBackup.nosync/Projects/ubuntu-automation/traefik/traefik-test.yml:/etc/traefik/traefik.yml:ro,Z
