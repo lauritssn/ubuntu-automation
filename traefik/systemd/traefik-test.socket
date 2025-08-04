@@ -9,6 +9,7 @@ ListenStream=0.0.0.0:8080
 FileDescriptorName=web
 FreeBind=true
 NoDelay=true
+Service=traefik-test.service
 
 [Install]
-WantedBy=sockets.target
+WantedBy=sockets.target 
