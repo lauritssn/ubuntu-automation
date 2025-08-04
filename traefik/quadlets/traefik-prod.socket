@@ -1,0 +1,14 @@
+[Unit]
+Description=Traefik Production Socket Activation
+Documentation=https://doc.traefik.io/traefik/
+
+[Socket]
+ListenStream=0.0.0.0:80
+ListenStream=0.0.0.0:443
+ListenStream=0.0.0.0:8080
+FileDescriptorName=web
+FreeBind=true
+NoDelay=true
+
+[Install]
+WantedBy=sockets.target

@@ -1,314 +1,223 @@
-# Traefik Dynamic Configuration Setup
+# Traefik Container Setup
 
-This directory contains a comprehensive Traefik reverse proxy setup with dynamic service configuration, supporting both development and production environments.
+This repository contains configurations for running Traefik reverse proxy in different environments using modern containerization approaches.
 
-## 📁 Directory Structure
+## Architecture
+
+### Development Environment
+- Uses **Docker Compose** for simplicity
+- Direct port binding (80, 443, 8080)
+- Simplified configuration for local development
+- No socket activation (not needed for dev)
+
+### Test/Production Environments
+- Uses **Podman Quadlets** for systemd integration
+- **Socket activation** for client IP preservation
+- Rootless containers with full security isolation
+- Automatic container updates via systemd
+
+## Directory Structure
 
 ```
 traefik/
-├── traefik.yml              # Main production configuration
-├── traefik-dev.yml          # Development-specific configuration
-├── docker-compose.prod.yml  # Production (socket activation)
-├── docker-compose.dev.yml   # Development (direct ports)
-├── env.template             # Environment variables template
-├── dynamic/
-│   ├── dev/                 # Development dynamic configs
-│   │   ├── dashboard.yml    # Dashboard routing
-│   │   └── services.yml     # Development services
-│   └── prod/                # Production dynamic configs
-│       ├── strapi.yml       # Strapi service
-│       ├── vaultwarden.yml  # Vaultwarden service
-│       └── monitor.yml      # Monitoring service
-└── data/                    # Persistent data (certificates, etc.)
+├── quadlets/                   # Quadlet configurations for test/prod
+│   ├── traefik.network
+│   ├── traefik-test.socket
+│   ├── traefik-test.container
+│   ├── traefik-prod.socket
+│   ├── traefik-prod.container
+│   ├── hello-world-test.container
+│   └── hello-world-prod.container
+├── scripts/                    # Deployment and management scripts
+│   ├── deploy-dev.sh
+│   ├── deploy-test.sh
+│   ├── deploy-prod.sh
+│   ├── cleanup-dev.sh
+│   ├── cleanup-test.sh
+│   └── cleanup-prod.sh
+├── docker-compose.dev.yml      # Development compose file
+├── docker-compose.test.yml     # Legacy (archived)
+├── docker-compose.prod.yml     # Legacy (archived)
+├── traefik-dev.yml            # Dev Traefik config
+├── traefik-test.yml           # Test Traefik config  
+├── traefik.yml                # Production Traefik config
+├── dynamic/                   # Dynamic configuration files
+└── data/                      # Persistent data (ACME certs, etc.)
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
-### Development Setup
-
-1. **Set up Podman environment:**
-
-   ```bash
-   # Set XDG_RUNTIME_DIR if not set
-   export XDG_RUNTIME_DIR="/run/user/$(id -u)"
-
-   # Start Podman socket (if not already running)
-   systemctl --user enable --now podman.socket
-   ```
-
-2. **Create environment file:**
-
-   ```bash
-   cp env.template .env
-   # Edit .env with your settings (especially XDG_RUNTIME_DIR)
-   ```
-
-3. **Create Traefik network:**
-
-   ```bash
-   podman network create traefik
-   ```
-
-4. **Start development environment:**
-
-   ```bash
-   podman-compose -f docker-compose.dev.yml up -d
-   ```
-
-5. **Access dashboard:**
-   - Direct: http://localhost:8080
-   - Via proxy: http://traefik.localhost
-
-### Production Setup (with Socket Activation)
-
-1. **Setup as podman user:**
-
-   ```bash
-   sudo su - podman
-   ```
-
-2. **Create socket activation:**
-
-   ```bash
-   /srv/apps/scripts/socket-setup.sh traefik 80 443 8080
-   ```
-
-3. **Create systemd service:**
-
-   ```bash
-   cat > ~/.config/containers/systemd/traefik.container << 'EOF'
-   [Unit]
-   Description=Traefik reverse proxy
-   Requires=traefik.socket
-   After=traefik.socket
-
-   [Service]
-   Type=oneshot
-   RemainAfterExit=true
-   WorkingDirectory=/srv/apps/deploy/WTools/traefik
-   ExecStart=/usr/bin/podman-compose -f docker-compose.prod.yml up -d
-   ExecStop=/usr/bin/podman-compose -f docker-compose.prod.yml down
-   TimeoutStartSec=60
-   TimeoutStopSec=30
-
-   [Install]
-   WantedBy=default.target
-   EOF
-   ```
-
-4. **Enable and start:**
-   ```bash
-   systemctl --user daemon-reload
-   systemctl --user enable traefik.socket traefik.service
-   systemctl --user start traefik.socket
-   ```
-
-## 🔧 Configuration Files
-
-### Main Configurations
-
-- **`traefik.yml`**: Production configuration with security headers, rate limiting, and socket activation support
-- **`traefik-dev.yml`**: Development configuration with debug logging and relaxed security
-
-### Dynamic Configurations
-
-Service configurations are automatically loaded from the `dynamic/` directory:
-
-- **Development** (`dynamic/dev/`): Uses `.localhost` domains for easy local testing
-- **Production** (`dynamic/prod/`): Uses environment variables for domain configuration
-
-## 🛡️ Security Features
-
-### Production Security
-
-- **HTTPS by default** with automatic Let's Encrypt certificates
-- **Security headers** (HSTS, frame protection, XSS protection)
-- **Rate limiting** to prevent abuse
-- **Trusted IP forwarding** for real client IP preservation
-- **Basic authentication** for sensitive services
-
-### Development Convenience
-
-- **HTTP access** for easy local development
-- **Debug logging** for troubleshooting
-- **Relaxed rate limits** for development workflows
-- **No HTTPS redirects** to avoid certificate issues
-
-## 📝 Adding New Services
-
-### Development Service
-
-Create `dynamic/dev/my-service.yml`:
-
-```yaml
-http:
-  routers:
-    my-service-dev:
-      rule: "Host(`my-service.localhost`)"
-      service: "my-service-dev"
-      entryPoints:
-        - "web"
-      middlewares:
-        - "dev-headers"
-
-  services:
-    my-service-dev:
-      loadBalancer:
-        servers:
-          - url: "http://my-service-dev:3000"
-```
-
-### Production Service
-
-Create `dynamic/prod/my-service.yml`:
-
-```yaml
-http:
-  routers:
-    my-service-prod:
-      rule: "Host(`${MY_SERVICE_DOMAIN}`)"
-      service: "my-service-prod"
-      entryPoints:
-        - "websecure"
-      tls:
-        certResolver: "letsencrypt"
-      middlewares:
-        - "security-headers"
-        - "rate-limit"
-
-  services:
-    my-service-prod:
-      loadBalancer:
-        servers:
-          - url: "http://my-service-prod:3000"
-        healthCheck:
-          path: "/health"
-          interval: "30s"
-```
-
-Add the domain to your `.env` file:
-
-```env
-MY_SERVICE_DOMAIN=service.yourdomain.com
-```
-
-### Hello World Example (Production)
-
-The production configuration includes a hello world example service that demonstrates proper production patterns:
-
-**Features:**
-- **HTTPS by default** with automatic Let's Encrypt certificates
-- **Security headers** (HSTS, frame protection, XSS protection)
-- **Rate limiting** to prevent abuse
-- **Health checks** for reliability
-- **Compression** for better performance
-
-**Configuration:**
-- Service: `traefik/dynamic/prod/hello-world.yml`
-- Domain: `${HELLO_WORLD_DOMAIN:-hello.${APP_DOMAIN}}`
-- Container: `hello-world-prod` (Traefik whoami image)
-
-**To test the hello world service:**
+### Development Environment
 
 ```bash
-# Set your domain in .env file
-HELLO_WORLD_DOMAIN=hello.yourdomain.com
+# Set up environment variables
+cp env.template .env
+# Edit .env with your settings
 
-# Test HTTP (will redirect to HTTPS in production)
-curl -H "Host: hello.yourdomain.com" http://localhost
+# Deploy development environment
+./scripts/deploy-dev.sh
 
-# Test HTTPS
-curl -H "Host: hello.yourdomain.com" https://localhost
+# Access services
+# - Dashboard: http://localhost:8080 or http://traefik.localhost
+# - Hello World: http://hello.localhost
+
+# Cleanup when done
+./scripts/cleanup-dev.sh
 ```
 
-The hello world service shows your request details including headers, which is useful for debugging reverse proxy configuration.
-
-## 🔍 Monitoring and Debugging
-
-### Check Service Status
+### Test Environment
 
 ```bash
-# Development
-podman-compose -f docker-compose.dev.yml logs traefik
+# Set environment variables
+export APP_DOMAIN="test.yourdomain.com"
+export LETSENCRYPT_EMAIL="admin@yourdomain.com"
 
-# Production (as podman user)
-systemctl --user status traefik.socket
-journalctl --user -u traefik.service -f
+# Deploy test environment with Quadlets
+./scripts/deploy-test.sh
+
+# Check status
+systemctl --user status traefik-test.service
+
+# Cleanup when done
+./scripts/cleanup-test.sh
 ```
 
-### Dashboard Access
-
-- **Development**: http://localhost:8080 or http://traefik.localhost
-- **Production**: https://your-domain.com:8080 (if API access is enabled)
-
-### Health Checks
-
-All services include health checks for better reliability and monitoring.
-
-## 🌐 Network Configuration
-
-### Development
-
-- Uses Podman bridge network
-- Direct port mapping (80, 443, 8080)
-- Standard Podman socket access
-
-### Production
-
-- Uses Podman with socket activation
-- Real IP preservation through trusted headers
-- IPv4 and IPv6 support
-- Enhanced security isolation
-
-## 📊 Environment Variables
-
-Key environment variables (see `env.template`):
-
-- `TRAEFIK_LOG_LEVEL`: Logging level (DEBUG, INFO, WARN, ERROR)
-- `APP_DOMAIN`: Main application domain
-- `VAULTWARDEN_URL`: Vaultwarden service domain
-- `MONITOR_URL`: Monitoring service domain
-- `XDG_RUNTIME_DIR`: Podman runtime directory (production)
-
-## 🔒 Best Practices
-
-1. **Use environment variables** for all domain configurations
-2. **Enable health checks** for all services
-3. **Apply security middlewares** to production services
-4. **Use specific rate limits** for different service types
-5. **Regularly update certificates** (automatic with Let's Encrypt)
-6. **Monitor logs** for security and performance issues
-7. **Test configurations** in development before production deployment
-
-## 🚨 Troubleshooting
-
-### Common Issues
-
-1. **Certificate issues**: Check domain DNS and firewall settings
-2. **Service not accessible**: Verify network connectivity and service health
-3. **Socket activation fails**: Check user permissions and systemd configuration
-4. **Dashboard not accessible**: Verify API configuration and network settings
-5. **Podman socket not found**: Ensure `XDG_RUNTIME_DIR` is set and Podman socket is running
-6. **Permission denied on socket**: Check that user has access to Podman socket
-
-### Useful Commands
+### Production Environment
 
 ```bash
-# Reload dynamic configuration
-podman-compose -f docker-compose.dev.yml restart traefik
+# Set environment variables
+export APP_DOMAIN="yourdomain.com"
+export LETSENCRYPT_EMAIL="admin@yourdomain.com"
+export TRAEFIK_DASHBOARD_DOMAIN="traefik.yourdomain.com"
+
+# Deploy production environment with Quadlets
+./scripts/deploy-prod.sh
+
+# Check status
+systemctl --user status traefik-prod.service
+
+# Cleanup when done
+./scripts/cleanup-prod.sh
+```
+
+## Key Features
+
+### Socket Activation (Test/Prod)
+- Preserves real client IP addresses in rootless containers
+- Near-native network performance
+- systemd manages privileged port binding
+- Automatic failover and restart capabilities
+
+### Quadlet Benefits
+- Declarative container management
+- Automatic systemd service generation
+- Integrated with systemd logging and monitoring
+- Built-in health checks and restart policies
+- AutoUpdate support for container images
+
+### Security Features
+- Rootless containers for all environments
+- SELinux label management
+- Proper file permissions for ACME certificates
+- Resource limits in production
+- Network isolation between services
+
+## Environment Variables
+
+Create a `.env` file or set these environment variables:
+
+```bash
+# Required for all environments
+APP_DOMAIN=yourdomain.com
+LETSENCRYPT_EMAIL=admin@yourdomain.com
+
+# Optional
+TRAEFIK_VERSION=v3.5.0
+TRAEFIK_LOG_LEVEL=INFO
+TRAEFIK_NETWORK=traefik
+TRAEFIK_DASHBOARD_DOMAIN=traefik.yourdomain.com
+
+# Development only
+TRAEFIK_WEB_PORT=80
+TRAEFIK_WEBSECURE_PORT=443
+TRAEFIK_DASHBOARD_PORT=8080
+
+# Production security
+TRAEFIK_DASHBOARD_USERS=admin:$$2y$$10$$...
+TRUSTED_IPS=172.18.0.0/16,172.19.0.0/16,172.20.0.0/16,127.0.0.1/32
+```
+
+## Monitoring and Logs
+
+### Systemd Integration (Test/Prod)
+```bash
+# View logs
+journalctl --user -u traefik-prod.service -f
+
+# Check status
+systemctl --user status traefik-prod.service
+
+# Restart service
+systemctl --user restart traefik-prod.service
+```
+
+### Development Logs
+```bash
+# View logs
+docker-compose -f docker-compose.dev.yml logs -f traefik
+
+# Check status
+docker-compose -f docker-compose.dev.yml ps
+```
+
+## Migration from Old Setup
+
+The old systemd service files in `systemd/` directory are now replaced by Quadlets:
+
+- `systemd/traefik-test.service` → `quadlets/traefik-test.container`
+- `systemd/traefik-prod.service` → `quadlets/traefik-prod.container`
+- `systemd/traefik.socket` → `quadlets/traefik-{test,prod}.socket`
+
+Quadlets provide the same functionality with better integration and easier management.
+
+## Troubleshooting
+
+### Socket Activation Issues
+```bash
+# Check if sockets are listening
+ss -tlnp | grep ':80\|:443\|:8080'
+
+# Verify systemd socket activation
+systemctl --user status traefik-test.socket
+```
+
+### Container Issues
+```bash
+# Check container logs
+podman logs traefik-test
+
+# Inspect container
+podman inspect traefik-test
 
 # Check network connectivity
-podman network ls
-podman network inspect traefik
-
-# Validate configuration
-podman-compose -f docker-compose.dev.yml config
-
-# Podman-specific commands
-podman system info                    # Check Podman system status
-systemctl --user status podman.socket # Check Podman socket status
-podman ps -a                         # List all containers
-echo $XDG_RUNTIME_DIR                # Verify runtime directory
+podman exec traefik-test traefik healthcheck --ping
 ```
 
-This setup provides a robust, scalable, and secure reverse proxy solution suitable for both development and production environments.
+### Development Issues
+```bash
+# Check Docker daemon
+docker info
+
+# Verify network
+docker network ls | grep traefik
+
+# Check port conflicts
+netstat -tlnp | grep ':80\|:443\|:8080'
+```
+
+## Notes
+
+- Development environment uses standard Docker/Docker Compose for simplicity
+- Test/Production use Podman Quadlets for better systemd integration and security
+- Socket activation is only used in test/production for client IP preservation
+- All environments support the same Traefik dynamic configuration files

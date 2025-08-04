@@ -26,7 +26,7 @@ providers:
 
 # Development-specific settings - no HTTPS complexity
 log:
-  level: ${TRAEFIK_LOG_LEVEL:-DEBUG}
+  level: DEBUG
   filePath: "/var/log/traefik/traefik.log"
 
 accessLog:

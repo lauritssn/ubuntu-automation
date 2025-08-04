@@ -1,0 +1,58 @@
+[Unit]
+Description=Traefik Production Container (Socket Activation)
+After=network-online.target traefik-prod.socket
+Wants=network-online.target
+Requires=traefik-prod.socket
+Documentation=https://doc.traefik.io/traefik/
+
+[Container]
+AutoUpdate=registry
+ContainerName=traefik-prod
+Image=docker.io/traefik:v3.5.0
+SecurityLabelDisable=true
+User=podman:podman
+
+# Volumes
+Volume=%h/NoBackup.nosync/Projects/ubuntu-automation/traefik/traefik.yml:/etc/traefik/traefik.yml:ro,Z
+Volume=%h/NoBackup.nosync/Projects/ubuntu-automation/traefik/dynamic:/etc/traefik/dynamic:ro,Z
+Volume=%h/NoBackup.nosync/Projects/ubuntu-automation/traefik/data:/data:Z
+Volume=%h/NoBackup.nosync/Projects/ubuntu-automation/traefik/logs:/var/log/traefik:Z
+Volume=%t/podman/podman.sock:/var/run/docker.sock:ro
+
+# Network
+Network=traefik
+
+# Environment variables
+Environment=LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL}
+Environment=APP_DOMAIN=${APP_DOMAIN}
+Environment=TRAEFIK_DASHBOARD_DOMAIN=${TRAEFIK_DASHBOARD_DOMAIN:-traefik.${APP_DOMAIN}}
+Environment=HELLO_WORLD_DOMAIN=${HELLO_WORLD_DOMAIN:-hello.${APP_DOMAIN}}
+
+# Resource limits
+Memory=512m
+MemoryReservation=256m
+
+# Health check
+HealthCmd=traefik healthcheck --ping
+HealthInterval=30s
+HealthTimeout=10s
+HealthRetries=3
+HealthStartPeriod=30s
+
+# Labels
+Label=traefik.enable=true
+Label=traefik.http.routers.dashboard-prod.rule=Host(`${TRAEFIK_DASHBOARD_DOMAIN}`)
+Label=traefik.http.routers.dashboard-prod.service=api@internal
+Label=traefik.http.routers.dashboard-prod.entrypoints=websecure
+Label=traefik.http.routers.dashboard-prod.tls.certresolver=letsencrypt
+Label=traefik.http.routers.dashboard-prod.middlewares=basic-auth@file,security-headers@file
+Label=traefik.http.routers.dashboard-prod.priority=100
+
+[Service]
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=300
+TimeoutStopSec=60
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,29 @@
+[Unit]
+Description=Hello World Production Service
+After=traefik-prod.service
+Wants=traefik-prod.service
+Documentation=https://github.com/traefik/whoami
+
+[Container]
+AutoUpdate=registry
+ContainerName=hello-world-prod
+Image=docker.io/traefik/whoami:latest
+SecurityLabelDisable=true
+User=podman:podman
+
+# Network
+Network=traefik
+
+# Health check
+HealthCmd=wget --quiet --tries=1 --spider http://localhost/
+HealthInterval=30s
+HealthTimeout=10s
+HealthRetries=3
+HealthStartPeriod=10s
+
+[Service]
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

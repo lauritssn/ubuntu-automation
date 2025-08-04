@@ -4,11 +4,25 @@ api:
 
 ping: {}
 
-# EntryPoints configured via environment variables for socket activation
-# Socket activation provides these ports: 80, 443, 8080
-# TRAEFIK_ENTRYPOINTS_WEB_ADDRESS=:80
-# TRAEFIK_ENTRYPOINTS_WEBSECURE_ADDRESS=:443  
-# TRAEFIK_ENTRYPOINTS_TRAEFIK_ADDRESS=:8080
+# Define trusted IPs for forwarded headers
+x-trusted-ips: &trusted-ips
+  - "172.18.0.0/16"
+  - "172.19.0.0/16"
+  - "172.20.0.0/16"
+  - "127.0.0.1/32"
+  - "::1/128"
+
+# EntryPoints - socket activation provides file descriptors, no address needed
+entryPoints:
+  web:
+    forwardedHeaders:
+      trustedIPs: *trusted-ips
+  websecure:
+    forwardedHeaders:
+      trustedIPs: *trusted-ips
+  traefik:
+    forwardedHeaders:
+      trustedIPs: *trusted-ips
 
 providers:
   docker:
@@ -30,7 +44,7 @@ certificatesResolvers:
         entryPoint: web
 
 log:
-  level: ${TRAEFIK_LOG_LEVEL:-INFO}
+  level: INFO
   filePath: "/var/log/traefik/traefik.log"
 
 accessLog:

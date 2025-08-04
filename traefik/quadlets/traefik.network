@@ -1,0 +1,15 @@
+[Unit]
+Description=Traefik Network
+Documentation=https://doc.traefik.io/traefik/
+
+[Network]
+NetworkName=traefik
+Driver=bridge
+Internal=false
+
+# Subnet configuration for proper IP preservation
+Subnet=172.20.0.0/16
+Gateway=172.20.0.1
+
+[Install]
+WantedBy=default.target
