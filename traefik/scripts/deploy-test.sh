@@ -12,7 +12,6 @@ QUADLET_DIR="$HOME/.config/containers/systemd"
 mkdir -p "$QUADLET_DIR"
 
 echo "Copying Quadlet files..."
-cp quadlets/traefik.network "$QUADLET_DIR/"
 cp quadlets/traefik-test.socket "$QUADLET_DIR/"
 cp quadlets/traefik-test.container "$QUADLET_DIR/"
 cp quadlets/hello-world-test.container "$QUADLET_DIR/"
@@ -30,11 +29,6 @@ chmod 600 data/acme.json
 echo "Reloading systemd configuration..."
 systemctl --user daemon-reload
 
-# Start network first
-echo "Starting Traefik network..."
-systemctl --user enable traefik-network.service
-systemctl --user start traefik-network.service
-
 # Enable and start socket (this will start the service on first connection)
 echo "Starting Traefik socket..."
 systemctl --user enable traefik-test.socket
@@ -42,7 +36,6 @@ systemctl --user start traefik-test.socket
 
 # Start hello-world service
 echo "Starting hello-world service..."
-systemctl --user enable hello-world-test.service
 systemctl --user start hello-world-test.service
 
 echo "✅ Test environment deployed successfully!"
