@@ -35,12 +35,14 @@ api:
 ping:
   entryPoint: traefik
 
-# EntryPoints - socket activation provides file descriptors, no address needed
+# EntryPoints - socket activation provides file descriptors, use :0 address
 entryPoints:
   web:
+    address: ":0"
     forwardedHeaders:
       trustedIPs: *trusted-ips
   traefik:
+    address: ":0"
     forwardedHeaders:
       trustedIPs: *trusted-ips
 
@@ -55,26 +57,30 @@ providers:
     directory: /etc/traefik/dynamic
     watch: true
 
-log:
-  level: DEBUG
-  filePath: "/var/log/traefik/traefik.log"
+metrics:
+  prometheus:
+    buckets:
+      - 0.1
+      - 0.3
+      - 1.2
+      - 5.0
 
+# Logging configuration
+log:
+  level: INFO
+
+# Access logs
 accessLog:
   filePath: "/var/log/traefik/access.log"
   format: json
   fields:
-    defaultMode: keep
-    names:
-      ClientUsername: drop
     headers:
       defaultMode: keep
       names:
+        User-Agent: keep
         Authorization: drop
-        Cookie: drop
-        Set-Cookie: drop
+        Content-Type: keep
 
-metrics:
-  prometheus:
-    addEntryPointsLabels: true
-    addServicesLabels: true
-    addRoutersLabels: true
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
