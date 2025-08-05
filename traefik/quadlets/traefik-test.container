@@ -12,10 +12,10 @@ Image=docker.io/traefik:v3.5.0
 SecurityLabelDisable=true
 
 # Volumes
-Volume=%h/NoBackup.nosync/Projects/ubuntu-automation/traefik/traefik-test.yml:/etc/traefik/traefik.yml:ro,Z
-Volume=%h/NoBackup.nosync/Projects/ubuntu-automation/traefik/dynamic:/etc/traefik/dynamic:ro,Z
-Volume=%h/NoBackup.nosync/Projects/ubuntu-automation/traefik/data:/data:Z
-Volume=%h/NoBackup.nosync/Projects/ubuntu-automation/traefik/logs:/var/log/traefik:Z
+Volume=/srv/apps/deploy/traefik/traefik-test.yml:/etc/traefik/traefik.yml:ro,Z
+Volume=/srv/apps/deploy/traefik/dynamic:/etc/traefik/dynamic:ro,Z
+Volume=/srv/apps/deploy/traefik/data:/data:Z
+Volume=/srv/apps/deploy/traefik/logs:/var/log/traefik:Z
 Volume=%t/podman/podman.sock:/var/run/docker.sock:ro
 
 # Network

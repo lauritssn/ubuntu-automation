@@ -13,10 +13,10 @@ SecurityLabelDisable=true
 User=podman:podman
 
 # Volumes
-Volume=%h/NoBackup.nosync/Projects/ubuntu-automation/traefik/traefik.yml:/etc/traefik/traefik.yml:ro,Z
-Volume=%h/NoBackup.nosync/Projects/ubuntu-automation/traefik/dynamic:/etc/traefik/dynamic:ro,Z
-Volume=%h/NoBackup.nosync/Projects/ubuntu-automation/traefik/data:/data:Z
-Volume=%h/NoBackup.nosync/Projects/ubuntu-automation/traefik/logs:/var/log/traefik:Z
+Volume=/srv/apps/deploy/traefik/traefik.yml:/etc/traefik/traefik.yml:ro,Z
+Volume=/srv/apps/deploy/traefik/dynamic:/etc/traefik/dynamic:ro,Z
+Volume=/srv/apps/deploy/traefik/data:/data:Z
+Volume=/srv/apps/deploy/traefik/logs:/var/log/traefik:Z
 Volume=%t/podman/podman.sock:/var/run/docker.sock:ro
 
 # Network
