@@ -30,6 +30,10 @@ mkdir -p data
 touch data/acme.json
 chmod 600 data/acme.json
 
+# Stop any existing services
+echo "Stopping existing services..."
+systemctl --user stop hello-world-test.service traefik-test.service traefik-test.socket 2>/dev/null || true
+
 # Reload systemd to pick up new socket unit and Quadlet files
 echo "Reloading systemd configuration..."
 systemctl --user daemon-reload
@@ -48,7 +52,7 @@ echo "✅ Test environment deployed successfully with socket activation!"
 # Get the actual IP address
 LOCAL_IP=$(ip route get 1.1.1.1 | awk '{print $7; exit}' 2>/dev/null || echo "localhost")
 echo "📊 Traefik dashboard should be available at: http://${LOCAL_IP}:8080"
-echo "🌍 Hello world service available at: http://hello.${APP_DOMAIN:-localhost}"
+echo "🌍 Hello world service available at: http://hello.localhost"
 echo "🔌 Socket activation: Traefik will start automatically on first request"
 
 # Show status

@@ -22,7 +22,7 @@ HealthStartPeriod=10s
 
 # Labels
 Label=traefik.enable=true
-Label=traefik.http.routers.hello.rule=Host(`hello.${APP_DOMAIN}`)
+Label=traefik.http.routers.hello.rule=Host(`hello.localhost`)
 Label=traefik.http.routers.hello.entrypoints=web
 Label=traefik.http.routers.hello.middlewares=test-headers,test-rate-limit
 

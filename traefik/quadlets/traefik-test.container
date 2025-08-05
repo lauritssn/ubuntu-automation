@@ -21,11 +21,6 @@ Volume=%t/podman/podman.sock:/var/run/docker.sock:ro
 # Network
 Network=traefik
 
-# Environment variables
-Environment=LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL}
-Environment=APP_DOMAIN=${APP_DOMAIN}
-Environment=TRAEFIK_DASHBOARD_DOMAIN=${TRAEFIK_DASHBOARD_DOMAIN}
-
 # Health check
 HealthCmd=traefik healthcheck --ping
 HealthInterval=30s
@@ -35,7 +30,7 @@ HealthStartPeriod=30s
 
 # Labels
 Label=traefik.enable=true
-Label=traefik.http.routers.dashboard.rule=Host(`${TRAEFIK_DASHBOARD_DOMAIN}`)
+Label=traefik.http.routers.dashboard.rule=Host(`traefik.localhost`)
 Label=traefik.http.routers.dashboard.service=api@internal
 Label=traefik.http.routers.dashboard.entrypoints=web
 Label=traefik.http.routers.dashboard.middlewares=test-headers
