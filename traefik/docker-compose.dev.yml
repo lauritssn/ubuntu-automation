@@ -18,7 +18,7 @@ services:
     environment:
       - APP_DOMAIN=${APP_DOMAIN:-localhost}
       - TRAEFIK_DASHBOARD_DOMAIN=${TRAEFIK_DASHBOARD_DOMAIN:-traefik.localhost}
-      - HELLO_WORLD_DOMAIN=${HELLO_WORLD_DOMAIN:-hello.localhost}
+      - WHOAMI_DOMAIN=${WHOAMI_DOMAIN:-whoami.localhost}
     healthcheck:
       test: ["CMD", "traefik", "healthcheck", "--ping"]
       interval: 30s
@@ -32,9 +32,9 @@ services:
       - "traefik.http.routers.dashboard-dev.entrypoints=web"
       - "traefik.http.routers.dashboard-dev.middlewares=dev-headers@shared"
 
-  hello-world:
+  whoami:
     image: docker.io/traefik/whoami:${WHOAMI_VERSION:-latest}
-    container_name: hello-world-dev
+    container_name: whoami-dev
     restart: unless-stopped
     networks:
       - traefik
@@ -46,9 +46,9 @@ services:
       start_period: 10s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.hello-dev.rule=Host(`${HELLO_WORLD_DOMAIN:-hello.localhost}`)"
-      - "traefik.http.routers.hello-dev.entrypoints=web"
-      - "traefik.http.routers.hello-dev.middlewares=dev-headers@shared"
+      - "traefik.http.routers.whoami-dev.rule=Host(`${WHOAMI_DOMAIN:-whoami.localhost}`)"
+      - "traefik.http.routers.whoami-dev.entrypoints=web"
+      - "traefik.http.routers.whoami-dev.middlewares=dev-headers@shared"
 
 networks:
   traefik:

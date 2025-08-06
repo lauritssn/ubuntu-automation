@@ -34,7 +34,7 @@ docker-compose -f docker-compose.dev.yml up -d
 echo "Development environment deployed successfully!"
 echo "Traefik dashboard available at: http://localhost:${TRAEFIK_DASHBOARD_PORT:-8080}"
 echo "Alternative dashboard at: http://${TRAEFIK_DASHBOARD_DOMAIN:-traefik.localhost}"
-echo "Hello world service available at: http://${HELLO_WORLD_DOMAIN:-hello.localhost}"
+echo "Whoami service available at: http://${WHOAMI_DOMAIN:-whoami.localhost}"
 
 # Show status
 docker-compose -f docker-compose.dev.yml ps

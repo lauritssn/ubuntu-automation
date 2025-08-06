@@ -26,7 +26,7 @@ echo "Copying Quadlet files..."
 cp quadlets/traefik.network "$QUADLET_DIR/"
 cp quadlets/traefik-prod.socket "$QUADLET_DIR/"
 cp quadlets/traefik-prod.container "$QUADLET_DIR/"
-cp quadlets/hello-world-prod.container "$QUADLET_DIR/"
+cp quadlets/whoami-prod.container "$QUADLET_DIR/"
 
 # Create logs directory
 mkdir -p logs
@@ -52,13 +52,13 @@ systemctl --user start traefik-prod.socket
 systemctl --user enable traefik-prod.service
 systemctl --user start traefik-prod.service
 
-# Enable and start hello-world service
-systemctl --user enable hello-world-prod.service
-systemctl --user start hello-world-prod.service
+# Enable and start whoami service
+systemctl --user enable whoami-prod.service
+systemctl --user start whoami-prod.service
 
-echo "Production environment deployed successfully!"
-echo "Traefik dashboard should be available at: https://${TRAEFIK_DASHBOARD_DOMAIN:-traefik.${APP_DOMAIN}}"
-echo "Hello world service available at: https://hello.${APP_DOMAIN}"
+# Wait for services to be ready
+sleep 5
+echo "Whoami service available at: https://whoami.${APP_DOMAIN}"
 
-# Show status
-systemctl --user --no-pager status traefik-prod.service hello-world-prod.service
+echo "Deployment complete! Checking service status..."
+systemctl --user --no-pager status traefik-prod.service whoami-prod.service

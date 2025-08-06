@@ -26,8 +26,8 @@ traefik/
 │   ├── traefik-test.container
 │   ├── traefik-prod.socket
 │   ├── traefik-prod.container
-│   ├── hello-world-test.container
-│   └── hello-world-prod.container
+│   ├── whoami-test.container
+│   └── whoami-prod.container
 ├── scripts/                    # Deployment and management scripts
 │   ├── deploy-dev.sh
 │   ├── deploy-test.sh
@@ -59,7 +59,7 @@ cp env.template .env
 
 # Access services
 # - Dashboard: http://localhost:8080 or http://traefik.localhost
-# - Hello World: http://hello.localhost
+# - Whoami: http://whoami.localhost
 
 # Cleanup when done
 ./scripts/cleanup-dev.sh

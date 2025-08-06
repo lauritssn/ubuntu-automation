@@ -32,8 +32,7 @@ api:
   dashboard: true
   insecure: true # Allow HTTP dashboard access
 
-ping:
-  entryPoint: web
+ping: {}
 
 # EntryPoints - addresses ignored when socket activation provides file descriptors
 entryPoints:

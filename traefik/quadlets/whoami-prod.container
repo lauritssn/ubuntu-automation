@@ -1,14 +1,15 @@
 [Unit]
-Description=Hello World Test Service
-After=traefik-test.service
-Wants=traefik-test.service
+Description=Whoami Production Service
+After=traefik-prod.service
+Wants=traefik-prod.service
 Documentation=https://github.com/traefik/whoami
 
 [Container]
 AutoUpdate=registry
-ContainerName=hello-world-test
+ContainerName=whoami-prod
 Image=docker.io/traefik/whoami:latest
 SecurityLabelDisable=true
+User=podman:podman
 
 # Network
 Network=traefik
@@ -19,12 +20,6 @@ HealthInterval=30s
 HealthTimeout=10s
 HealthRetries=3
 HealthStartPeriod=10s
-
-# Labels
-Label=traefik.enable=true
-Label=traefik.http.routers.hello.rule=Host(`hello.localhost`)
-Label=traefik.http.routers.hello.entrypoints=web
-Label=traefik.http.routers.hello.middlewares=test-headers,test-rate-limit
 
 [Service]
 Restart=on-failure

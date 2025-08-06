@@ -15,7 +15,7 @@ cd "$(dirname "$0")/.."
 
 # Stop any existing services as podman user first
 echo "Stopping existing services..."
-sudo -u podman -i bash -c "systemctl --user stop hello-world-test.service traefik-test.service 2>/dev/null || true"
+sudo -u podman -i bash -c "systemctl --user stop whoami-test.service traefik-test.service 2>/dev/null || true"
 sudo -u podman -i bash -c "systemctl --user stop http-test.socket https-test.socket traefik-test.socket 2>/dev/null || true"
 
 # Define directories for podman user
@@ -42,9 +42,9 @@ chown podman:podman "$SYSTEMD_USER_DIR"/*.socket
 echo "Copying Quadlet container files..."
 # Remove existing files and copy new ones
 rm -f "$QUADLET_DIR/traefik-test.container"
-rm -f "$QUADLET_DIR/hello-world-test.container"
+rm -f "$QUADLET_DIR/whoami-test.container"
 cp quadlets/traefik-test.container "$QUADLET_DIR/"
-cp quadlets/hello-world-test.container "$QUADLET_DIR/"
+cp quadlets/whoami-test.container "$QUADLET_DIR/"
 chown podman:podman "$QUADLET_DIR"/*.container
 
 # Create logs directory
@@ -67,21 +67,21 @@ echo "Enabling and starting Traefik socket units..."
 sudo -u podman -i bash -c "systemctl --user enable http-test.socket https-test.socket traefik-test.socket"
 sudo -u podman -i bash -c "systemctl --user start http-test.socket https-test.socket traefik-test.socket"
 
-# Start hello-world service as podman user
-echo "Starting hello-world service..."
-sudo -u podman -i bash -c "systemctl --user start hello-world-test.service"
+# Start whoami service as podman user
+echo "Starting whoami service..."
+sudo -u podman -i bash -c "systemctl --user start whoami-test.service"
 
 echo "✅ Test environment deployed successfully with socket activation!"
 
 # Get the actual IP address
 LOCAL_IP=$(ip route get 1.1.1.1 | awk '{print $7; exit}' 2>/dev/null || echo "localhost")
 echo "📊 Traefik dashboard should be available at: http://${LOCAL_IP}:8080"
-echo "🌍 Hello world service available at: http://hello.localhost"
+echo "🌍 Whoami service available at: http://whoami.localhost"
 echo "🔌 Socket activation: Traefik will start automatically on first request"
 
 # Show status
 echo "📋 Service status:"
-sudo -u podman -i bash -c "systemctl --user --no-pager status http-test.socket https-test.socket traefik-test.socket hello-world-test.service"
+sudo -u podman -i bash -c "systemctl --user --no-pager status http-test.socket https-test.socket traefik-test.socket whoami-test.service"
 
 echo ""
 echo "Note: Traefik service will start automatically via socket activation when traffic arrives"

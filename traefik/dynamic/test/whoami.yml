@@ -1,8 +1,8 @@
 http:
   routers:
-    hello-world-test:
-      rule: "Host(`hello.localhost`)"
-      service: "hello-world-test"
+    whoami-test:
+      rule: "Host(`whoami.localhost`)"
+      service: "whoami-test"
       entryPoints:
         - "web"
       priority: 90
@@ -11,11 +11,11 @@ http:
         - "test-rate-limit@file"
 
   services:
-    hello-world-test: 
+    whoami-test:
       loadBalancer:
         servers:
-          - url: "http://hello-world-test:80"
+          - url: "http://whoami-test:80"
         healthCheck:
-          path: "/"
+          path: "/health"
           interval: "30s"
-          timeout: "5s" 
+          timeout: "10s"

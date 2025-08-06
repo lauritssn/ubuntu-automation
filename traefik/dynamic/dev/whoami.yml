@@ -1,8 +1,8 @@
 http:
   routers:
-    hello-world-dev:
-      rule: "Host(`hello.localhost`)"
-      service: "hello-world-dev"
+    whoami-dev:
+      rule: "Host(`whoami.localhost`)"
+      service: "whoami-dev"
       entryPoints:
         - "web"
       priority: 90
@@ -11,10 +11,10 @@ http:
         - "dev-rate-limit"
 
   services:
-    hello-world-dev:
+    whoami-dev:
       loadBalancer:
         servers:
-          - url: "http://hello-world-dev:80"
+          - url: "http://whoami-dev:80"
         healthCheck:
           path: "/"
           interval: "30s"
