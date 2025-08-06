@@ -77,11 +77,11 @@ http:
         accessControlAllowOriginList:
           - "*"
 
-    # Basic auth template (override users in specific services)
-    basic-auth:
-      basicAuth:
-        users:
-          - "${TRAEFIK_DASHBOARD_USERS}"
+    # # Basic auth template (override users in specific services)
+    # basic-auth:
+    #   basicAuth:
+    #     users:
+    #       - "${TRAEFIK_DASHBOARD_USERS}"
 
     # Cache headers for static content
     cache-headers:

@@ -13,7 +13,7 @@ SecurityLabelDisable=true
 
 # Volumes
 Volume=/srv/apps/deploy/traefik/traefik-test.yml:/etc/traefik/traefik.yml:ro,Z
-Volume=/srv/apps/deploy/traefik/dynamic/test:/etc/traefik/dynamic:ro,Z
+Volume=/srv/apps/deploy/traefik/dynamic/test:/etc/traefik/sites:ro,Z
 Volume=/srv/apps/deploy/traefik/dynamic/shared:/etc/traefik/shared:ro,Z
 Volume=/srv/apps/deploy/traefik/data:/data:Z
 Volume=/srv/apps/deploy/traefik/logs:/var/log/traefik:Z
@@ -34,7 +34,7 @@ Label=traefik.enable=true
 Label=traefik.http.routers.dashboard.rule=Host(`traefik.localhost`)
 Label=traefik.http.routers.dashboard.service=api@internal
 Label=traefik.http.routers.dashboard.entrypoints=web
-Label=traefik.http.routers.dashboard.middlewares=test-headers
+Label=traefik.http.routers.dashboard.middlewares=test-headers@shared
 
 [Service]
 Restart=on-failure

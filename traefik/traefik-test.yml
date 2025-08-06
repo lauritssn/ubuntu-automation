@@ -53,11 +53,13 @@ providers:
     network: "traefik"
 
   # Dynamic configuration files
-  file:
-    - directory: /etc/traefik/dynamic
-      watch: true
-    - directory: /etc/traefik/test
-      watch: true
+  shared:
+    directory: /etc/traefik/shared
+    watch: true
+
+  sites:
+    directory: /etc/traefik/sites
+    watch: true
 
 metrics:
   prometheus:

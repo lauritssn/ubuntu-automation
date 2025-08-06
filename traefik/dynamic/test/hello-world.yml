@@ -7,8 +7,8 @@ http:
         - "web"
       priority: 90
       middlewares:
-        - "test-headers"
-        - "test-rate-limit"
+        - "test-headers@shared"
+        - "test-rate-limit@shared"
 
   services:
     hello-world-test: 

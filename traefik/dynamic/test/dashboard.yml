@@ -7,4 +7,4 @@ http:
         - "admin"
       priority: 100
       middlewares:
-        - "test-headers" 
+        - "test-headers@shared" 

@@ -45,7 +45,7 @@ Label=traefik.http.routers.dashboard-prod.rule=Host(`${TRAEFIK_DASHBOARD_DOMAIN}
 Label=traefik.http.routers.dashboard-prod.service=api@internal
 Label=traefik.http.routers.dashboard-prod.entrypoints=websecure
 Label=traefik.http.routers.dashboard-prod.tls.certresolver=letsencrypt
-Label=traefik.http.routers.dashboard-prod.middlewares=basic-auth@file,security-headers@file
+Label=traefik.http.routers.dashboard-prod.middlewares=basic-auth@shared,security-headers@shared
 Label=traefik.http.routers.dashboard-prod.priority=100
 
 [Service]
