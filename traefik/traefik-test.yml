@@ -54,8 +54,10 @@ providers:
 
   # Dynamic configuration files
   file:
-    directory: /etc/traefik/dynamic
-    watch: true
+    - directory: /etc/traefik/dynamic
+      watch: true
+    - directory: /etc/traefik/test
+      watch: true
 
 metrics:
   prometheus:

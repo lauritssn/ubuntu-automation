@@ -13,7 +13,8 @@ SecurityLabelDisable=true
 
 # Volumes
 Volume=/srv/apps/deploy/traefik/traefik-test.yml:/etc/traefik/traefik.yml:ro,Z
-Volume=/srv/apps/deploy/traefik/dynamic:/etc/traefik/dynamic:ro,Z
+Volume=/srv/apps/deploy/traefik/dynamic/test:/etc/traefik/dynamic:ro,Z
+Volume=/srv/apps/deploy/traefik/dynamic/shared:/etc/traefik/shared:ro,Z
 Volume=/srv/apps/deploy/traefik/data:/data:Z
 Volume=/srv/apps/deploy/traefik/logs:/var/log/traefik:Z
 Volume=%t/podman/podman.sock:/var/run/docker.sock:ro
