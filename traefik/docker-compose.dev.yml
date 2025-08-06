@@ -4,33 +4,23 @@ services:
     container_name: traefik-dev
     restart: unless-stopped
     ports:
-      - "${TRAEFIK_WEB_PORT:-80}:80"
-      - "${TRAEFIK_WEBSECURE_PORT:-443}:443"
-      - "${TRAEFIK_DASHBOARD_PORT:-8080}:8080"
+      - 80:80
+      - 8080:8080
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /run/podman/podman.sock:/var/run/docker.sock:ro
       - ./traefik-dev.yml:/etc/traefik/traefik.yml:ro
-      - ./dynamic:/etc/traefik/dynamic:ro
+      - ./dynamic/dev:/etc/traefik/sites/config:ro
+      - ./dynamic/shared:/etc/traefik/sites/shared:ro
       - ./data:/data
       - ./logs:/var/log/traefik
     networks:
       - traefik
-    environment:
-      - APP_DOMAIN=${APP_DOMAIN:-localhost}
-      - TRAEFIK_DASHBOARD_DOMAIN=${TRAEFIK_DASHBOARD_DOMAIN:-traefik.localhost}
-      - WHOAMI_DOMAIN=${WHOAMI_DOMAIN:-whoami.localhost}
     healthcheck:
       test: ["CMD", "traefik", "healthcheck", "--ping"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 30s
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.dashboard-dev.rule=Host(`${TRAEFIK_DASHBOARD_DOMAIN:-traefik.localhost}`)"
-      - "traefik.http.routers.dashboard-dev.service=api@internal"
-      - "traefik.http.routers.dashboard-dev.entrypoints=web"
-      - "traefik.http.routers.dashboard-dev.middlewares=dev-headers@shared"
 
   whoami:
     image: docker.io/traefik/whoami:${WHOAMI_VERSION:-latest}
@@ -38,19 +28,9 @@ services:
     restart: unless-stopped
     networks:
       - traefik
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.whoami-dev.rule=Host(`${WHOAMI_DOMAIN:-whoami.localhost}`)"
-      - "traefik.http.routers.whoami-dev.entrypoints=web"
-      - "traefik.http.routers.whoami-dev.middlewares=dev-headers@shared"
 
 networks:
   traefik:
-    name: ${TRAEFIK_NETWORK:-traefik}
+    name: traefik
     driver: bridge
+    external: true

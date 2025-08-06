@@ -158,11 +158,6 @@ init = true
 # Use netavark for better networking (default in newer versions)
 network_backend = \"netavark\"
 
-# Configure for socket activation and real IP passthrough
-# Socket activation preserves original client IPs without NAT
-# This is optimal for Traefik to log real user IP addresses
-default_network = \"netavark\"
-
 # Enable IPv6 for full socket activation support
 enable_ipv6 = true
 
