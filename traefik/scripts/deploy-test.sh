@@ -48,15 +48,15 @@ cp quadlets/hello-world-test.container "$QUADLET_DIR/"
 chown podman:podman "$QUADLET_DIR"/*.container
 
 # Create logs directory
-mkdir -p logs
-chmod 755 logs
-chown podman:podman logs
+mkdir -p /srv/apps/deploy/traefik/logs
+chmod 755 /srv/apps/deploy/traefik/logs
+chown podman:podman /srv/apps/deploy/traefik/logs
 
 # Ensure data directory exists with correct permissions
-mkdir -p data
-touch data/acme.json
-chmod 600 data/acme.json
-chown -R podman:podman data
+mkdir -p /srv/apps/deploy/traefik/data
+touch /srv/apps/deploy/traefik/data/acme.json
+chmod 600 /srv/apps/deploy/traefik/data/acme.json
+chown -R podman:podman /srv/apps/deploy/traefik/data
 
 # Reload systemd to pick up new socket units and Quadlet files
 echo "Reloading systemd configuration..."
