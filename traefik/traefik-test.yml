@@ -41,10 +41,6 @@ entryPoints:
     address: ":80"
     forwardedHeaders:
       trustedIPs: *trusted-ips
-  websecure:
-    address: ":443"
-    forwardedHeaders:
-      trustedIPs: *trusted-ips
   admin:
     address: ":8080"
     forwardedHeaders:
