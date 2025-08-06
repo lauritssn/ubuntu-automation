@@ -41,7 +41,7 @@ entryPoints:
     address: ":80"
     forwardedHeaders:
       trustedIPs: *trusted-ips
-  admin:
+  traefik:
     address: ":8080"
     forwardedHeaders:
       trustedIPs: *trusted-ips
