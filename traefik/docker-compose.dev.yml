@@ -30,7 +30,7 @@ services:
       - "traefik.http.routers.dashboard-dev.rule=Host(`${TRAEFIK_DASHBOARD_DOMAIN:-traefik.localhost}`)"
       - "traefik.http.routers.dashboard-dev.service=api@internal"
       - "traefik.http.routers.dashboard-dev.entrypoints=web"
-      - "traefik.http.routers.dashboard-dev.middlewares=dev-headers@file"
+      - "traefik.http.routers.dashboard-dev.middlewares=dev-headers@shared"
 
   hello-world:
     image: docker.io/traefik/whoami:${WHOAMI_VERSION:-latest}
@@ -48,7 +48,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.hello-dev.rule=Host(`${HELLO_WORLD_DOMAIN:-hello.localhost}`)"
       - "traefik.http.routers.hello-dev.entrypoints=web"
-      - "traefik.http.routers.hello-dev.middlewares=dev-headers@file"
+      - "traefik.http.routers.hello-dev.middlewares=dev-headers@shared"
 
 networks:
   traefik:
