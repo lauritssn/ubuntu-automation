@@ -53,11 +53,7 @@ providers:
     network: "traefik"
 
   # Dynamic configuration files
-  shared:
-    directory: /etc/traefik/shared
-    watch: true
-
-  sites:
+  file:
     directory: /etc/traefik/sites
     watch: true
 
