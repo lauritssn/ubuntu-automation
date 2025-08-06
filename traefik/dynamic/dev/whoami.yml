@@ -9,6 +9,7 @@ http:
       middlewares:
         - "dev-headers@file"
         - "dev-rate-limit@file"
+        # - "waf@file"
 
   services:
     whoami-dev:

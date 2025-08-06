@@ -1,6 +1,6 @@
 services:
   traefik:
-    image: docker.io/traefik:${TRAEFIK_VERSION:-v3.5.0}
+    image: docker.io/traefik:${TRAEFIK_VERSION:-v3.1}
     container_name: traefik-dev
     restart: unless-stopped
     ports:
@@ -13,6 +13,7 @@ services:
       - ./dynamic/shared:/etc/traefik/sites/shared:ro
       - ./data:/data
       - ./logs:/var/log/traefik
+      - ".:/plugins-local/src/github.com/acouvreur/traefik-modsecurity-plugin"
     networks:
       - traefik
     healthcheck:
@@ -21,6 +22,25 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+
+  # waf:
+  #   image: docker.io/owasp/modsecurity-crs:4.2.0-apache-202405220605
+  #   container_name: waf-dev
+  #   restart: unless-stopped
+  #   environment:
+  #     - PARANOIA=1
+  #     - ANOMALY_INBOUND=10
+  #     - ANOMALY_OUTBOUND=5
+  #     - BACKEND=http://dummy-dev
+  #   networks:
+  #     - traefik
+
+  # dummy:
+  #   image: docker.io/traefik/whoami:${WHOAMI_VERSION:-latest}
+  #   container_name: dummy-dev
+  #   restart: unless-stopped
+  #   networks:
+  #     - traefik
 
   whoami:
     image: docker.io/traefik/whoami:${WHOAMI_VERSION:-latest}

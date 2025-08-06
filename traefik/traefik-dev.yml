@@ -34,6 +34,12 @@ api:
 
 ping: {}
 
+# Experimental plugins configuration
+# experimental:
+#   localPlugins:
+#     traefik-modsecurity-plugin:
+#       moduleName: "github.com/acouvreur/traefik-modsecurity-plugin"
+
 # EntryPoints - addresses ignored when socket activation provides file descriptors
 entryPoints:
   web:

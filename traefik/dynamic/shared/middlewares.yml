@@ -96,3 +96,10 @@ http:
           Cache-Control: "no-cache, no-store, must-revalidate"
           Pragma: "no-cache"
           Expires: "0"
+
+    # # ModSecurity Web Application Firewall
+    # waf:
+    #   plugin:
+    #     traefik-modsecurity-plugin:
+    #       modSecurityUrl: "http://waf:8080"
+    #       maxBodySize: 10485760
