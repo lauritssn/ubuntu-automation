@@ -41,8 +41,8 @@ http:
     # Production rate limiting
     rate-limit:
       rateLimit:
-        average: ${DEFAULT_RATE_LIMIT_AVERAGE:-100}
-        burst: ${DEFAULT_RATE_LIMIT_BURST:-200}
+        average: 100
+        burst: 200
 
     # Development rate limiting (relaxed)
     dev-rate-limit:
@@ -62,7 +62,7 @@ http:
         excludedContentTypes:
           - "text/event-stream"
 
-    # CORS middleware for APIs
+    # CORS middleware for APIs - remember to change this for production
     cors-api:
       headers:
         accessControlAllowMethods:
@@ -75,7 +75,7 @@ http:
         hostsProxyHeaders:
           - "X-Forwarded-Host"
         accessControlAllowOriginList:
-          - "${ALLOWED_ORIGINS}"
+          - "*"
 
     # Basic auth template (override users in specific services)
     basic-auth:

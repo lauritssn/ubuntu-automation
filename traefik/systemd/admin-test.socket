@@ -1,0 +1,13 @@
+[Unit]
+Description=Admin socket for Traefik Test
+After=network.target
+
+[Socket]
+ListenStream=0.0.0.0:8080
+FileDescriptorName=admin
+FreeBind=true
+NoDelay=true
+Service=traefik-test.service
+
+[Install]
+WantedBy=sockets.target 

@@ -13,9 +13,11 @@ QUADLET_DIR="$HOME/.config/containers/systemd"
 mkdir -p "$SYSTEMD_USER_DIR"
 mkdir -p "$QUADLET_DIR"
 
-echo "Copying systemd socket unit for Traefik..."
-# Copy systemd socket unit (not Quadlet - regular systemd socket)
-cp systemd/traefik-test.socket "$SYSTEMD_USER_DIR/"
+echo "Copying systemd socket units for Traefik..."
+# Copy separate socket units for each port
+cp systemd/http-test.socket "$SYSTEMD_USER_DIR/"
+cp systemd/https-test.socket "$SYSTEMD_USER_DIR/"
+cp systemd/admin-test.socket "$SYSTEMD_USER_DIR/"
 
 echo "Copying Quadlet container files..."
 cp quadlets/traefik-test.container "$QUADLET_DIR/"
@@ -32,16 +34,17 @@ chmod 600 data/acme.json
 
 # Stop any existing services
 echo "Stopping existing services..."
-systemctl --user stop hello-world-test.service traefik-test.service traefik-test.socket 2>/dev/null || true
+systemctl --user stop hello-world-test.service traefik-test.service 2>/dev/null || true
+systemctl --user stop http-test.socket https-test.socket admin-test.socket 2>/dev/null || true
 
-# Reload systemd to pick up new socket unit and Quadlet files
+# Reload systemd to pick up new socket units and Quadlet files
 echo "Reloading systemd configuration..."
 systemctl --user daemon-reload
 
-# Enable and start socket (this will automatically start the service when traffic arrives)
-echo "Enabling and starting Traefik socket..."
-systemctl --user enable traefik-test.socket
-systemctl --user start traefik-test.socket
+# Enable and start all socket units
+echo "Enabling and starting Traefik socket units..."
+systemctl --user enable http-test.socket https-test.socket admin-test.socket
+systemctl --user start http-test.socket https-test.socket admin-test.socket
 
 # Start hello-world service
 echo "Starting hello-world service..."
@@ -57,8 +60,9 @@ echo "🔌 Socket activation: Traefik will start automatically on first request"
 
 # Show status
 echo "📋 Service status:"
-systemctl --user --no-pager status traefik-test.socket hello-world-test.service
+systemctl --user --no-pager status http-test.socket https-test.socket admin-test.socket hello-world-test.service
 
 echo ""
 echo "Note: Traefik service will start automatically via socket activation when traffic arrives"
 echo "You can check if it's running with: systemctl --user status traefik-test.service"
+echo "Socket status: systemctl --user status http-test.socket https-test.socket admin-test.socket"

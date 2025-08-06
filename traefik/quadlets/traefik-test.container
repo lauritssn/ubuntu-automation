@@ -1,8 +1,8 @@
 [Unit]
 Description=Traefik Test Container (Socket Activation)
-After=network-online.target traefik-test.socket
+After=network-online.target http-test.socket https-test.socket admin-test.socket
 Wants=network-online.target
-Requires=traefik-test.socket
+Requires=http-test.socket https-test.socket admin-test.socket
 Documentation=https://doc.traefik.io/traefik/
 
 [Container]

@@ -33,16 +33,20 @@ api:
   insecure: true # Allow HTTP dashboard access
 
 ping:
-  entryPoint: traefik
+  entryPoint: web
 
-# EntryPoints - socket activation provides file descriptors, use :0 address
+# EntryPoints - addresses ignored when socket activation provides file descriptors
 entryPoints:
   web:
-    address: ":0"
+    address: ":80"
     forwardedHeaders:
       trustedIPs: *trusted-ips
-  traefik:
-    address: ":0"
+  websecure:
+    address: ":443"
+    forwardedHeaders:
+      trustedIPs: *trusted-ips
+  admin:
+    address: ":8080"
     forwardedHeaders:
       trustedIPs: *trusted-ips
 

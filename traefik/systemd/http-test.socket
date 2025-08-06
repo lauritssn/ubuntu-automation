@@ -1,11 +1,9 @@
 [Unit]
-Description=Traefik Test Socket Activation
-Documentation=https://doc.traefik.io/traefik/
+Description=HTTP socket for Traefik Test
+After=network.target
 
 [Socket]
 ListenStream=0.0.0.0:80
-ListenStream=0.0.0.0:443
-ListenStream=0.0.0.0:8080
 FileDescriptorName=web
 FreeBind=true
 NoDelay=true
