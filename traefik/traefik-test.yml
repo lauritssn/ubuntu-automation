@@ -46,11 +46,6 @@ entryPoints:
       trustedIPs: *trusted-ips
 
 providers:
-  docker:
-    endpoint: "unix:///var/run/docker.sock"
-    exposedByDefault: false
-    network: "traefik"
-
   # Dynamic configuration files
   file:
     directory: /etc/traefik/sites

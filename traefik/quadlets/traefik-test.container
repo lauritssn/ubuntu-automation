@@ -1,8 +1,8 @@
 [Unit]
 Description=Traefik Test Container (Socket Activation)
-After=network-online.target http-test.socket https-test.socket traefik-test.socket
+After=network-online.target http-test.socket traefik-test.socket
 Wants=network-online.target
-Requires=http-test.socket https-test.socket traefik-test.socket
+Requires=http-test.socket traefik-test.socket
 Documentation=https://doc.traefik.io/traefik/
 
 [Container]
@@ -28,13 +28,6 @@ HealthInterval=30s
 HealthTimeout=10s
 HealthRetries=3
 HealthStartPeriod=30s
-
-# Labels
-Label=traefik.enable=true
-Label=traefik.http.routers.dashboard.rule=Host(`traefik.localhost`)
-Label=traefik.http.routers.dashboard.service=api@internal
-Label=traefik.http.routers.dashboard.entrypoints=web
-Label=traefik.http.routers.dashboard.middlewares=test-headers@shared
 
 [Service]
 Restart=on-failure
