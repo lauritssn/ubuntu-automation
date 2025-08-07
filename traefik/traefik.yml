@@ -75,8 +75,8 @@ metrics:
 # Logging configuration
 log:
   level: INFO
-  # filePath: "/var/log/traefik/traefik.log"
-  filePath: "/dev/stdout"
+  filePath: "/var/log/traefik/traefik.log"
+  # filePath: "/dev/stdout"
   format: json
 
 # Access logs
