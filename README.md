@@ -14,7 +14,6 @@ The automation script installs and configures:
 - **Firewall protection** with UFW (IPv6 enabled)
 - **System monitoring** with comprehensive Slack notifications and optional Netdata
 - **Real-time alerting** with intelligent Slack integration for all monitoring activities
-- **Docker support** with rootless mode and custom data directories
 - **Wireguard VPN** for secure remote access to services
 - **Automated scheduling** with systemd timers and instant notifications
 - **Comprehensive logging** with systemd journal integration
@@ -188,34 +187,21 @@ The automation suite is modular, allowing you to choose which components to inst
 
 **Recommended:** ✅ Yes - Prevents out-of-memory crashes
 
-### 🐳 Container Support (Docker & Podman)
+### 🐳 Container Support (Podman)
 
-**Components:** Docker CE and Podman with modern Ubuntu 24.04 setup
+**Components:** Podman with modern Ubuntu 24.04 setup
 
 **What it does:**
 
-- **Docker Installation:** Latest Docker CE with proper GPG verification
 - **Podman Installation:** Rootless container engine (Docker-compatible alternative)
-- **Docker Compose:** v2 plugin installation
-- **Rootless mode:** Enhanced security for both Docker and Podman
-- **Custom storage:** Configurable container data directories
-- **Security:** Proper user permissions and group management
-
-**Docker Configuration options:**
-
-- **Root mode:** Traditional Docker (requires root privileges)
-- **Rootless mode:** User-space Docker (enhanced security, some limitations)
-- **Data directory:** Custom location for Docker images/containers
-
-**Podman Configuration:**
-
 - **Rootless by default:** Enhanced security with user namespaces
 - **Docker compatibility:** Drop-in replacement for most Docker commands
 - **Systemd integration:** Native systemd socket activation and service management
 - **No daemon:** Direct container execution without background daemon
 - **Pod support:** Kubernetes-style pod management capabilities
+- **Security:** Proper user permissions and group management
 
-**Recommended:** 🤔 Optional - Choose Docker for maximum compatibility or Podman for enhanced security
+**Recommended:** 🤔 Optional - Enhanced security container platform
 
 ### 📊 System Monitoring
 
@@ -342,18 +328,6 @@ The installation script will prompt you for:
 5. **Component selection:** Choose which modules to install
 
 ### Advanced Configuration
-
-#### Docker Configuration
-
-```bash
-# Choose installation mode
-Rootless Docker: Enhanced security, some limitations
-Root Docker: Full functionality, requires root privileges
-
-# Custom data directory
-Default: /var/lib/docker
-Custom: /mnt/docker (or your preferred location)
-```
 
 #### Podman Configuration
 
@@ -825,8 +799,6 @@ echo "Test" | mail -s "Test Subject" your-email@domain.com
 
 ### Optimization Tips
 
-- **Docker rootless:** Slight performance overhead but enhanced security
-- **Custom Docker storage:** Use faster storage for better performance
 - **Swap configuration:** Optimized for 4-16GB RAM servers
 - **Systemd timers:** Better resource management than cronjobs
 

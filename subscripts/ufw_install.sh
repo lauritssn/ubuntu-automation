@@ -119,12 +119,12 @@ ufw allow out on lo
 
 EOF
 
-# Add HTTP/HTTPS rules if Dokku, Docker, or Podman is installed
-if [[ "$DO_DOKKU_INSTALL" =~ [Yy]$ ]] || [[ "$DO_DOCKER_INSTALL" =~ [Yy]$ ]] || [[ "$DO_PODMAN_INSTALL" =~ [Yy]$ ]]; then
+# Add HTTP/HTTPS rules if Podman is installed
+if [[ "$DO_PODMAN_INSTALL" =~ [Yy]$ ]]; then
     cat >>$SCRIPTSDIR/ufw.sh <<'EOF'
 
 ##########################################################################################
-## Web Server Rules (Dokku/Docker/Podman)
+## Web Server Rules (Podman)
 ##########################################################################################
 
 # Allow HTTP and HTTPS from anywhere (web services)
