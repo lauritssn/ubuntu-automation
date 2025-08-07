@@ -38,12 +38,15 @@ ping: {}
 # EntryPoints - socket activation provides file descriptors, no address needed
 entryPoints:
   web:
+    address: ":80"
     forwardedHeaders:
       trustedIPs: *trusted-ips
   websecure:
+    address: ":443"
     forwardedHeaders:
       trustedIPs: *trusted-ips
   traefik:
+    address: ":8080"
     forwardedHeaders:
       trustedIPs: *trusted-ips
 
