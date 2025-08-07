@@ -61,11 +61,15 @@ metrics:
 
 # Logging configuration
 log:
-  level: DEBUG
+  level: INFO
+  # filePath: "/var/log/traefik/traefik.log"
+  filePath: "/dev/stdout"
+  format: json
 
 # Access logs
 accessLog:
-  filePath: "/var/log/traefik/access.log"
+  # filePath: "/var/log/traefik/access.log"
+  filePath: "/dev/stdout"
   format: json
   fields:
     headers:
