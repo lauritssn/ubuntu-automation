@@ -1,0 +1,39 @@
+[Unit]
+Description=Traefik Test Container (Socket Activation)
+After=network-online.target http-test.socket traefik-test.socket
+Wants=network-online.target
+Requires=http-test.socket traefik-test.socket
+Documentation=https://doc.traefik.io/traefik/
+
+[Container]
+AutoUpdate=registry
+ContainerName=traefik-test
+Image=docker.io/traefik:v3.5.0
+SecurityLabelDisable=true
+
+# Volumes
+Volume=/srv/apps/deploy/traefik/traefik-test.yml:/etc/traefik/traefik.yml:ro,Z
+Volume=/srv/apps/deploy/traefik/dynamic/test:/etc/traefik/sites/config:ro,Z
+Volume=/srv/apps/deploy/traefik/dynamic/shared:/etc/traefik/sites/shared:ro,Z
+Volume=/srv/apps/deploy/traefik/data:/data:Z
+Volume=/srv/apps/deploy/traefik/logs:/var/log/traefik:Z
+Volume=%t/podman/podman.sock:/var/run/docker.sock:ro
+
+# Network
+Network=traefik
+
+# Health check
+HealthCmd=traefik healthcheck --ping
+HealthInterval=30s
+HealthTimeout=10s
+HealthRetries=3
+HealthStartPeriod=30s
+
+[Service]
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=300
+TimeoutStopSec=60
+
+[Install]
+WantedBy=default.target

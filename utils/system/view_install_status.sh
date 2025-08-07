@@ -118,7 +118,7 @@ reset_module_status() {
 
     if [ -z "$module_name" ]; then
         show_err "Please specify a module name to reset."
-        echo "Example: $0 reset-module Docker_Installation"
+        echo "Example: $0 reset-module Podman_Installation"
         return 1
     fi
 
@@ -171,7 +171,7 @@ case "$1" in
     echo ""
     echo "EXAMPLES:"
     echo "  $0                              # View status"
-    echo "  $0 reset-module Docker_Installation  # Reset Docker installation"
+    echo "  $0 reset-module Podman_Installation  # Reset Podman installation"
     echo "  $0 reset                        # Reset everything"
     echo ""
     ;;

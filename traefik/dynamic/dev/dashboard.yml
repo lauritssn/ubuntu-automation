@@ -1,0 +1,11 @@
+http:
+  routers:
+    dashboard-dev:
+      rule: "Host(`traefik.localhost`)"
+      service: "api@internal"
+      entryPoints:
+        - "traefik"
+      priority: 100
+      middlewares:
+        - "dev-headers@file" 
+        - "coraza-waf-dev@file"

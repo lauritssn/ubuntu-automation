@@ -119,12 +119,12 @@ ufw allow out on lo
 
 EOF
 
-# Add HTTP/HTTPS rules if Dokku is installed
-if [[ "$DO_DOKKU_INSTALL" =~ [Yy]$ ]]; then
+# Add HTTP/HTTPS rules if Podman is installed
+if [[ "$DO_PODMAN_INSTALL" =~ [Yy]$ ]]; then
     cat >>$SCRIPTSDIR/ufw.sh <<'EOF'
 
 ##########################################################################################
-## Web Server Rules (Dokku)
+## Web Server Rules (Podman)
 ##########################################################################################
 
 # Allow HTTP and HTTPS from anywhere (web services)
@@ -150,9 +150,9 @@ if [ -n "$SECURE_SUBNET" ] && [ "$SECURE_SUBNET" != "0.0.0.0/0" ]; then
     cat >>$SCRIPTSDIR/ufw.sh <<EOF
 
 # Allow SSH only from secure subnet with rate limiting for enhanced security
-ufw limit proto tcp from $SECURE_SUBNET to any port 22 comment '$SECURE_SUBNET_DESC to SSH (rate limited)'
+ufw allow proto tcp from $SECURE_SUBNET to any port 22 comment '$SECURE_SUBNET_DESC to SSH (not rate limited)'
 
-show_info "SSH access restricted to secure subnet: $SECURE_SUBNET with rate limiting enabled"
+show_info "SSH access restricted to secure subnet: $SECURE_SUBNET with no rate limitation enabled"
 
 EOF
 else

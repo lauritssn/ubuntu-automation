@@ -20,15 +20,15 @@ echo ""
 # Check for common software and suggest exclusions
 echo "Checking for common software that may cause false positives..."
 
-# Docker
-if command -v docker &>/dev/null; then
-    echo "✓ Docker detected - Consider excluding /var/lib/docker"
-    if ! grep -q "/var/lib/docker" $EXCLUDE_FILE; then
-        echo "Add Docker exclusion? (y/n): "
+# Podman
+if command -v podman &>/dev/null; then
+    echo "✓ Podman detected - Consider excluding /var/lib/containers"
+    if ! grep -q "/var/lib/containers" $EXCLUDE_FILE; then
+        echo "Add Podman exclusion? (y/n): "
         read -r response
         if [[ $response == "y" ]]; then
-            echo "/var/lib/docker" >>$EXCLUDE_FILE
-            echo "Added Docker exclusion"
+            echo "/var/lib/containers" >>$EXCLUDE_FILE
+            echo "Added Podman exclusion"
         fi
     fi
 fi

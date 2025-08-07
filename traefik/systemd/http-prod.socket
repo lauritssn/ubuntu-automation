@@ -1,0 +1,14 @@
+[Unit]
+Description=HTTP socket for Traefik Production
+After=network.target
+
+[Socket]
+ListenStream=0.0.0.0:80
+# ListenDatagram= # UDP
+FileDescriptorName=web
+FreeBind=true
+NoDelay=true
+Service=traefik-prod.service
+
+[Install]
+WantedBy=sockets.target 

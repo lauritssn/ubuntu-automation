@@ -48,7 +48,6 @@ fi
 export DO_SSH_2FA="${DO_SSH_2FA:-Y}"
 export DO_WIREGUARD_INSTALL="${DO_WIREGUARD_INSTALL:-N}"
 export DO_NETDATA_INSTALL="${DO_NETDATA_INSTALL:-N}"
-export DO_DOCKER_INSTALL="${DO_DOCKER_INSTALL:-N}"
 
 # Ensure directories are created (shared functions handles this)
 ensure_directories

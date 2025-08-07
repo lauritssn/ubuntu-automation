@@ -14,6 +14,7 @@ SLACK_WEBHOOK_URL="{{SLACK_WEBHOOK_URL}}"
 MONITOR_URL="http://localhost:3001"
 HOSTNAME=$(hostname)
 SCRIPT_NAME="Disk Space Monitor"
+KEY="" # Monitoring key variable
 
 # File to track last "running" notification time
 LAST_NOTIFY_FILE="/var/log/disk-space-last-notify"
@@ -40,7 +41,7 @@ while getopts ":w:c:d:k:" option; do
         disks+=("${OPTARG}")
         ;;
     k)
-        key=${OPTARG}
+        KEY=${OPTARG}
         ;;
     *)
         echo "Invalid option: -${OPTARG}" >&2
@@ -204,9 +205,9 @@ done
 
 ## Notify if at least one disk is in warning or critical state
 if [ ${CRITICAL_ALERT} -ne 0 ]; then
-    # Send monitor ping if key is provided
-    if [ -n "$key" ]; then
-        curl -f -s --max-time 10 "${MONITOR_URL}/api/push/${key}?status=down&msg=CRITICAL&ping=" >/dev/null 2>&1 || echo "Failed to send monitor ping"
+    # Send monitor ping if KEY is defined
+    if [ -n "$KEY" ]; then
+        curl -f -s --max-time 10 "${MONITOR_URL}/api/push/${KEY}?status=down&msg=CRITICAL&ping=" >/dev/null 2>&1 || echo "Failed to send monitor ping"
     fi
 
     message="CRITICAL: Disk space is critically low on $(hostname):\n"
@@ -219,9 +220,9 @@ if [ ${CRITICAL_ALERT} -ne 0 ]; then
     echo "CRITICAL: Disk space critically low on disks: ${critical_disks[*]}" | logger -p user.crit -t disk-space-monitor
 
 elif [ ${WARNING_ALERT} -ne 0 ]; then
-    # Send monitor ping if key is provided
-    if [ -n "$key" ]; then
-        curl -f -s --max-time 10 "${MONITOR_URL}/api/push/${key}?status=down&msg=WARNING&ping=" >/dev/null 2>&1 || echo "Failed to send monitor ping"
+    # Send monitor ping if KEY is defined
+    if [ -n "$KEY" ]; then
+        curl -f -s --max-time 10 "${MONITOR_URL}/api/push/${KEY}?status=down&msg=WARNING&ping=" >/dev/null 2>&1 || echo "Failed to send monitor ping"
     fi
 
     message="WARNING: Disk space is low on $(hostname):\n"
@@ -234,9 +235,9 @@ elif [ ${WARNING_ALERT} -ne 0 ]; then
     echo "WARNING: Disk space low on disks: ${warning_disks[*]}" | logger -p user.warn -t disk-space-monitor
 
 else
-    # Send healthy monitor ping if key is provided
-    if [ -n "$key" ]; then
-        curl -f -s --max-time 10 "${MONITOR_URL}/api/push/${key}?status=up&msg=OK&ping=" >/dev/null 2>&1 || echo "Failed to send monitor ping"
+    # Send healthy monitor ping if KEY is defined
+    if [ -n "$KEY" ]; then
+        curl -f -s --max-time 10 "${MONITOR_URL}/api/push/${KEY}?status=up&msg=OK&ping=" >/dev/null 2>&1 || echo "Failed to send monitor ping"
     fi
 
     echo "All disks have sufficient space available"

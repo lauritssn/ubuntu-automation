@@ -1,0 +1,27 @@
+http:
+  routers:
+    whoami-prod:
+      rule: "Host(`${WHOAMI_DOMAIN:-whoami.${APP_DOMAIN}}`)"
+      service: "whoami-prod"
+      entryPoints:
+        - "web"
+        - "websecure"
+      priority: 90
+      middlewares:
+        - "security-headers@file"
+        - "rate-limit@file"
+        - "compress@file"
+      tls:
+        certResolver: "letsencrypt"
+
+  services:
+    whoami-prod:
+      loadBalancer:
+        servers:
+          - url: "http://whoami-prod:80"
+        healthCheck:
+          path: "/"
+          interval: "30s"
+          timeout: "5s"
+          headers:
+            Host: "${WHOAMI_DOMAIN:-whoami.${APP_DOMAIN}}" 

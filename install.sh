@@ -66,17 +66,14 @@ export DO_NTP_INSTALL=M # MANDATORY
 export DO_LIGHTWEIGHT_MONITORING=M  # MANDATORY
 export DO_NETDATA_INSTALL=N
 export DO_SYSTEMD_TIMERS=M # MANDATORY
-export DO_DOCKER_INSTALL=N
+export DO_PODMAN_INSTALL=N
 export DO_UFW_INSTALL=M  # MANDATORY
 export DO_SWAP_INSTALL=M # MANDATORY
-export DO_DOKKU_INSTALL=N
 export DO_WIREGUARD_INSTALL=N
 
 export ENABLE_SLACK_MONITORING=N
 export SLACK_WEBHOOK_URL=""
 
-export DOCKER_ROOTLESS=N
-export DOCKER_DATA_ROOT="/var/lib/docker"
 export WIREGUARD_SUBNET="10.66.66.0/24"
 
 # @TODO - INSTALL RSYSLOG + POSTGRES DUMPER
@@ -243,13 +240,8 @@ if is_resuming && load_user_choices; then
     echo "• ENABLE_SLACK_MONITORING: $ENABLE_SLACK_MONITORING"
     echo "• DO_NETDATA_INSTALL: $DO_NETDATA_INSTALL"
     echo "• DO_SYSTEMD_TIMERS: $DO_SYSTEMD_TIMERS (Mandatory)"
-    echo "• DO_DOCKER_INSTALL: $DO_DOCKER_INSTALL"
-    if [[ $DO_DOCKER_INSTALL =~ [Yy]$ ]]; then
-        echo "• DOCKER_ROOTLESS: $DOCKER_ROOTLESS"
-        echo "• DOCKER_DATA_ROOT: $DOCKER_DATA_ROOT"
-    fi
+    echo "• DO_PODMAN_INSTALL: $DO_PODMAN_INSTALL"
     echo "• DO_UFW_INSTALL: $DO_UFW_INSTALL (Mandatory)"
-    echo "• DO_DOKKU_INSTALL: $DO_DOKKU_INSTALL"
     echo "• DO_WIREGUARD_INSTALL: $DO_WIREGUARD_INSTALL"
     if [[ $DO_WIREGUARD_INSTALL =~ [Yy]$ ]]; then
         echo "• WIREGUARD_SUBNET: $WIREGUARD_SUBNET"
@@ -337,77 +329,25 @@ else
 
     # Systemd timers install is MANDATORY (M) - no user prompts needed
 
-    # Docker install
+    # Podman install
     while true; do
-        read -p "Do You want to install Docker (Y/N)? " yn
+        read -p "Do You want to install Podman in rootless mode (Y/N)? " yn
         case $yn in
         [Yy]*)
-            DO_DOCKER_INSTALL=Y
+            DO_PODMAN_INSTALL=Y
             break
             ;;
         [Nn]*)
-            DO_DOCKER_INSTALL=N
+            DO_PODMAN_INSTALL=N
             break
             ;;
         *) echo "Please answer yes or no." ;;
         esac
     done
 
-    if [[ $DO_DOCKER_INSTALL =~ [Yy]$ ]]; then
-        # Docker rootless mode
-        while true; do
-            read -p "Do You want to install Docker in rootless mode (Y/N)? " yn
-            case $yn in
-            [Yy]*)
-                DOCKER_ROOTLESS=Y
-                break
-                ;;
-            [Nn]*)
-                DOCKER_ROOTLESS=N
-                break
-                ;;
-            *) echo "Please answer yes or no." ;;
-            esac
-        done
-
-        # Docker data directory
-        while true; do
-            read -p "Do You want to change Docker data directory (default: $DOCKER_DATA_ROOT) (Y/N)? " yn
-            case $yn in
-            [Yy]*)
-                read -p "Enter Docker data directory (e.g., '/mnt/docker'): " DOCKER_DATA_ROOT
-                break
-                ;;
-            [Nn]*)
-                break
-                ;;
-            *) echo "Please answer yes or no." ;;
-            esac
-        done
-
-        echo "DOCKER_ROOTLESS: "$DOCKER_ROOTLESS
-        echo "DOCKER_DATA_ROOT: "$DOCKER_DATA_ROOT
-    fi
-
-    echo "DO_DOCKER_INSTALL: "$DO_DOCKER_INSTALL
+    echo "DO_PODMAN_INSTALL: "$DO_PODMAN_INSTALL
 
     # UFW install is MANDATORY (M) - no user prompts needed
-
-    # Dokku install
-    while true; do
-        read -p "Do You want to install Dokku (Y/N)? " yn
-        case $yn in
-        [Yy]*)
-            DO_DOKKU_INSTALL=Y
-            break
-            ;;
-        [Nn]*)
-            DO_DOKKU_INSTALL=N
-            break
-            ;;
-        *) echo "Please answer yes or no." ;;
-        esac
-    done
 
     # Wireguard install
     while true; do
@@ -465,7 +405,7 @@ fi
 ##########################################################################################
 
 # UFW rules are now generated dynamically by the ufw_install.sh script
-# based on the services being installed (Dokku, WireGuard, Netdata, etc.)
+# based on the services being installed (WireGuard, Netdata, etc.)
 # This provides better organization and security-focused rule generation
 
 ##########################################################################################
@@ -595,8 +535,8 @@ execute_module "Swap_Installation" "$BASEDIR/subscripts/swap_install.sh" "$DO_SW
 
 printf "\n--------------------\n"
 
-# Docker install
-execute_module "Docker_Installation" "$BASEDIR/subscripts/docker_install.sh" "$DO_DOCKER_INSTALL"
+# Podman install
+execute_module "Podman_Installation" "$BASEDIR/subscripts/podman_install.sh" "$DO_PODMAN_INSTALL"
 
 printf "\n--------------------\n"
 
@@ -628,11 +568,6 @@ if [[ $DO_UFW_INSTALL =~ [YyMm]$ ]]; then
     fi
 fi
 execute_module "UFW_Firewall" "$BASEDIR/subscripts/ufw_install.sh" "$DO_UFW_INSTALL"
-
-printf "\n--------------------\n"
-
-# Dokku install
-execute_module "Dokku_Installation" "$BASEDIR/subscripts/dokku_install.sh" "$DO_DOKKU_INSTALL"
 
 printf "\n--------------------\n"
 

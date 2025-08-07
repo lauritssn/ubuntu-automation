@@ -1,0 +1,127 @@
+#!/bin/bash
+# Script to manage socket-activated containers
+
+show_usage() {
+    echo "Usage: podman-socket <command> [service-name]"
+    echo "Commands:"
+    echo "  list              - List all socket units"
+    echo "  status [service]  - Show status of socket service(s)"
+    echo "  start [service]   - Start specific socket service"
+    echo "  stop [service]    - Stop specific socket service"
+    echo "  restart [service] - Restart specific socket service"
+    echo "  logs [service]    - Show logs for specific service"
+    echo "  enable [service]  - Enable socket service to start on boot"
+    echo "  disable [service] - Disable socket service from starting on boot"
+    echo ""
+    echo "Examples:"
+    echo "  podman-socket list"
+    echo "  podman-socket status traefik-http"
+    echo "  podman-socket start traefik-http"
+    echo "  podman-socket logs traefik"
+}
+
+# Function to run systemctl commands as podman user or directly
+run_systemctl() {
+    if [ "$(whoami)" = "podman" ]; then
+        # Running as podman user - execute directly
+        export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+        eval "$1"
+    else
+        # Check if podman user exists
+        if ! id -u podman >/dev/null 2>&1; then
+            echo "Error: podman user does not exist"
+            return 1
+        fi
+        # Running as different user - use sudo
+        sudo -u podman bash -c "export XDG_RUNTIME_DIR=\"/run/user/\$(id -u)\"; $1"
+    fi
+}
+
+if [ "$#" -lt 1 ]; then
+    show_usage
+    exit 1
+fi
+
+COMMAND="$1"
+SERVICE="$2"
+
+case "$COMMAND" in
+"list")
+    echo "=== Socket Units ==="
+    run_systemctl 'systemctl --user list-units --type=socket --state=loaded'
+    echo ""
+    echo "=== Container Services ==="
+    run_systemctl 'systemctl --user list-units --type=service --state=loaded | grep -E "\.(service|container)"'
+    ;;
+"status")
+    if [ -z "$SERVICE" ]; then
+        echo "=== All Socket Services Status ==="
+        run_systemctl 'systemctl --user status --no-pager -l *.socket' 2>/dev/null || echo "No active socket services found"
+    else
+        echo "=== Status for $SERVICE ==="
+        run_systemctl "systemctl --user status --no-pager -l $SERVICE.socket" 2>/dev/null ||
+            run_systemctl "systemctl --user status --no-pager -l $SERVICE.service" 2>/dev/null ||
+            echo "Service $SERVICE not found"
+    fi
+    ;;
+"start")
+    if [ -z "$SERVICE" ]; then
+        echo "Error: Service name required for start command"
+        show_usage
+        exit 1
+    fi
+    echo "Starting socket service: $SERVICE"
+    run_systemctl "systemctl --user start $SERVICE.socket"
+    ;;
+"stop")
+    if [ -z "$SERVICE" ]; then
+        echo "Error: Service name required for stop command"
+        show_usage
+        exit 1
+    fi
+    echo "Stopping socket service: $SERVICE"
+    run_systemctl "systemctl --user stop $SERVICE.socket $SERVICE.service" 2>/dev/null || true
+    ;;
+"restart")
+    if [ -z "$SERVICE" ]; then
+        echo "Error: Service name required for restart command"
+        show_usage
+        exit 1
+    fi
+    echo "Restarting socket service: $SERVICE"
+    run_systemctl "systemctl --user restart $SERVICE.socket"
+    ;;
+"logs")
+    if [ -z "$SERVICE" ]; then
+        echo "Error: Service name required for logs command"
+        show_usage
+        exit 1
+    fi
+    echo "Showing logs for: $SERVICE"
+    run_systemctl "journalctl --user -u $SERVICE.service -f" 2>/dev/null ||
+        run_systemctl "journalctl --user -u $SERVICE.socket -f"
+    ;;
+"enable")
+    if [ -z "$SERVICE" ]; then
+        echo "Error: Service name required for enable command"
+        show_usage
+        exit 1
+    fi
+    echo "Enabling socket service: $SERVICE"
+    run_systemctl "systemctl --user enable $SERVICE.socket"
+    ;;
+"disable")
+    if [ -z "$SERVICE" ]; then
+        echo "Error: Service name required for disable command"
+        show_usage
+        exit 1
+    fi
+    echo "Disabling socket service: $SERVICE"
+    run_systemctl "systemctl --user disable $SERVICE.socket"
+    ;;
+*)
+    echo "Error: Unknown command '$COMMAND'"
+    show_usage
+    exit 1
+    ;;
+esac

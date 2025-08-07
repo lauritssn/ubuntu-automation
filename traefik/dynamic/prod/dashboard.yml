@@ -1,0 +1,30 @@
+http:
+  routers:
+    # Redirect HTTP dashboard to HTTPS
+    dashboard-redirect:
+      rule: "Host(`${TRAEFIK_DASHBOARD_DOMAIN}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+      entryPoints:
+        - "web"
+      middlewares:
+        - "redirect-to-https"
+      service: "api@internal"
+      priority: 100
+
+    # HTTPS dashboard
+    dashboard-secure:
+      rule: "Host(`${TRAEFIK_DASHBOARD_DOMAIN}`)"
+      entryPoints:
+        - "websecure"
+      middlewares:
+        - "basic-auth@file"
+        - "security-headers@file"
+      service: "api@internal"
+      tls:
+        certResolver: "letsencrypt"
+      priority: 100
+
+  middlewares:
+    redirect-to-https:
+      redirectScheme:
+        scheme: https
+        permanent: true 

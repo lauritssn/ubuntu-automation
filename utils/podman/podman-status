@@ -1,0 +1,80 @@
+#!/bin/bash
+
+# Function to run commands as podman user or directly if already podman user
+run_as_podman() {
+    if [ "$(whoami)" = "podman" ]; then
+        # Already running as podman user
+        export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+        eval "$1"
+    else
+        # Running as different user, use sudo
+        sudo -u podman bash -c "export XDG_RUNTIME_DIR=\"/run/user/\$(id -u)\"; $1"
+    fi
+}
+
+echo "=== Podman User Status ==="
+echo "User: $(whoami)"
+echo "Home: $(eval echo ~$(whoami))"
+if [ "$(whoami)" = "podman" ]; then
+    echo "Runtime Dir: /run/user/$(id -u)"
+else
+    echo "Runtime Dir: /run/user/$(id -u podman 2>/dev/null || echo 'N/A')"
+fi
+echo ""
+
+echo "=== Environment Test ==="
+if [ "$(whoami)" = "podman" ]; then
+    export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+    echo "XDG_RUNTIME_DIR: $XDG_RUNTIME_DIR"
+else
+    run_as_podman 'echo "XDG_RUNTIME_DIR: $XDG_RUNTIME_DIR"'
+fi
+echo ""
+
+echo "=== Podman Service Status ==="
+if [ "$(whoami)" = "podman" ]; then
+    export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+    systemctl --user status podman.socket --no-pager -l 2>/dev/null || echo "Socket not running"
+else
+    run_as_podman 'systemctl --user status podman.socket --no-pager -l' 2>/dev/null || echo "Socket not running"
+fi
+echo ""
+
+echo "=== Socket File Check ==="
+if [ "$(whoami)" = "podman" ]; then
+    SOCKET_PATH="/run/user/$(id -u)/podman/podman.sock"
+else
+    SOCKET_PATH="/run/user/$(id -u podman 2>/dev/null || echo '0')/podman/podman.sock"
+fi
+if [ -S "$SOCKET_PATH" ]; then
+    echo "✅ Socket file exists: $SOCKET_PATH"
+else
+    echo "❌ Socket file missing: $SOCKET_PATH"
+fi
+echo ""
+
+echo "=== Podman Version ==="
+if [ "$(whoami)" = "podman" ]; then
+    export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+    podman version --format "{{.Client.Version}}" 2>/dev/null || echo "Version check failed"
+else
+    run_as_podman 'podman version --format "{{.Client.Version}}"' 2>/dev/null || echo "Version check failed"
+fi
+echo ""
+
+echo "=== Running Containers ==="
+if [ "$(whoami)" = "podman" ]; then
+    export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+    podman ps 2>/dev/null || echo "No containers or podman not accessible"
+else
+    run_as_podman 'podman ps' 2>/dev/null || echo "No containers or podman not accessible"
+fi
+echo ""
+
+echo "=== Network Configuration ==="
+if [ "$(whoami)" = "podman" ]; then
+    export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+    podman network ls 2>/dev/null || echo "Network info not accessible"
+else
+    run_as_podman 'podman network ls' 2>/dev/null || echo "Network info not accessible"
+fi

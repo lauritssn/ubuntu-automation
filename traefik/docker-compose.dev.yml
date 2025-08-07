@@ -1,0 +1,43 @@
+services:
+  traefik:
+    image: docker.io/traefik:${TRAEFIK_VERSION:-v3.5.0}
+    container_name: traefik-dev
+    restart: unless-stopped
+    user: "0:0"
+    ports:
+      - 80:80
+      - 8080:8080
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    volumes:
+      - /run/podman/podman.sock:/var/run/docker.sock:ro
+      - ./traefik-dev.yml:/etc/traefik/traefik.yml:ro,Z
+      - ./dynamic/dev:/etc/traefik/sites/config:ro,Z
+      - ./dynamic/shared:/etc/traefik/sites/shared:ro,Z
+      - ./data:/data:Z
+      - ./logs:/var/log/traefik:Z
+      - ./plugins-storage:/plugins-storage:Z
+    networks:
+      - traefik
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  whoami:
+    image: docker.io/traefik/whoami:${WHOAMI_VERSION:-latest}
+    container_name: whoami-dev
+    restart: unless-stopped
+    networks:
+      - traefik
+
+networks:
+  traefik:
+    name: traefik
+    driver: bridge
+    external: true

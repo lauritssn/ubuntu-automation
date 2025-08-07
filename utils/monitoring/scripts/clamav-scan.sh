@@ -14,7 +14,7 @@ SCAN_DIR="/home /tmp /var /srv"
 
 # Exclude common false positive locations and file types
 # Enhanced exclusions to prevent scanning ClamAV's own files and logs
-EXCLUDE_OPTS="--exclude-dir=/tmp/systemd-private* --exclude-dir=/var/lib/docker --exclude-dir=/var/cache --exclude-dir=/var/log --exclude-dir=/var/lib/clamav --exclude-dir=/var/lib/maldet --exclude-dir=/usr/local/maldetect --exclude=*.pid --exclude=*.lock --exclude=*.sock"
+EXCLUDE_OPTS="--exclude-dir=/tmp/systemd-private* --exclude-dir=/var/lib/containers --exclude-dir=/var/cache --exclude-dir=/var/log --exclude-dir=/var/lib/clamav --exclude-dir=/var/lib/maldet --exclude-dir=/usr/local/maldetect --exclude=*.pid --exclude=*.lock --exclude=*.sock"
 
 # Location of log file
 LOG_FILE="/var/log/clamav/manual_clamscan.log"

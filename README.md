@@ -14,7 +14,6 @@ The automation script installs and configures:
 - **Firewall protection** with UFW (IPv6 enabled)
 - **System monitoring** with comprehensive Slack notifications and optional Netdata
 - **Real-time alerting** with intelligent Slack integration for all monitoring activities
-- **Docker support** with rootless mode and custom data directories
 - **Wireguard VPN** for secure remote access to services
 - **Automated scheduling** with systemd timers and instant notifications
 - **Comprehensive logging** with systemd journal integration
@@ -188,25 +187,21 @@ The automation suite is modular, allowing you to choose which components to inst
 
 **Recommended:** ✅ Yes - Prevents out-of-memory crashes
 
-### 🐳 Docker Support
+### 🐳 Container Support (Podman)
 
-**Components:** Docker CE with modern Ubuntu 24.04 setup
+**Components:** Podman with modern Ubuntu 24.04 setup
 
 **What it does:**
 
-- **Installation:** Latest Docker CE with proper GPG verification
-- **Docker Compose:** v2 plugin installation
-- **Rootless mode:** Optional rootless Docker for enhanced security
-- **Custom storage:** Configurable Docker data directory
+- **Podman Installation:** Rootless container engine (Docker-compatible alternative)
+- **Rootless by default:** Enhanced security with user namespaces
+- **Docker compatibility:** Drop-in replacement for most Docker commands
+- **Systemd integration:** Native systemd socket activation and service management
+- **No daemon:** Direct container execution without background daemon
+- **Pod support:** Kubernetes-style pod management capabilities
 - **Security:** Proper user permissions and group management
 
-**Configuration options:**
-
-- **Root mode:** Traditional Docker (requires root privileges)
-- **Rootless mode:** User-space Docker (enhanced security, some limitations)
-- **Data directory:** Custom location for Docker images/containers
-
-**Recommended:** 🤔 Optional - Only if you plan to use containers
+**Recommended:** 🤔 Optional - Enhanced security container platform
 
 ### 📊 System Monitoring
 
@@ -334,16 +329,26 @@ The installation script will prompt you for:
 
 ### Advanced Configuration
 
-#### Docker Configuration
+#### Podman Configuration
 
 ```bash
-# Choose installation mode
-Rootless Docker: Enhanced security, some limitations
-Root Docker: Full functionality, requires root privileges
+# Podman is installed in rootless mode by default
+# Runs as dedicated 'podman' user for enhanced security
+# No daemon required - containers run directly
 
-# Custom data directory
-Default: /var/lib/docker
-Custom: /mnt/docker (or your preferred location)
+# Using Podman
+podman-user ps -a                    # List containers
+podman-user run hello-world          # Run test container
+podman-user pull nginx               # Pull container image
+podman-user images                   # List images
+
+# Check Podman status
+podman-status                        # Comprehensive status check
+
+# Socket management (for systemd integration)
+podman-socket list                   # List socket services
+podman-socket status                 # Check socket status
+podman-socket start traefik-http     # Start socket service
 ```
 
 #### Wireguard VPN Configuration
@@ -523,6 +528,12 @@ The automation installs comprehensive utility scripts to `/srv/apps/scripts/` fo
 - **`remove-wg-client`** - Remove WireGuard VPN clients
 - **`enable_ip_forwarding.sh`** - Configure IP forwarding for VPN
 - **`ufw.sh`** - Firewall rule management script
+
+#### Container Management (Podman)
+
+- **`podman-user`** - Execute Podman commands as the podman user with proper environment setup
+- **`podman-status`** - Comprehensive Podman installation and service status check
+- **`podman-socket`** - Manage socket-activated containers and services
 
 #### Testing & Validation
 
@@ -788,8 +799,6 @@ echo "Test" | mail -s "Test Subject" your-email@domain.com
 
 ### Optimization Tips
 
-- **Docker rootless:** Slight performance overhead but enhanced security
-- **Custom Docker storage:** Use faster storage for better performance
 - **Swap configuration:** Optimized for 4-16GB RAM servers
 - **Systemd timers:** Better resource management than cronjobs
 

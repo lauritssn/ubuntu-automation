@@ -1,0 +1,10 @@
+http:
+  routers:
+    dashboard-test:
+      rule: "Host(`traefik.localhost`)"
+      service: "api@internal"
+      entryPoints:
+        - "traefik"
+      priority: 100
+      middlewares:
+        - "test-headers@file" 
