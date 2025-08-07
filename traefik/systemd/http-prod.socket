@@ -1,14 +1,14 @@
 [Unit]
-Description=Admin socket for Traefik Test
+Description=HTTP socket for Traefik Production
 After=network.target
 
 [Socket]
-ListenStream=0.0.0.0:8080
+ListenStream=0.0.0.0:80
 # ListenDatagram= # UDP
-FileDescriptorName=traefik
+FileDescriptorName=web
 FreeBind=true
 NoDelay=true
-Service=traefik-test.service
+Service=traefik-prod.service
 
 [Install]
 WantedBy=sockets.target 

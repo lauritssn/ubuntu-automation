@@ -1,60 +1,234 @@
+# =============================================================================
+# SHARED CONFIGURATION FOR TRAEFIK MIDDLEWARES
+# =============================================================================
+
+# =============================================================================
+# SHARED SECURITY HEADERS CONFIGURATION
+# =============================================================================
+
+# Production security headers configuration
+x-security-headers-production: &security-headers-production
+  frameDeny: true
+  sslRedirect: true
+  browserXssFilter: true
+  contentTypeNosniff: true
+  forceSTSHeader: true
+  stsIncludeSubdomains: true
+  stsPreload: true
+  stsSeconds: 31536000
+  customFrameOptionsValue: "SAMEORIGIN"
+  customRequestHeaders:
+    X-Forwarded-Proto: "https"
+  customResponseHeaders:
+    X-Frame-Options: "SAMEORIGIN"
+    X-Content-Type-Options: "nosniff"
+    Referrer-Policy: "strict-origin-when-cross-origin"
+    Permissions-Policy: "camera=(), microphone=(), geolocation=()"
+
+# Development security headers configuration
+x-security-headers-development: &security-headers-development
+  frameDeny: false
+  browserXssFilter: true
+  contentTypeNosniff: true
+  customRequestHeaders:
+    X-Forwarded-Proto: "http"
+
+# =============================================================================
+# SHARED RATE LIMITING CONFIGURATION
+# =============================================================================
+
+# Production rate limiting settings
+x-rate-limit-production: &rate-limit-production
+  average: 100
+  burst: 200
+
+# Development rate limiting settings
+x-rate-limit-development: &rate-limit-development
+  average: 1000
+  burst: 2000
+
+# Strict rate limiting for sensitive endpoints
+x-rate-limit-strict: &rate-limit-strict
+  average: 10
+  burst: 20
+
+# =============================================================================
+# MIDDLEWARE DEFINITIONS
+# =============================================================================
+
 http:
   middlewares:
+    # =============================================================================
+    # CORAZA WAF MIDDLEWARES
+    # =============================================================================
+
+    # Production Coraza WAF with standard security settings
+    coraza-waf:
+      plugin:
+        coraza:
+          directives: [
+            # OWASP TOP 10 PROTECTION
+            'SecRule REQUEST_URI "@streq /.env" "id:101,phase:1,log,deny,status:403,msg:Environment file access blocked"',
+            'SecRule REQUEST_URI "@streq /admin" "id:102,phase:1,log,deny,status:403,msg:Admin path access blocked"',
+            'SecRule REQUEST_URI "@contains .." "id:103,phase:1,log,deny,status:403,msg:Directory traversal attempt"',
+            'SecRule REQUEST_URI "@rx \.(htaccess|htpasswd|ini|log|conf|backup|bak|old|tmp)$" "id:104,phase:1,log,deny,status:403,msg:Sensitive file access attempt"',
+            'SecRule REQUEST_URI "@rx /\.(git|svn|hg)" "id:105,phase:1,log,deny,status:403,msg:Version control directory access blocked"',
+            'SecRule ARGS "@rx union.*select" "id:301,phase:2,log,deny,status:403,msg:SQL injection attempt detected"',
+            'SecRule ARGS "@rx (select|insert|update|delete|drop|create).*from" "id:302,phase:2,log,deny,status:403,msg:SQL injection detected"',
+            'SecRule ARGS "@rx \-\-|\#|\*\/|\*\*" "id:303,phase:2,log,deny,status:403,msg:SQL comment injection blocked"',
+            'SecRule ARGS "@rx <script.*?>" "id:304,phase:2,log,deny,status:403,msg:XSS script tag detected"',
+            'SecRule ARGS "@rx javascript:" "id:305,phase:2,log,deny,status:403,msg:XSS javascript protocol detected"',
+            'SecRule ARGS "@rx on(load|click|error|focus)" "id:306,phase:2,log,deny,status:403,msg:XSS event handler detected"',
+            'SecRule ARGS "@rx (;|\||&|`|\$\(|\$\{)" "id:401,phase:2,log,deny,status:403,msg:Command injection attempt detected"',
+            'SecRule ARGS "@rx (wget|curl|nc|netcat|telnet|ssh)" "id:402,phase:2,log,deny,status:403,msg:System command detected"',
+            'SecRule REQUEST_METHOD "@streq TRACE" "id:501,phase:1,log,deny,status:405,msg:TRACE method not allowed"',
+            'SecRule REQUEST_METHOD "@streq TRACK" "id:502,phase:1,log,deny,status:405,msg:TRACK method not allowed"',
+            'SecRule REQUEST_METHOD "@streq OPTIONS" "id:503,phase:1,log,pass,msg:OPTIONS method logged"',
+            'SecRule REQUEST_HEADERS:User-Agent "@rx (sqlmap|nikto|nmap|masscan|gobuster|dirb|dirbuster|wpscan)" "id:601,phase:1,log,deny,status:403,msg:Security scanner detected"',
+            'SecRule REQUEST_HEADERS:User-Agent "@rx (python-requests|curl|wget)" "id:602,phase:1,log,pass,msg:Automated tool detected"',
+            'SecRule ARGS "@rx (admin|administrator|root|test|guest|demo)" "id:701,phase:2,log,pass,msg:Common username detected"',
+            'SecRule REQUEST_URI "@rx /(login|signin|auth)" "id:702,phase:1,log,pass,msg:Authentication endpoint accessed"',
+            'SecRule REQUEST_HEADERS:Content-Type "@rx multipart/form-data" "id:801,phase:1,log,pass,msg:File upload detected"',
+            'SecRule ARGS "@rx (localhost|127\.0\.0\.1|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)" "id:1001,phase:2,log,deny,status:403,msg:SSRF attempt detected"',
+            'SecRule ARGS "@rx (file://|ftp://|gopher://|dict://)" "id:1002,phase:2,log,deny,status:403,msg:Dangerous protocol detected"',
+            # WordPress protection
+            'SecRule REQUEST_URI "@rx /wp-config\.php" "id:2001,phase:1,log,deny,status:403,msg:WordPress config file access blocked"',
+            'SecRule REQUEST_URI "@rx /wp-admin/install\.php" "id:2002,phase:1,log,deny,status:403,msg:WordPress install file access blocked"',
+            'SecRule REQUEST_URI "@rx /wp-content/debug\.log" "id:2003,phase:1,log,deny,status:403,msg:WordPress debug log access blocked"',
+            'SecRule REQUEST_URI "@rx /wp-includes/" "id:2004,phase:1,log,deny,status:403,msg:WordPress includes directory access blocked"',
+            'SecRule REQUEST_URI "@rx /wp-admin/" "id:2010,phase:1,log,pass,msg:WordPress admin access detected"',
+            'SecRule REQUEST_URI "@rx /wp-login\.php" "id:2011,phase:1,log,pass,msg:WordPress login attempt detected"',
+            'SecRule ARGS "@rx (/wp-content/uploads/.*\.php)" "id:2020,phase:2,log,deny,status:403,msg:PHP file upload to WordPress uploads blocked"',
+            'SecRule REQUEST_URI "@rx /xmlrpc\.php" "id:2021,phase:1,log,deny,status:403,msg:WordPress XML-RPC blocked"',
+            # Engine settings
+            "SecRuleEngine On",
+            "SecDebugLog /dev/stdout",
+            "SecDebugLogLevel 1"
+          ]
+
+    # Development Coraza WAF with verbose logging
+    coraza-waf-dev:
+      plugin:
+        coraza:
+          directives: [
+            # OWASP TOP 10 PROTECTION
+            'SecRule REQUEST_URI "@streq /.env" "id:101,phase:1,log,deny,status:403,msg:Environment file access blocked"',
+            'SecRule REQUEST_URI "@streq /admin" "id:102,phase:1,log,deny,status:403,msg:Admin path access blocked"',
+            'SecRule REQUEST_URI "@contains .." "id:103,phase:1,log,deny,status:403,msg:Directory traversal attempt"',
+            'SecRule REQUEST_URI "@rx \.(htaccess|htpasswd|ini|log|conf|backup|bak|old|tmp)$" "id:104,phase:1,log,deny,status:403,msg:Sensitive file access attempt"',
+            'SecRule REQUEST_URI "@rx /\.(git|svn|hg)" "id:105,phase:1,log,deny,status:403,msg:Version control directory access blocked"',
+            'SecRule ARGS "@rx union.*select" "id:301,phase:2,log,deny,status:403,msg:SQL injection attempt detected"',
+            'SecRule ARGS "@rx (select|insert|update|delete|drop|create).*from" "id:302,phase:2,log,deny,status:403,msg:SQL injection detected"',
+            'SecRule ARGS "@rx \-\-|\#|\*\/|\*\*" "id:303,phase:2,log,deny,status:403,msg:SQL comment injection blocked"',
+            'SecRule ARGS "@rx <script.*?>" "id:304,phase:2,log,deny,status:403,msg:XSS script tag detected"',
+            'SecRule ARGS "@rx javascript:" "id:305,phase:2,log,deny,status:403,msg:XSS javascript protocol detected"',
+            'SecRule ARGS "@rx on(load|click|error|focus)" "id:306,phase:2,log,deny,status:403,msg:XSS event handler detected"',
+            'SecRule ARGS "@rx (;|\||&|`|\$\(|\$\{)" "id:401,phase:2,log,deny,status:403,msg:Command injection attempt detected"',
+            'SecRule ARGS "@rx (wget|curl|nc|netcat|telnet|ssh)" "id:402,phase:2,log,deny,status:403,msg:System command detected"',
+            'SecRule REQUEST_METHOD "@streq TRACE" "id:501,phase:1,log,deny,status:405,msg:TRACE method not allowed"',
+            'SecRule REQUEST_METHOD "@streq TRACK" "id:502,phase:1,log,deny,status:405,msg:TRACK method not allowed"',
+            'SecRule REQUEST_METHOD "@streq OPTIONS" "id:503,phase:1,log,pass,msg:OPTIONS method logged"',
+            'SecRule REQUEST_HEADERS:User-Agent "@rx (sqlmap|nikto|nmap|masscan|gobuster|dirb|dirbuster|wpscan)" "id:601,phase:1,log,deny,status:403,msg:Security scanner detected"',
+            'SecRule REQUEST_HEADERS:User-Agent "@rx (python-requests|curl|wget)" "id:602,phase:1,log,pass,msg:Automated tool detected"',
+            'SecRule ARGS "@rx (admin|administrator|root|test|guest|demo)" "id:701,phase:2,log,pass,msg:Common username detected"',
+            'SecRule REQUEST_URI "@rx /(login|signin|auth)" "id:702,phase:1,log,pass,msg:Authentication endpoint accessed"',
+            'SecRule REQUEST_HEADERS:Content-Type "@rx multipart/form-data" "id:801,phase:1,log,pass,msg:File upload detected"',
+            'SecRule ARGS "@rx (localhost|127\.0\.0\.1|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)" "id:1001,phase:2,log,deny,status:403,msg:SSRF attempt detected"',
+            'SecRule ARGS "@rx (file://|ftp://|gopher://|dict://)" "id:1002,phase:2,log,deny,status:403,msg:Dangerous protocol detected"',
+            # WordPress protection
+            'SecRule REQUEST_URI "@rx /wp-config\.php" "id:2001,phase:1,log,deny,status:403,msg:WordPress config file access blocked"',
+            'SecRule REQUEST_URI "@rx /wp-admin/install\.php" "id:2002,phase:1,log,deny,status:403,msg:WordPress install file access blocked"',
+            'SecRule REQUEST_URI "@rx /wp-content/debug\.log" "id:2003,phase:1,log,deny,status:403,msg:WordPress debug log access blocked"',
+            'SecRule REQUEST_URI "@rx /wp-includes/" "id:2004,phase:1,log,deny,status:403,msg:WordPress includes directory access blocked"',
+            'SecRule REQUEST_URI "@rx /wp-admin/" "id:2010,phase:1,log,pass,msg:WordPress admin access detected"',
+            'SecRule REQUEST_URI "@rx /wp-login\.php" "id:2011,phase:1,log,pass,msg:WordPress login attempt detected"',
+            'SecRule ARGS "@rx (/wp-content/uploads/.*\.php)" "id:2020,phase:2,log,deny,status:403,msg:PHP file upload to WordPress uploads blocked"',
+            'SecRule REQUEST_URI "@rx /xmlrpc\.php" "id:2021,phase:1,log,deny,status:403,msg:WordPress XML-RPC blocked"',
+            # Engine settings
+            "SecRuleEngine On",
+            "SecDebugLog /dev/stdout",
+            "SecDebugLogLevel 3"
+          ]
+
+    # Detection-only mode for testing and monitoring
+    coraza-waf-detect:
+      plugin:
+        coraza:
+          directives: [
+            # OWASP TOP 10 PROTECTION
+            'SecRule REQUEST_URI "@streq /.env" "id:101,phase:1,log,deny,status:403,msg:Environment file access blocked"',
+            'SecRule REQUEST_URI "@streq /admin" "id:102,phase:1,log,deny,status:403,msg:Admin path access blocked"',
+            'SecRule REQUEST_URI "@contains .." "id:103,phase:1,log,deny,status:403,msg:Directory traversal attempt"',
+            'SecRule REQUEST_URI "@rx \.(htaccess|htpasswd|ini|log|conf|backup|bak|old|tmp)$" "id:104,phase:1,log,deny,status:403,msg:Sensitive file access attempt"',
+            'SecRule REQUEST_URI "@rx /\.(git|svn|hg)" "id:105,phase:1,log,deny,status:403,msg:Version control directory access blocked"',
+            'SecRule ARGS "@rx union.*select" "id:301,phase:2,log,deny,status:403,msg:SQL injection attempt detected"',
+            'SecRule ARGS "@rx (select|insert|update|delete|drop|create).*from" "id:302,phase:2,log,deny,status:403,msg:SQL injection detected"',
+            'SecRule ARGS "@rx \-\-|\#|\*\/|\*\*" "id:303,phase:2,log,deny,status:403,msg:SQL comment injection blocked"',
+            'SecRule ARGS "@rx <script.*?>" "id:304,phase:2,log,deny,status:403,msg:XSS script tag detected"',
+            'SecRule ARGS "@rx javascript:" "id:305,phase:2,log,deny,status:403,msg:XSS javascript protocol detected"',
+            'SecRule ARGS "@rx on(load|click|error|focus)" "id:306,phase:2,log,deny,status:403,msg:XSS event handler detected"',
+            'SecRule ARGS "@rx (;|\||&|`|\$\(|\$\{)" "id:401,phase:2,log,deny,status:403,msg:Command injection attempt detected"',
+            'SecRule ARGS "@rx (wget|curl|nc|netcat|telnet|ssh)" "id:402,phase:2,log,deny,status:403,msg:System command detected"',
+            'SecRule REQUEST_METHOD "@streq TRACE" "id:501,phase:1,log,deny,status:405,msg:TRACE method not allowed"',
+            'SecRule REQUEST_METHOD "@streq TRACK" "id:502,phase:1,log,deny,status:405,msg:TRACK method not allowed"',
+            'SecRule REQUEST_METHOD "@streq OPTIONS" "id:503,phase:1,log,pass,msg:OPTIONS method logged"',
+            'SecRule REQUEST_HEADERS:User-Agent "@rx (sqlmap|nikto|nmap|masscan|gobuster|dirb|dirbuster|wpscan)" "id:601,phase:1,log,deny,status:403,msg:Security scanner detected"',
+            'SecRule REQUEST_HEADERS:User-Agent "@rx (python-requests|curl|wget)" "id:602,phase:1,log,pass,msg:Automated tool detected"',
+            'SecRule ARGS "@rx (admin|administrator|root|test|guest|demo)" "id:701,phase:2,log,pass,msg:Common username detected"',
+            'SecRule REQUEST_URI "@rx /(login|signin|auth)" "id:702,phase:1,log,pass,msg:Authentication endpoint accessed"',
+            'SecRule REQUEST_HEADERS:Content-Type "@rx multipart/form-data" "id:801,phase:1,log,pass,msg:File upload detected"',
+            'SecRule ARGS "@rx (localhost|127\.0\.0\.1|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)" "id:1001,phase:2,log,deny,status:403,msg:SSRF attempt detected"',
+            'SecRule ARGS "@rx (file://|ftp://|gopher://|dict://)" "id:1002,phase:2,log,deny,status:403,msg:Dangerous protocol detected"',
+            # WordPress protection
+            'SecRule REQUEST_URI "@rx /wp-config\.php" "id:2001,phase:1,log,deny,status:403,msg:WordPress config file access blocked"',
+            'SecRule REQUEST_URI "@rx /wp-admin/install\.php" "id:2002,phase:1,log,deny,status:403,msg:WordPress install file access blocked"',
+            'SecRule REQUEST_URI "@rx /wp-content/debug\.log" "id:2003,phase:1,log,deny,status:403,msg:WordPress debug log access blocked"',
+            'SecRule REQUEST_URI "@rx /wp-includes/" "id:2004,phase:1,log,deny,status:403,msg:WordPress includes directory access blocked"',
+            'SecRule REQUEST_URI "@rx /wp-admin/" "id:2010,phase:1,log,pass,msg:WordPress admin access detected"',
+            'SecRule REQUEST_URI "@rx /wp-login\.php" "id:2011,phase:1,log,pass,msg:WordPress login attempt detected"',
+            'SecRule ARGS "@rx (/wp-content/uploads/.*\.php)" "id:2020,phase:2,log,deny,status:403,msg:PHP file upload to WordPress uploads blocked"',
+            'SecRule REQUEST_URI "@rx /xmlrpc\.php" "id:2021,phase:1,log,deny,status:403,msg:WordPress XML-RPC blocked"',
+            # Engine settings
+            "SecRuleEngine DetectionOnly",
+            "SecDebugLog /dev/stdout",
+            "SecDebugLogLevel 2"
+          ]
+
+    # =============================================================================
+    # SECURITY HEADERS MIDDLEWARES
+    # =============================================================================
+
     # Production security headers
     security-headers:
-      headers:
-        frameDeny: true
-        sslRedirect: true
-        browserXssFilter: true
-        contentTypeNosniff: true
-        forceSTSHeader: true
-        stsIncludeSubdomains: true
-        stsPreload: true
-        stsSeconds: 31536000
-        customFrameOptionsValue: "SAMEORIGIN"
-        customRequestHeaders:
-          X-Forwarded-Proto: "https"
-        customResponseHeaders:
-          X-Frame-Options: "SAMEORIGIN"
-          X-Content-Type-Options: "nosniff"
-          Referrer-Policy: "strict-origin-when-cross-origin"
-          Permissions-Policy: "camera=(), microphone=(), geolocation=()"
+      headers: *security-headers-production
 
     # Development security headers (relaxed)
     dev-headers:
-      headers:
-        frameDeny: false
-        browserXssFilter: true
-        contentTypeNosniff: true
-        customRequestHeaders:
-          X-Forwarded-Proto: "http"
+      headers: *security-headers-development
 
-    # Test security headers (relaxed)
+    # Test security headers (same as development)
     test-headers:
-      headers:
-        frameDeny: false
-        browserXssFilter: true
-        contentTypeNosniff: true
-        customRequestHeaders:
-          X-Forwarded-Proto: "http"
+      headers: *security-headers-development
+
+    # =============================================================================
+    # RATE LIMITING MIDDLEWARES
+    # =============================================================================
 
     # Production rate limiting
     rate-limit:
-      rateLimit:
-        average: 100
-        burst: 200
+      rateLimit: *rate-limit-production
 
     # Development rate limiting (relaxed)
     dev-rate-limit:
-      rateLimit:
-        average: 1000
-        burst: 2000
+      rateLimit: *rate-limit-development
+
+    # Strict rate limiting for sensitive endpoints
+    rate-limit-strict:
+      rateLimit: *rate-limit-strict
 
     # Test rate limiting (relaxed)
     test-rate-limit:
-      rateLimit:
-        average: 1000
-        burst: 2000
+      rateLimit: *rate-limit-development
 
     # Compression middleware
     compress:
@@ -77,11 +251,11 @@ http:
         accessControlAllowOriginList:
           - "*"
 
-    # # Basic auth template (override users in specific services)
-    # basic-auth:
-    #   basicAuth:
-    #     users:
-    #       - "${TRAEFIK_DASHBOARD_USERS}"
+    # Basic auth for production dashboard (override users in environment)
+    basic-auth:
+      basicAuth:
+        users:
+          - "${TRAEFIK_DASHBOARD_USERS:-admin:$2y$10$2b2cu8Sw4kADVOskOnCpYOBz.qtgHPVBpALBjNpjfw/OaEbWtl4nu}" # admin:changeme
 
     # Cache headers for static content
     cache-headers:
@@ -96,10 +270,3 @@ http:
           Cache-Control: "no-cache, no-store, must-revalidate"
           Pragma: "no-cache"
           Expires: "0"
-
-    # # ModSecurity Web Application Firewall
-    # waf:
-    #   plugin:
-    #     traefik-modsecurity-plugin:
-    #       modSecurityUrl: "http://waf:8080"
-    #       maxBodySize: 10485760

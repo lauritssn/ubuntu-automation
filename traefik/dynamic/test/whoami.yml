@@ -7,6 +7,7 @@ http:
         - "web"
       priority: 90
       middlewares:
+        - "coraza-waf-dev@file"
         - "test-headers@file"
         - "test-rate-limit@file"
 

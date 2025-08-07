@@ -7,19 +7,26 @@ Documentation=https://github.com/traefik/whoami
 [Container]
 AutoUpdate=registry
 ContainerName=whoami-prod
+
+# Pin to specific version instead of :latest
 Image=docker.io/traefik/whoami:latest
-SecurityLabelDisable=true
+
+# Only disable if you have a specific need and understand the risk
+# SecurityLabelDisable=true
 User=podman:podman
+
+# Add security hardening
+ReadOnly=true
+NoNewPrivileges=true
+
+# Drop all capabilities and add only what's needed
+DropCapability=ALL
+
+# Limit resources
+Memory=128M
 
 # Network
 Network=traefik
-
-# Health check
-HealthCmd=wget --quiet --tries=1 --spider http://localhost/
-HealthInterval=30s
-HealthTimeout=10s
-HealthRetries=3
-HealthStartPeriod=10s
 
 [Service]
 Restart=on-failure

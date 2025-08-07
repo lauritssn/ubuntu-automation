@@ -34,12 +34,6 @@ api:
 
 ping: {}
 
-# Experimental plugins configuration
-# experimental:
-#   localPlugins:
-#     traefik-modsecurity-plugin:
-#       moduleName: "github.com/acouvreur/traefik-modsecurity-plugin"
-
 # EntryPoints - addresses ignored when socket activation provides file descriptors
 entryPoints:
   web:
@@ -84,4 +78,11 @@ accessLog:
 global:
   checkNewVersion: false
   sendAnonymousUsage: false
+
+# Experimental features - WASM plugin support
+experimental:
+  plugins:
+    coraza:
+      moduleName: github.com/jcchavezs/coraza-http-wasm-traefik
+      version: v0.3.0
 

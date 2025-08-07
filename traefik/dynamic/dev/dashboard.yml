@@ -7,4 +7,5 @@ http:
         - "traefik"
       priority: 100
       middlewares:
-        - "dev-headers" 
+        - "dev-headers@file" 
+        - "coraza-waf-dev@file"

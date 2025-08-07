@@ -1,5 +1,5 @@
 [Unit]
-Description=Admin socket for Traefik Test
+Description=Admin socket for Traefik Production
 After=network.target
 
 [Socket]
@@ -8,7 +8,7 @@ ListenStream=0.0.0.0:8080
 FileDescriptorName=traefik
 FreeBind=true
 NoDelay=true
-Service=traefik-test.service
+Service=traefik-prod.service
 
 [Install]
 WantedBy=sockets.target 

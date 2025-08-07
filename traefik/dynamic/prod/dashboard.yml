@@ -16,8 +16,8 @@ http:
       entryPoints:
         - "websecure"
       middlewares:
-        - "basic-auth"
-        - "security-headers"
+        - "basic-auth@file"
+        - "security-headers@file"
       service: "api@internal"
       tls:
         certResolver: "letsencrypt"

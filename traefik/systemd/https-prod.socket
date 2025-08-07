@@ -1,5 +1,5 @@
 [Unit]
-Description=HTTPS socket for Traefik Test
+Description=HTTPS socket for Traefik Production
 After=network.target
 
 [Socket]
@@ -8,7 +8,7 @@ ListenStream=0.0.0.0:443
 FileDescriptorName=websecure
 FreeBind=true
 NoDelay=true
-Service=traefik-test.service
+Service=traefik-prod.service
 
 [Install]
 WantedBy=sockets.target 
