@@ -1,6 +1,6 @@
 # Ubuntu 24.04 Server Automation
 
-This project provides a comprehensive automation suite for Ubuntu 24.04 server installation and hardening. It transforms a fresh Ubuntu server into a secure, production-ready system with modern security practices, monitoring tools, and optional services like Docker and Wireguard VPN.
+This project provides a comprehensive automation suite for Ubuntu 24.04 server installation and hardening. It transforms a fresh Ubuntu server into a secure, production-ready system with modern security practices, monitoring tools, and optional services like Podman and Wireguard VPN.
 
 ## 🎯 Overview
 
@@ -82,7 +82,7 @@ The automation includes a robust status tracking system that prevents re-install
 
 ```bash
 # Reset specific module (force reinstall)
-./view_install_status.sh reset-module Docker_Installation
+./view_install_status.sh reset-module Podman_Installation
 
 # Reset all modules (force complete reinstall)
 ./view_install_status.sh reset

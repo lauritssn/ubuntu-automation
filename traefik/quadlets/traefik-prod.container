@@ -13,7 +13,7 @@ ContainerName=traefik-prod
 # Good: Using pinned version instead of :latest
 Image=docker.io/traefik:v3.5.0
 
-# Remove this unless you have a specific SELinux/AppArmor issue
+# Remove this unless you have a specific AppArmor issue
 # SecurityLabelDisable=true
 User=podman:podman
 

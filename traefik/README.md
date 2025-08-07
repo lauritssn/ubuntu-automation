@@ -21,28 +21,44 @@ This repository contains configurations for running Traefik reverse proxy in dif
 ```
 traefik/
 ├── quadlets/                   # Quadlet configurations for test/prod
-│   ├── traefik.network
-│   ├── traefik-test.socket
 │   ├── traefik-test.container
-│   ├── traefik-prod.socket
 │   ├── traefik-prod.container
 │   ├── whoami-test.container
 │   └── whoami-prod.container
 ├── scripts/                    # Deployment and management scripts
 │   ├── deploy-dev.sh
 │   ├── deploy-test.sh
-│   ├── deploy-prod.sh
-│   ├── cleanup-dev.sh
-│   ├── cleanup-test.sh
-│   └── cleanup-prod.sh
+│   └── deploy-prod.sh
+├── systemd/                    # Socket activation files
+│   ├── http-prod.socket
+│   ├── http-test.socket
+│   ├── https-prod.socket
+│   ├── https-test.socket
+│   ├── traefik-prod.socket
+│   └── traefik-test.socket
 ├── docker-compose.dev.yml      # Development compose file
-├── docker-compose.test.yml     # Legacy (archived)
-├── docker-compose.prod.yml     # Legacy (archived)
 ├── traefik-dev.yml            # Dev Traefik config
 ├── traefik-test.yml           # Test Traefik config  
 ├── traefik.yml                # Production Traefik config
 ├── dynamic/                   # Dynamic configuration files
-└── data/                      # Persistent data (ACME certs, etc.)
+│   ├── dev/                   # Development-specific configs
+│   │   ├── dashboard.yml
+│   │   └── whoami.yml
+│   ├── test/                  # Test environment configs
+│   │   ├── dashboard.yml
+│   │   └── whoami.yml
+│   ├── prod/                  # Production configs
+│   │   ├── dashboard.yml
+│   │   └── whoami.yml
+│   └── shared/                # Shared configurations
+│       └── middlewares.yml
+├── data/                      # Persistent data (ACME certs, etc.)
+│   └── acme.json
+├── logs/                      # Traefik logs
+│   ├── access.log
+│   └── traefik.log
+├── plugins-storage/           # Plugin storage
+└── env.template              # Environment variables template
 ```
 
 ## Quick Start
@@ -61,8 +77,8 @@ cp env.template .env
 # - Dashboard: http://localhost:8080 or http://traefik.localhost
 # - Whoami: http://whoami.localhost
 
-# Cleanup when done
-./scripts/cleanup-dev.sh
+# Stop development environment
+# (No cleanup script - use docker-compose down)
 ```
 
 ### Test Environment
@@ -78,8 +94,8 @@ export LETSENCRYPT_EMAIL="admin@yourdomain.com"
 # Check status
 systemctl --user status traefik-test.service
 
-# Cleanup when done
-./scripts/cleanup-test.sh
+# Stop test environment
+# (Use systemctl --user stop commands)
 ```
 
 ### Production Environment
@@ -96,8 +112,8 @@ export TRAEFIK_DASHBOARD_DOMAIN="traefik.yourdomain.com"
 # Check status
 systemctl --user status traefik-prod.service
 
-# Cleanup when done
-./scripts/cleanup-prod.sh
+# Stop production environment
+# (Use systemctl --user stop commands)
 ```
 
 ## Key Features
@@ -117,7 +133,7 @@ systemctl --user status traefik-prod.service
 
 ### Security Features
 - Rootless containers for all environments
-- SELinux label management
+- AppArmor profile management
 - Proper file permissions for ACME certificates
 - Resource limits in production
 - Network isolation between services
@@ -170,15 +186,16 @@ docker-compose -f docker-compose.dev.yml logs -f traefik
 docker-compose -f docker-compose.dev.yml ps
 ```
 
-## Migration from Old Setup
+## Socket Activation Setup
 
-The old systemd service files in `systemd/` directory are now replaced by Quadlets:
+The systemd socket files enable socket activation for Traefik services:
 
-- `systemd/traefik-test.service` → `quadlets/traefik-test.container`
-- `systemd/traefik-prod.service` → `quadlets/traefik-prod.container`
-- `systemd/traefik.socket` → `quadlets/traefik-{test,prod}.socket`
+- `systemd/traefik-test.socket` → Activates test environment
+- `systemd/traefik-prod.socket` → Activates production environment
+- `systemd/http-{test,prod}.socket` → HTTP port (80) activation
+- `systemd/https-{test,prod}.socket` → HTTPS port (443) activation
 
-Quadlets provide the same functionality with better integration and easier management.
+Quadlet containers in `quadlets/` directory work with these socket files for systemd integration.
 
 ## Troubleshooting
 
@@ -205,7 +222,7 @@ podman exec traefik-test traefik healthcheck --ping
 
 ### Development Issues
 ```bash
-# Check Docker daemon
+# Check Docker system
 docker info
 
 # Verify network
@@ -221,3 +238,4 @@ netstat -tlnp | grep ':80\|:443\|:8080'
 - Test/Production use Podman Quadlets for better systemd integration and security
 - Socket activation is only used in test/production for client IP preservation
 - All environments support the same Traefik dynamic configuration files
+- Environment-specific configurations are stored in `dynamic/` subdirectories
