@@ -31,7 +31,7 @@ fi
 ## Set variables
 ##########################################################################################
 DATE=$(date +%Y-%m-%d_%H%M)
-SUBSCRIPT="ufw_install.sh"
+SUBSCRIPT="ufw_configure.sh"
 
 if [ -n "$LOGDIR" ]; then
     LOGDIR=$LOGDIR
@@ -53,32 +53,10 @@ CONF_BACK_2=$BACKUPDIR/ufw_rules_$DATE
 show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFILE."
 
 ##########################################################################################
-## Install UFW
+## Configure UFW (pre-installed on Ubuntu 24.04)
 ##########################################################################################
 
-apt-get --yes install ufw >$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of UFW failed. Please check logfile and fix error manually.")
-show_yellow "UFW installation done."
-
-##########################################################################################
-## Check if a ufw.sh file exists and back up
-##########################################################################################
-
-if [ -f $CONF_ORG_1 ]; then
-    cp -p $CONF_ORG_1 $CONF_BACK_1 && show_yellow "Config file $CONF_ORG_1 backed up to $CONF_BACK_1."
-fi
-
-##########################################################################################
-## Back up active ufw rules
-##########################################################################################
-
-ufw status numbered >>$CONF_BACK_2 2>/dev/null
-show_yellow "Backup of active ufw rules can be found in $CONF_BACK_2."
-
-##########################################################################################
-## Configure UFW for Ubuntu 24.04
-##########################################################################################
-
-show_yellow "Configuring UFW defaults for Ubuntu 24.04."
+show_yellow "Configuring UFW (pre-installed on Ubuntu 24.04)."
 
 # Configure defaults
 ufw default deny incoming >>$LOGDIR/$LOGFILE 2>&1
