@@ -67,7 +67,7 @@ show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFIL
 ##########################################################################################
 ## Install Fail2Ban
 ##########################################################################################
-if ! apt-get --yes install fail2ban >>$LOGDIR/$LOGFILE 2>&1; then
+if ! apt_install_safe "fail2ban" "$LOGDIR/$LOGFILE"; then
     show_err "Installation of fail2ban failed. Please check logfile and fix error manually."
     exit 1
 fi

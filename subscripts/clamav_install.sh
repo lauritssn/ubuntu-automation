@@ -73,7 +73,7 @@ apt-get update >>$LOGDIR/$LOGFILE 2>&1
 ## Install ClamAV
 ##########################################################################################
 
-if ! apt-get --yes install clamav clamav-daemon clamav-freshclam >>$LOGDIR/$LOGFILE 2>&1; then
+if ! apt_install_safe "clamav clamav-daemon clamav-freshclam" "$LOGDIR/$LOGFILE"; then
     show_err "ClamAV installation failed. Please check logfile and fix error manually."
     exit 1
 fi

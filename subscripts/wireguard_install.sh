@@ -78,7 +78,10 @@ done
 
 # Install Wireguard packages
 show_yellow "Installing Wireguard packages."
-apt-get --yes install wireguard wireguard-tools qrencode >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of Wireguard failed. Please check logfile and fix error manually." && exit 100)
+if ! apt_install_safe "wireguard wireguard-tools qrencode" "$LOGDIR/$LOGFILE"; then
+    show_err "Installation of Wireguard failed. Please check logfile and fix error manually."
+    exit 100
+fi
 
 show_yellow "Wireguard packages installed successfully."
 

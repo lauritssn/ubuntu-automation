@@ -67,7 +67,10 @@ show_yellow "Installing Postfix..."
 debconf-set-selections <<<"postfix postfix/mailname string $(hostname -f)"
 debconf-set-selections <<<"postfix postfix/main_mailer_type string 'Internet Site'"
 
-apt-get --yes install postfix mailutils >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of Postfix failed. Please check logfile and fix error manually.")
+if ! apt_install_safe "postfix mailutils" "$LOGDIR/$LOGFILE"; then
+    show_err "Installation of Postfix failed. Please check logfile and fix error manually."
+    exit 1
+fi
 
 show_yellow "Postfix installed successfully."
 

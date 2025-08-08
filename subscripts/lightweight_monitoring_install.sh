@@ -60,7 +60,10 @@ show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFIL
 show_yellow "Installing lightweight monitoring tools."
 
 # Install additional lightweight monitoring tools
-apt-get --yes install sysstat nethogs ncdu tree >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of monitoring tools failed. Please check logfile and fix error manually.")
+if ! apt_install_safe "sysstat nethogs ncdu tree" "$LOGDIR/$LOGFILE"; then
+    show_err "Installation of monitoring tools failed. Please check logfile and fix error manually."
+    exit 1
+fi
 
 show_yellow "Lightweight monitoring tools installed successfully."
 

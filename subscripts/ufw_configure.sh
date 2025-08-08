@@ -53,10 +53,18 @@ CONF_BACK_2=$BACKUPDIR/ufw_rules_$DATE
 show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFILE."
 
 ##########################################################################################
-## Configure UFW (pre-installed on Ubuntu 24.04)
+## Install and Configure UFW
 ##########################################################################################
 
-show_yellow "Configuring UFW (pre-installed on Ubuntu 24.04)."
+show_yellow "Installing UFW if not already present."
+
+# Install UFW if not already installed
+if ! apt_install_safe "ufw" "$LOGDIR/$LOGFILE"; then
+    show_err "Installation of UFW failed. Please check logfile and fix error manually."
+    exit 1
+fi
+
+show_yellow "Configuring UFW."
 
 # Configure defaults
 ufw default deny incoming >>$LOGDIR/$LOGFILE 2>&1
