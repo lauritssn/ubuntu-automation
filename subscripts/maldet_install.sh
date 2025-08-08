@@ -72,7 +72,7 @@ fi
 ##########################################################################################
 
 cd /tmp
-apt-get --yes install inotify-tools >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of inotify-tools failed. Please check logfile and fix error manually.")
+apt_install_safe "inotify-tools" "$LOGDIR/$LOGFILE" || (show_err "Installation of inotify-tools failed. Please check logfile and fix error manually.")
 wget https://www.rfxn.com/downloads/$MALDET_PKG >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Download of maldet failed. Please check logfile and fix error manually.")
 show_yellow "Maldet downloaded successfully."
 tar xfz $MALDET_PKG >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Extraction of maldet package failed. Please check logfile and fix error manually.")

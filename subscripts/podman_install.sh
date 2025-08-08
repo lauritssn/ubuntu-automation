@@ -83,7 +83,7 @@ show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFIL
 show_yellow "Installing Podman in rootless mode."
 
 # Update package lists
-apt-get update >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Package update failed. Please check logfile and fix error manually.")
+apt_update_safe "$LOGDIR/$LOGFILE" || (show_err "Package update failed. Please check logfile and fix error manually.")
 
 # Check available packages and show versions
 show_info "Checking available Podman packages..."
@@ -94,16 +94,16 @@ fi
 
 show_yellow "Installing Podman and required dependencies."
 # Install core packages
-apt-get --yes install podman uidmap dbus-user-session crun >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of core Podman packages failed. Please check logfile and fix error manually.")
+apt_install_safe "podman uidmap dbus-user-session crun" "$LOGDIR/$LOGFILE" || (show_err "Installation of core Podman packages failed. Please check logfile and fix error manually.")
 
 # Install additional useful tools
 show_yellow "Installing additional container tools."
-apt-get --yes install buildah skopeo >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Some additional tools failed to install - continuing with core installation"
+apt_install_safe "buildah skopeo" "$LOGDIR/$LOGFILE" || show_warn "Some additional tools failed to install - continuing with core installation"
 
 # Try to install podman-compose if available
 if apt-cache show podman-compose >/dev/null 2>&1; then
     show_yellow "Installing podman-compose."
-    apt-get --yes install podman-compose >>$LOGDIR/$LOGFILE 2>&1 || show_warn "podman-compose installation failed - Docker Compose alternative may not be available"
+    apt_install_safe "podman-compose" "$LOGDIR/$LOGFILE" || show_warn "podman-compose installation failed - Docker Compose alternative may not be available"
 else
     show_warn "podman-compose package not available in repositories"
 fi

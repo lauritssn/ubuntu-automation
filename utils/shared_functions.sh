@@ -44,6 +44,67 @@ check_root() {
     fi
 }
 
+# Wait for APT lock to be released and perform operation with retry logic
+apt_with_lock_retry() {
+    local max_attempts="${1:-5}"
+    local delay="${2:-3}"
+    shift 2
+    local apt_command="$@"
+
+    log_info "Executing APT command with lock retry: $apt_command"
+
+    for attempt in $(seq 1 $max_attempts); do
+        # Check if dpkg/apt is locked
+        if fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 ||
+            fuser /var/lib/apt/lists/lock >/dev/null 2>&1 ||
+            fuser /var/cache/apt/archives/lock >/dev/null 2>&1; then
+
+            if [ $attempt -eq $max_attempts ]; then
+                log_error "APT is locked after $max_attempts attempts. Please wait for other package operations to complete."
+                return 1
+            fi
+
+            log_info "APT is locked, waiting ${delay}s before retry (attempt $attempt/$max_attempts)..."
+            sleep $delay
+            continue
+        fi
+
+        # Try to execute the command
+        if eval "$apt_command"; then
+            log_info "APT command completed successfully on attempt $attempt"
+            return 0
+        else
+            local exit_code=$?
+            if [ $attempt -eq $max_attempts ]; then
+                log_error "APT command failed after $max_attempts attempts with exit code $exit_code"
+                return $exit_code
+            fi
+
+            log_warning "APT command failed on attempt $attempt, retrying in ${delay}s..."
+            sleep $delay
+        fi
+    done
+
+    return 1
+}
+
+# Enhanced APT update with lock handling
+apt_update_safe() {
+    local logfile="${1:-/dev/null}"
+
+    log_info "Performing safe APT update with lock detection"
+    apt_with_lock_retry 5 3 "apt-get update >>$logfile 2>&1"
+}
+
+# Enhanced APT install with lock handling
+apt_install_safe() {
+    local packages="$1"
+    local logfile="${2:-/dev/null}"
+
+    log_info "Performing safe APT install for packages: $packages"
+    apt_with_lock_retry 5 3 "apt-get --yes install $packages >>$logfile 2>&1"
+}
+
 # Create necessary directories
 ensure_directories() {
     mkdir -p "$LOGDIR" "$BACKUPDIR" "$SCRIPTSDIR"
@@ -123,10 +184,10 @@ show_error_no_exit() {
 init_logging() {
     local script_name="$1"
     local install_id="${2:-$(date +%Y%m%d_%H%M%S)}"
-    
+
     export JOURNAL_TAG="ubuntu-automation-${install_id}"
     export CURRENT_SCRIPT="$script_name"
-    
+
     # Log to systemd journal if available
     if command -v systemd-cat >/dev/null 2>&1; then
         export SYSTEMD_LOGGING_AVAILABLE=true
@@ -148,18 +209,18 @@ log_message() {
 
     # Also display to user with appropriate formatting
     case "$level" in
-        "info")
-            show_info "$message"
-            ;;
-        "warning")
-            show_warn "$message"
-            ;;
-        "err"|"error")
-            show_error_no_exit "$message"
-            ;;
-        *)
-            echo "$message"
-            ;;
+    "info")
+        show_info "$message"
+        ;;
+    "warning")
+        show_warn "$message"
+        ;;
+    "err" | "error")
+        show_error_no_exit "$message"
+        ;;
+    *)
+        echo "$message"
+        ;;
     esac
 }
 
@@ -194,7 +255,7 @@ export INSTALL_STATUS_LOG="/srv/apps/scripts/installation_status.log"
 # Initialize the installation status log
 init_install_status_log() {
     ensure_directories
-    
+
     if [ ! -f "$INSTALL_STATUS_LOG" ]; then
         cat >"$INSTALL_STATUS_LOG" <<EOF
 # Ubuntu Automation Installation Status Log
@@ -429,6 +490,10 @@ execute_module() {
         return 0
     fi
 
+    # Add small delay before module execution to prevent lock conflicts
+    log_info "Preparing to execute $module_name (waiting 2s to prevent lock conflicts)..."
+    sleep 2
+
     # Execute the module
     log_start "$module_name"
 
@@ -445,6 +510,10 @@ execute_module() {
         mark_module_success "$module_name"
         log_success "$module_name"
         show_yellow "$module_name installation completed successfully"
+
+        # Add small delay after successful module execution
+        log_info "$module_name completed, waiting 1s before next module..."
+        sleep 1
     else
         mark_module_failed "$module_name"
         log_error "$module_name installation failed with exit code $exit_code"
@@ -482,7 +551,7 @@ USER_CHOICES_FILE="/srv/apps/scripts/user_choices.conf"
 # Save user choices to file
 save_user_choices() {
     ensure_directories
-    
+
     cat >"$USER_CHOICES_FILE" <<EOF
 # Ubuntu Automation User Choices
 # Generated on: $(date)
@@ -584,6 +653,9 @@ export -f check_root
 export -f ensure_directories
 export -f generate_password
 export -f validate_username
+export -f apt_with_lock_retry
+export -f apt_update_safe
+export -f apt_install_safe
 
 # Export color output functions
 export -f show_yellow
@@ -639,4 +711,4 @@ ensure_directories
 # Set default script name if not provided
 if [ -z "$CURRENT_SCRIPT" ]; then
     export CURRENT_SCRIPT="$(basename "${BASH_SOURCE[1]:-unknown}")"
-fi 
+fi
