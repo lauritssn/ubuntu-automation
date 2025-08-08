@@ -419,99 +419,45 @@ sudo ufw status numbered
 
 ### 12. Optional Services
 
-#### Docker Installation (`docker_install.sh`)
+#### Podman Installation (`podman_install.sh`)
 
 **Estimated time:** 3-8 minutes
 
-**Docker Installation Options:**
+**Podman Installation Features:**
 
-- **System Docker:** Traditional Docker with root daemon (requires user in docker group)
-- **Rootless Docker with existing user:** Uses your current user account (set DOCKER_DEDICATED_USER=N)
-- **Rootless Docker with dedicated user:** Creates a dedicated `dockerrootless` user for better isolation (default)
-
-**Recommended approach:** Use dedicated user for production servers (default), existing user for development.
+- **Rootless containers:** Enhanced security with user namespaces by default
+- **Dedicated user:** Creates a dedicated `podman` user for better isolation
+- **Systemd integration:** Native socket activation and service management
+- **Docker compatibility:** Drop-in replacement for most Docker commands
 
 ```bash
-# Test Docker installation with options
+# Test Podman installation
+sudo ./run_subscript.sh podman_install.sh
 
-# Option 1: Rootless Docker with dedicated user (default - recommended)
-export DOCKER_DATA_ROOT="/var/lib/docker"
-export DOCKER_ROOTLESS="Y"
-# DOCKER_DEDICATED_USER defaults to "Y" for rootless installations
-# DOCKER_USER_NAME defaults to "dockerrootless"
-sudo ./run_subscript.sh docker_install.sh
+# Verify installation
+podman-status  # Comprehensive status check
 
-# Option 2: Rootless Docker with existing user
-export DOCKER_DATA_ROOT="/var/lib/docker"
-export DOCKER_ROOTLESS="Y"
-export DOCKER_DEDICATED_USER="N"
-sudo ./run_subscript.sh docker_install.sh
+# Test basic container operations
+podman-user run hello-world
+podman-user ps -a
+podman-user images
 
-# Option 3: Rootless Docker with custom dedicated user name
-export DOCKER_DATA_ROOT="/var/lib/docker"
-export DOCKER_ROOTLESS="Y"
-export DOCKER_DEDICATED_USER="Y"
-export DOCKER_USER_NAME="mycustomdockeruser"
-sudo ./run_subscript.sh docker_install.sh
+# Test socket activation
+podman-socket list
+podman-socket status
 
-# Verify installation type
-if [[ "$DOCKER_ROOTLESS" =~ [Yy]$ ]]; then
-    if [[ "$DOCKER_DEDICATED_USER" =~ [Yy]$ ]]; then
-        # For rootless Docker with dedicated user
-        echo "Testing with dedicated Docker user..."
-
-        # Switch to the Docker user
-        sudo su - ${DOCKER_USER_NAME:-dockerrootless} -c "
-            # Verify Docker is available
-            docker --version
-
-            # Check if rootless daemon is running
-            systemctl --user status docker
-
-            # Test Docker rootless (no sudo needed)
-            docker run hello-world
-        "
-
-        # Alternative: manually switch and test
-        echo "Or manually switch to test:"
-        echo "sudo su - ${DOCKER_USER_NAME:-dockerrootless}"
-        echo "docker run hello-world"
-
-    else
-        # For rootless Docker with existing user
-        docker --version
-
-        # Check if rootless daemon is running
-        systemctl --user status docker
-
-        # If not set up, run manual setup
-        dockerd-rootless-setuptool.sh install
-
-        # Add environment variables to shell profile
-        echo 'export PATH=$PATH:/usr/bin' >> ~/.bashrc
-        echo 'export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/docker.sock' >> ~/.bashrc
-        source ~/.bashrc
-
-        # Test Docker rootless (no sudo needed)
-        docker run hello-world
-    fi
-else
-    # For system Docker
-    sudo docker --version
-    sudo systemctl status docker
-
-    # Check if user is in docker group
-    groups $USER | grep docker
-
-    # If not in docker group, add user and restart session
-    sudo usermod -aG docker $USER
-
-    # Test Docker (may require logout/login for group changes to take effect)
-    sudo docker run hello-world
-
-    # After logout/login, test without sudo
-    docker run hello-world
-fi
+# Verify rootless operation
+sudo su - podman -c "
+    # Verify Podman is available
+    podman --version
+    
+    # Check environment
+    echo \$XDG_RUNTIME_DIR
+    
+    # Test basic functionality
+    podman run hello-world
+    podman ps -a
+"
 ```
 
 #### Netdata Installation (`netdata_install.sh`)
@@ -541,18 +487,7 @@ sudo wg show
 add-wg-client testclient
 ```
 
-#### Dokku Installation (`dokku_install.sh`)
 
-**Estimated time:** 5-15 minutes
-
-```bash
-# Test Dokku installation
-sudo ./run_subscript.sh dokku_install.sh
-
-# Verify
-dokku version
-dokku apps:list
-```
 
 ## Testing Strategy Recommendations
 

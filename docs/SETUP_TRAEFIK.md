@@ -1,15 +1,15 @@
 # Traefik Setup with Podman - Service File Approach
 
-This guide explains how to set up Traefik with Podman using **systemd service files** with Docker Compose for maximum configuration flexibility. Production uses socket activation for real client IP preservation, while development uses direct port mapping for simplicity.
+This guide explains how to set up Traefik with Podman using **systemd service files** with Podman Compose for maximum configuration flexibility. Production uses socket activation for real client IP preservation, while development uses direct port mapping for simplicity.
 
 ## Overview: Service File + Docker Compose Approach
 
 This approach provides the best balance of features:
 
-### ✅ **Why Service Files + Docker Compose?**
+### ✅ **Why Service Files + Podman Compose?**
 
 - **Socket activation compatibility** - Perfect integration with systemd socket activation
-- **Maximum compose configuration** - Configure everything in `docker-compose.yml`
+- **Maximum compose configuration** - Configure everything in `podman-compose.yml`
 - **Environment-driven** - Single `.env` file controls all settings
 - **Easy debugging** - Clear systemd and compose logs
 - **Production-ready** - Proper restart policies and dependencies
@@ -230,8 +230,8 @@ traefik/
 │   ├── traefik-prod.service    # Production service (socket activation)
 │   ├── traefik-dev.service     # Development service (direct ports)
 │   └── traefik.socket          # Socket activation config
-├── docker-compose.prod.yml     # Production compose (no port mappings)
-├── docker-compose.dev.yml      # Development compose (with port mappings)
+├── podman-compose.prod.yml     # Production compose (no port mappings)
+├── podman-compose.dev.yml      # Development compose (with port mappings)
 ├── traefik.yml                 # Production config (socket activation)
 ├── traefik-dev.yml            # Development config (direct ports)
 └── .env                       # Environment-driven configuration
@@ -239,7 +239,7 @@ traefik/
 
 ### Production Features in Compose File
 
-The production `docker-compose.prod.yml` includes:
+The production `podman-compose.prod.yml` includes:
 
 ```yaml
 services:
@@ -266,7 +266,7 @@ services:
 
 ### Development Features in Compose File
 
-The development `docker-compose.dev.yml` includes:
+The development `podman-compose.dev.yml` includes:
 
 ```yaml
 services:
@@ -382,7 +382,7 @@ sudo podman-user ps -a
 
 ### Production Service Example
 
-Add to `docker-compose.prod.yml`:
+Add to `podman-compose.prod.yml`:
 
 ```yaml
 services:
@@ -420,7 +420,7 @@ http:
 
 ### Development Service Example
 
-Add to `docker-compose.dev.yml`:
+Add to `podman-compose.dev.yml`:
 
 ```yaml
 services:
@@ -471,7 +471,7 @@ podman exec -it traefik-prod /bin/sh
 
 # Check compose status
 cd /srv/apps/deploy/WTools/traefik
-podman-compose -f docker-compose.prod.yml ps
+podman-compose -f podman-compose.prod.yml ps
 ```
 
 ### Development Issues
@@ -534,7 +534,7 @@ XDG_RUNTIME_DIR=/run/user/$(id -u)
 
 ## Summary
 
-This **Service File + Docker Compose** approach provides:
+This **Service File + Podman Compose** approach provides:
 
 ### Production Benefits
 - **Socket activation** preserves real client IP addresses
