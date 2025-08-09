@@ -17,6 +17,9 @@ Image=docker.io/traefik:v3.5.0
 # SecurityLabelDisable=true
 User=podman:podman
 
+LogDriver=journald
+LogOpt=tag=traefik-prod
+
 # Volumes
 Volume=/srv/apps/deploy/traefik/traefik-prod.yml:/etc/traefik/traefik.yml:ro,Z
 Volume=/srv/apps/deploy/traefik/dynamic/prod:/etc/traefik/sites/config:ro,Z

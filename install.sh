@@ -454,6 +454,11 @@ execute_module "Packages_Installation" "$BASEDIR/subscripts/packages_install.sh"
 
 printf "\n--------------------\n"
 
+# Configure systemd journal retention (must be early to apply to all subsequent logging)
+execute_module "Journald_Configuration" "$BASEDIR/subscripts/journald_config.sh" "Y"
+
+printf "\n--------------------\n"
+
 # Network security configuration (must be early in process)
 execute_module "Network_Security" "$BASEDIR/subscripts/network_security.sh" "Y"
 

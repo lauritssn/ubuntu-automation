@@ -11,6 +11,9 @@ ContainerName=traefik-test
 Image=docker.io/traefik:v3.5.0
 SecurityLabelDisable=true
 
+LogDriver=journald
+LogOpt=tag=traefik-test
+
 # Volumes
 Volume=/srv/apps/deploy/traefik/traefik-test.yml:/etc/traefik/traefik.yml:ro,Z
 Volume=/srv/apps/deploy/traefik/dynamic/test:/etc/traefik/sites/config:ro,Z
