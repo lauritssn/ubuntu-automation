@@ -44,7 +44,7 @@ DropCapability=ALL
 # Traefik needs these for binding to privileged ports and network operations
 AddCapability=CAP_NET_BIND_SERVICE
 
-# Resource limits (your existing ones are good)
+# Resource limits
 Memory=512m
 MemoryReservation=256m
 
@@ -52,8 +52,8 @@ MemoryReservation=256m
 CpuQuota=100%
 PidsLimit=1024
 
-# Health check (good as-is)
-HealthCmd=traefik healthcheck --ping
+# Health check
+HealthCmd=traefik healthcheck --ping --entryPoint=internal
 HealthInterval=30s
 HealthTimeout=10s
 HealthRetries=3

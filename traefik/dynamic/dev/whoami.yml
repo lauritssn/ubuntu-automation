@@ -1,7 +1,7 @@
 http:
   routers:
     whoami-dev:
-      rule: "Host(`whoami.localhost`)"
+      rule: "Host(`whoami.localdev`)"
       service: "whoami-dev"
       entryPoints:
         - "web"

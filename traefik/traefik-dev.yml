@@ -32,7 +32,8 @@ api:
   dashboard: true
   insecure: true # Allow HTTP dashboard access
 
-ping: {}
+ping:
+  entryPoint: "internal"
 
 # EntryPoints - addresses ignored when socket activation provides file descriptors
 entryPoints:
@@ -44,6 +45,8 @@ entryPoints:
     address: ":8080"
     forwardedHeaders:
       trustedIPs: *trusted-ips
+  internal:
+    address: ":9000" # new port bound inside container
 
 providers:
   # Dynamic configuration files
@@ -89,4 +92,3 @@ experimental:
     coraza:
       moduleName: github.com/jcchavezs/coraza-http-wasm-traefik
       version: v0.3.0
-

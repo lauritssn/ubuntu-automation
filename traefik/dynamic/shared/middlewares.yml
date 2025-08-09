@@ -67,132 +67,253 @@ http:
       plugin:
         coraza:
           directives: [
-            # OWASP TOP 10 PROTECTION
-            'SecRule REQUEST_URI "@streq /.env" "id:101,phase:1,log,deny,status:403,msg:Environment file access blocked"',
-            'SecRule REQUEST_URI "@streq /admin" "id:102,phase:1,log,deny,status:403,msg:Admin path access blocked"',
-            'SecRule REQUEST_URI "@contains .." "id:103,phase:1,log,deny,status:403,msg:Directory traversal attempt"',
-            'SecRule REQUEST_URI "@rx \.(htaccess|htpasswd|ini|log|conf|backup|bak|old|tmp)$" "id:104,phase:1,log,deny,status:403,msg:Sensitive file access attempt"',
-            'SecRule REQUEST_URI "@rx /\.(git|svn|hg)" "id:105,phase:1,log,deny,status:403,msg:Version control directory access blocked"',
-            'SecRule ARGS "@rx union.*select" "id:301,phase:2,log,deny,status:403,msg:SQL injection attempt detected"',
-            'SecRule ARGS "@rx (select|insert|update|delete|drop|create).*from" "id:302,phase:2,log,deny,status:403,msg:SQL injection detected"',
-            'SecRule ARGS "@rx \-\-|\#|\*\/|\*\*" "id:303,phase:2,log,deny,status:403,msg:SQL comment injection blocked"',
-            'SecRule ARGS "@rx <script.*?>" "id:304,phase:2,log,deny,status:403,msg:XSS script tag detected"',
-            'SecRule ARGS "@rx javascript:" "id:305,phase:2,log,deny,status:403,msg:XSS javascript protocol detected"',
-            'SecRule ARGS "@rx on(load|click|error|focus)" "id:306,phase:2,log,deny,status:403,msg:XSS event handler detected"',
-            'SecRule ARGS "@rx (;|\||&|`|\$\(|\$\{)" "id:401,phase:2,log,deny,status:403,msg:Command injection attempt detected"',
-            'SecRule ARGS "@rx (wget|curl|nc|netcat|telnet|ssh)" "id:402,phase:2,log,deny,status:403,msg:System command detected"',
-            'SecRule REQUEST_METHOD "@streq TRACE" "id:501,phase:1,log,deny,status:405,msg:TRACE method not allowed"',
-            'SecRule REQUEST_METHOD "@streq TRACK" "id:502,phase:1,log,deny,status:405,msg:TRACK method not allowed"',
-            'SecRule REQUEST_METHOD "@streq OPTIONS" "id:503,phase:1,log,pass,msg:OPTIONS method logged"',
-            'SecRule REQUEST_HEADERS:User-Agent "@rx (sqlmap|nikto|nmap|masscan|gobuster|dirb|dirbuster|wpscan)" "id:601,phase:1,log,deny,status:403,msg:Security scanner detected"',
-            'SecRule REQUEST_HEADERS:User-Agent "@rx (python-requests|curl|wget)" "id:602,phase:1,log,pass,msg:Automated tool detected"',
-            'SecRule ARGS "@rx (admin|administrator|root|test|guest|demo)" "id:701,phase:2,log,pass,msg:Common username detected"',
-            'SecRule REQUEST_URI "@rx /(login|signin|auth)" "id:702,phase:1,log,pass,msg:Authentication endpoint accessed"',
-            'SecRule REQUEST_HEADERS:Content-Type "@rx multipart/form-data" "id:801,phase:1,log,pass,msg:File upload detected"',
-            'SecRule ARGS "@rx (localhost|127\.0\.0\.1|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)" "id:1001,phase:2,log,deny,status:403,msg:SSRF attempt detected"',
-            'SecRule ARGS "@rx (file://|ftp://|gopher://|dict://)" "id:1002,phase:2,log,deny,status:403,msg:Dangerous protocol detected"',
-            # WordPress protection
-            'SecRule REQUEST_URI "@rx /wp-config\.php" "id:2001,phase:1,log,deny,status:403,msg:WordPress config file access blocked"',
-            'SecRule REQUEST_URI "@rx /wp-admin/install\.php" "id:2002,phase:1,log,deny,status:403,msg:WordPress install file access blocked"',
-            'SecRule REQUEST_URI "@rx /wp-content/debug\.log" "id:2003,phase:1,log,deny,status:403,msg:WordPress debug log access blocked"',
-            'SecRule REQUEST_URI "@rx /wp-includes/" "id:2004,phase:1,log,deny,status:403,msg:WordPress includes directory access blocked"',
-            'SecRule REQUEST_URI "@rx /wp-admin/" "id:2010,phase:1,log,pass,msg:WordPress admin access detected"',
-            'SecRule REQUEST_URI "@rx /wp-login\.php" "id:2011,phase:1,log,pass,msg:WordPress login attempt detected"',
-            'SecRule ARGS "@rx (/wp-content/uploads/.*\.php)" "id:2020,phase:2,log,deny,status:403,msg:PHP file upload to WordPress uploads blocked"',
-            'SecRule REQUEST_URI "@rx /xmlrpc\.php" "id:2021,phase:1,log,deny,status:403,msg:WordPress XML-RPC blocked"',
-            # Engine settings
-            "SecRuleEngine On",
-            "SecDebugLog /dev/stdout",
-            "SecDebugLogLevel 1"
-          ]
+              # OWASP TOP 10 PROTECTION
+              'SecRule REQUEST_URI "@streq /.env" "id:101,phase:1,log,deny,status:403,msg:Environment file access blocked"',
+              'SecRule REQUEST_URI "@streq /admin" "id:102,phase:1,log,deny,status:403,msg:Admin path access blocked"',
+              'SecRule REQUEST_URI "@contains .." "id:103,phase:1,log,deny,status:403,msg:Directory traversal attempt"',
+              'SecRule REQUEST_URI "@rx \.(htaccess|htpasswd|ini|log|conf|backup|bak|old|tmp)$" "id:104,phase:1,log,deny,status:403,msg:Sensitive file access attempt"',
+              'SecRule REQUEST_URI "@rx /\.(git|svn|hg)" "id:105,phase:1,log,deny,status:403,msg:Version control directory access blocked"',
+              'SecRule ARGS "@rx union.*select" "id:301,phase:2,log,deny,status:403,msg:SQL injection attempt detected"',
+              'SecRule ARGS "@rx (select|insert|update|delete|drop|create).*from" "id:302,phase:2,log,deny,status:403,msg:SQL injection detected"',
+              'SecRule ARGS "@rx \-\-|\#|\*\/|\*\*" "id:303,phase:2,log,deny,status:403,msg:SQL comment injection blocked"',
+              'SecRule ARGS "@rx <script.*?>" "id:304,phase:2,log,deny,status:403,msg:XSS script tag detected"',
+              'SecRule ARGS "@rx javascript:" "id:305,phase:2,log,deny,status:403,msg:XSS javascript protocol detected"',
+              'SecRule ARGS "@rx on(load|click|error|focus)" "id:306,phase:2,log,deny,status:403,msg:XSS event handler detected"',
+              'SecRule ARGS "@rx (;|\||&|`|\$\(|\$\{)" "id:401,phase:2,log,deny,status:403,msg:Command injection attempt detected"',
+              'SecRule ARGS "@rx (wget|curl|nc|netcat|telnet|ssh)" "id:402,phase:2,log,deny,status:403,msg:System command detected"',
+              'SecRule REQUEST_METHOD "@streq TRACE" "id:501,phase:1,log,deny,status:405,msg:TRACE method not allowed"',
+              'SecRule REQUEST_METHOD "@streq TRACK" "id:502,phase:1,log,deny,status:405,msg:TRACK method not allowed"',
+              'SecRule REQUEST_METHOD "@streq OPTIONS" "id:503,phase:1,log,pass,msg:OPTIONS method logged"',
+              'SecRule REQUEST_HEADERS:User-Agent "@rx (sqlmap|nikto|nmap|masscan|gobuster|dirb|dirbuster|wpscan)" "id:601,phase:1,log,deny,status:403,msg:Security scanner detected"',
+              'SecRule REQUEST_HEADERS:User-Agent "@rx (python-requests|curl|wget)" "id:602,phase:1,log,pass,msg:Automated tool detected"',
+              'SecRule ARGS "@rx (admin|administrator|root|test|guest|demo)" "id:701,phase:2,log,pass,msg:Common username detected"',
+              'SecRule REQUEST_URI "@rx /(login|signin|auth)" "id:702,phase:1,log,pass,msg:Authentication endpoint accessed"',
+              'SecRule REQUEST_HEADERS:Content-Type "@rx multipart/form-data" "id:801,phase:1,log,pass,msg:File upload detected"',
+              'SecRule ARGS "@rx (localhost|127\.0\.0\.1|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)" "id:1001,phase:2,log,deny,status:403,msg:SSRF attempt detected"',
+              'SecRule ARGS "@rx (file://|ftp://|gopher://|dict://)" "id:1002,phase:2,log,deny,status:403,msg:Dangerous protocol detected"',
+              # WordPress protection
+              'SecRule REQUEST_URI "@rx /wp-config\.php" "id:2001,phase:1,log,deny,status:403,msg:WordPress config file access blocked"',
+              'SecRule REQUEST_URI "@rx /wp-admin/install\.php" "id:2002,phase:1,log,deny,status:403,msg:WordPress install file access blocked"',
+              'SecRule REQUEST_URI "@rx /wp-content/debug\.log" "id:2003,phase:1,log,deny,status:403,msg:WordPress debug log access blocked"',
+              'SecRule REQUEST_URI "@rx /wp-includes/" "id:2004,phase:1,log,deny,status:403,msg:WordPress includes directory access blocked"',
+              'SecRule REQUEST_URI "@rx /wp-admin/" "id:2010,phase:1,log,pass,msg:WordPress admin access detected"',
+              'SecRule REQUEST_URI "@rx /wp-login\.php" "id:2011,phase:1,log,pass,msg:WordPress login attempt detected"',
+              'SecRule ARGS "@rx (/wp-content/uploads/.*\.php)" "id:2020,phase:2,log,deny,status:403,msg:PHP file upload to WordPress uploads blocked"',
+              'SecRule REQUEST_URI "@rx /xmlrpc\.php" "id:2021,phase:1,log,deny,status:403,msg:WordPress XML-RPC blocked"',
+              # Engine settings
+              "SecRuleEngine On",
+              "SecDebugLog /dev/stdout",
+              "SecDebugLogLevel 1",
+            ]
 
     # Development Coraza WAF with verbose logging
     coraza-waf-dev:
       plugin:
         coraza:
           directives: [
-            # OWASP TOP 10 PROTECTION
-            'SecRule REQUEST_URI "@streq /.env" "id:101,phase:1,log,deny,status:403,msg:Environment file access blocked"',
-            'SecRule REQUEST_URI "@streq /admin" "id:102,phase:1,log,deny,status:403,msg:Admin path access blocked"',
-            'SecRule REQUEST_URI "@contains .." "id:103,phase:1,log,deny,status:403,msg:Directory traversal attempt"',
-            'SecRule REQUEST_URI "@rx \.(htaccess|htpasswd|ini|log|conf|backup|bak|old|tmp)$" "id:104,phase:1,log,deny,status:403,msg:Sensitive file access attempt"',
-            'SecRule REQUEST_URI "@rx /\.(git|svn|hg)" "id:105,phase:1,log,deny,status:403,msg:Version control directory access blocked"',
-            'SecRule ARGS "@rx union.*select" "id:301,phase:2,log,deny,status:403,msg:SQL injection attempt detected"',
-            'SecRule ARGS "@rx (select|insert|update|delete|drop|create).*from" "id:302,phase:2,log,deny,status:403,msg:SQL injection detected"',
-            'SecRule ARGS "@rx \-\-|\#|\*\/|\*\*" "id:303,phase:2,log,deny,status:403,msg:SQL comment injection blocked"',
-            'SecRule ARGS "@rx <script.*?>" "id:304,phase:2,log,deny,status:403,msg:XSS script tag detected"',
-            'SecRule ARGS "@rx javascript:" "id:305,phase:2,log,deny,status:403,msg:XSS javascript protocol detected"',
-            'SecRule ARGS "@rx on(load|click|error|focus)" "id:306,phase:2,log,deny,status:403,msg:XSS event handler detected"',
-            'SecRule ARGS "@rx (;|\||&|`|\$\(|\$\{)" "id:401,phase:2,log,deny,status:403,msg:Command injection attempt detected"',
-            'SecRule ARGS "@rx (wget|curl|nc|netcat|telnet|ssh)" "id:402,phase:2,log,deny,status:403,msg:System command detected"',
-            'SecRule REQUEST_METHOD "@streq TRACE" "id:501,phase:1,log,deny,status:405,msg:TRACE method not allowed"',
-            'SecRule REQUEST_METHOD "@streq TRACK" "id:502,phase:1,log,deny,status:405,msg:TRACK method not allowed"',
-            'SecRule REQUEST_METHOD "@streq OPTIONS" "id:503,phase:1,log,pass,msg:OPTIONS method logged"',
-            'SecRule REQUEST_HEADERS:User-Agent "@rx (sqlmap|nikto|nmap|masscan|gobuster|dirb|dirbuster|wpscan)" "id:601,phase:1,log,deny,status:403,msg:Security scanner detected"',
-            'SecRule REQUEST_HEADERS:User-Agent "@rx (python-requests|curl|wget)" "id:602,phase:1,log,pass,msg:Automated tool detected"',
-            'SecRule ARGS "@rx (admin|administrator|root|test|guest|demo)" "id:701,phase:2,log,pass,msg:Common username detected"',
-            'SecRule REQUEST_URI "@rx /(login|signin|auth)" "id:702,phase:1,log,pass,msg:Authentication endpoint accessed"',
-            'SecRule REQUEST_HEADERS:Content-Type "@rx multipart/form-data" "id:801,phase:1,log,pass,msg:File upload detected"',
-            'SecRule ARGS "@rx (localhost|127\.0\.0\.1|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)" "id:1001,phase:2,log,deny,status:403,msg:SSRF attempt detected"',
-            'SecRule ARGS "@rx (file://|ftp://|gopher://|dict://)" "id:1002,phase:2,log,deny,status:403,msg:Dangerous protocol detected"',
-            # WordPress protection
-            'SecRule REQUEST_URI "@rx /wp-config\.php" "id:2001,phase:1,log,deny,status:403,msg:WordPress config file access blocked"',
-            'SecRule REQUEST_URI "@rx /wp-admin/install\.php" "id:2002,phase:1,log,deny,status:403,msg:WordPress install file access blocked"',
-            'SecRule REQUEST_URI "@rx /wp-content/debug\.log" "id:2003,phase:1,log,deny,status:403,msg:WordPress debug log access blocked"',
-            'SecRule REQUEST_URI "@rx /wp-includes/" "id:2004,phase:1,log,deny,status:403,msg:WordPress includes directory access blocked"',
-            'SecRule REQUEST_URI "@rx /wp-admin/" "id:2010,phase:1,log,pass,msg:WordPress admin access detected"',
-            'SecRule REQUEST_URI "@rx /wp-login\.php" "id:2011,phase:1,log,pass,msg:WordPress login attempt detected"',
-            'SecRule ARGS "@rx (/wp-content/uploads/.*\.php)" "id:2020,phase:2,log,deny,status:403,msg:PHP file upload to WordPress uploads blocked"',
-            'SecRule REQUEST_URI "@rx /xmlrpc\.php" "id:2021,phase:1,log,deny,status:403,msg:WordPress XML-RPC blocked"',
-            # Engine settings
-            "SecRuleEngine On",
-            "SecDebugLog /dev/stdout",
-            "SecDebugLogLevel 3"
-          ]
+              # OWASP TOP 10 PROTECTION
+              'SecRule REQUEST_URI "@streq /.env" "id:101,phase:1,log,deny,status:403,msg:Environment file access blocked"',
+              'SecRule REQUEST_URI "@streq /admin" "id:102,phase:1,log,deny,status:403,msg:Admin path access blocked"',
+              'SecRule REQUEST_URI "@contains .." "id:103,phase:1,log,deny,status:403,msg:Directory traversal attempt"',
+              'SecRule REQUEST_URI "@rx \.(htaccess|htpasswd|ini|log|conf|backup|bak|old|tmp)$" "id:104,phase:1,log,deny,status:403,msg:Sensitive file access attempt"',
+              'SecRule REQUEST_URI "@rx /\.(git|svn|hg)" "id:105,phase:1,log,deny,status:403,msg:Version control directory access blocked"',
+              'SecRule ARGS "@rx union.*select" "id:301,phase:2,log,deny,status:403,msg:SQL injection attempt detected"',
+              'SecRule ARGS "@rx (select|insert|update|delete|drop|create).*from" "id:302,phase:2,log,deny,status:403,msg:SQL injection detected"',
+              'SecRule ARGS "@rx \-\-|\#|\*\/|\*\*" "id:303,phase:2,log,deny,status:403,msg:SQL comment injection blocked"',
+              'SecRule ARGS "@rx <script.*?>" "id:304,phase:2,log,deny,status:403,msg:XSS script tag detected"',
+              'SecRule ARGS "@rx javascript:" "id:305,phase:2,log,deny,status:403,msg:XSS javascript protocol detected"',
+              'SecRule ARGS "@rx on(load|click|error|focus)" "id:306,phase:2,log,deny,status:403,msg:XSS event handler detected"',
+              'SecRule ARGS "@rx (;|\||&|`|\$\(|\$\{)" "id:401,phase:2,log,deny,status:403,msg:Command injection attempt detected"',
+              'SecRule ARGS "@rx (wget|curl|nc|netcat|telnet|ssh)" "id:402,phase:2,log,deny,status:403,msg:System command detected"',
+              'SecRule REQUEST_METHOD "@streq TRACE" "id:501,phase:1,log,deny,status:405,msg:TRACE method not allowed"',
+              'SecRule REQUEST_METHOD "@streq TRACK" "id:502,phase:1,log,deny,status:405,msg:TRACK method not allowed"',
+              'SecRule REQUEST_METHOD "@streq OPTIONS" "id:503,phase:1,log,pass,msg:OPTIONS method logged"',
+              'SecRule REQUEST_HEADERS:User-Agent "@rx (sqlmap|nikto|nmap|masscan|gobuster|dirb|dirbuster|wpscan)" "id:601,phase:1,log,deny,status:403,msg:Security scanner detected"',
+              'SecRule REQUEST_HEADERS:User-Agent "@rx (python-requests|curl|wget)" "id:602,phase:1,log,pass,msg:Automated tool detected"',
+              'SecRule ARGS "@rx (admin|administrator|root|test|guest|demo)" "id:701,phase:2,log,pass,msg:Common username detected"',
+              'SecRule REQUEST_URI "@rx /(login|signin|auth)" "id:702,phase:1,log,pass,msg:Authentication endpoint accessed"',
+              'SecRule REQUEST_HEADERS:Content-Type "@rx multipart/form-data" "id:801,phase:1,log,pass,msg:File upload detected"',
+              'SecRule ARGS "@rx (localhost|127\.0\.0\.1|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)" "id:1001,phase:2,log,deny,status:403,msg:SSRF attempt detected"',
+              'SecRule ARGS "@rx (file://|ftp://|gopher://|dict://)" "id:1002,phase:2,log,deny,status:403,msg:Dangerous protocol detected"',
+              # WordPress protection
+              'SecRule REQUEST_URI "@rx /wp-config\.php" "id:2001,phase:1,log,deny,status:403,msg:WordPress config file access blocked"',
+              'SecRule REQUEST_URI "@rx /wp-admin/install\.php" "id:2002,phase:1,log,deny,status:403,msg:WordPress install file access blocked"',
+              'SecRule REQUEST_URI "@rx /wp-content/debug\.log" "id:2003,phase:1,log,deny,status:403,msg:WordPress debug log access blocked"',
+              'SecRule REQUEST_URI "@rx /wp-includes/" "id:2004,phase:1,log,deny,status:403,msg:WordPress includes directory access blocked"',
+              'SecRule REQUEST_URI "@rx /wp-admin/" "id:2010,phase:1,log,pass,msg:WordPress admin access detected"',
+              'SecRule REQUEST_URI "@rx /wp-login\.php" "id:2011,phase:1,log,pass,msg:WordPress login attempt detected"',
+              'SecRule ARGS "@rx (/wp-content/uploads/.*\.php)" "id:2020,phase:2,log,deny,status:403,msg:PHP file upload to WordPress uploads blocked"',
+              'SecRule REQUEST_URI "@rx /xmlrpc\.php" "id:2021,phase:1,log,deny,status:403,msg:WordPress XML-RPC blocked"',
+              # Engine settings
+              "SecRuleEngine On",
+              "SecDebugLog /dev/stdout",
+              "SecDebugLogLevel 3",
+            ]
 
     # Detection-only mode for testing and monitoring
     coraza-waf-detect:
       plugin:
         coraza:
           directives: [
-            # OWASP TOP 10 PROTECTION
-            'SecRule REQUEST_URI "@streq /.env" "id:101,phase:1,log,deny,status:403,msg:Environment file access blocked"',
-            'SecRule REQUEST_URI "@streq /admin" "id:102,phase:1,log,deny,status:403,msg:Admin path access blocked"',
-            'SecRule REQUEST_URI "@contains .." "id:103,phase:1,log,deny,status:403,msg:Directory traversal attempt"',
-            'SecRule REQUEST_URI "@rx \.(htaccess|htpasswd|ini|log|conf|backup|bak|old|tmp)$" "id:104,phase:1,log,deny,status:403,msg:Sensitive file access attempt"',
-            'SecRule REQUEST_URI "@rx /\.(git|svn|hg)" "id:105,phase:1,log,deny,status:403,msg:Version control directory access blocked"',
-            'SecRule ARGS "@rx union.*select" "id:301,phase:2,log,deny,status:403,msg:SQL injection attempt detected"',
-            'SecRule ARGS "@rx (select|insert|update|delete|drop|create).*from" "id:302,phase:2,log,deny,status:403,msg:SQL injection detected"',
-            'SecRule ARGS "@rx \-\-|\#|\*\/|\*\*" "id:303,phase:2,log,deny,status:403,msg:SQL comment injection blocked"',
-            'SecRule ARGS "@rx <script.*?>" "id:304,phase:2,log,deny,status:403,msg:XSS script tag detected"',
-            'SecRule ARGS "@rx javascript:" "id:305,phase:2,log,deny,status:403,msg:XSS javascript protocol detected"',
-            'SecRule ARGS "@rx on(load|click|error|focus)" "id:306,phase:2,log,deny,status:403,msg:XSS event handler detected"',
-            'SecRule ARGS "@rx (;|\||&|`|\$\(|\$\{)" "id:401,phase:2,log,deny,status:403,msg:Command injection attempt detected"',
-            'SecRule ARGS "@rx (wget|curl|nc|netcat|telnet|ssh)" "id:402,phase:2,log,deny,status:403,msg:System command detected"',
-            'SecRule REQUEST_METHOD "@streq TRACE" "id:501,phase:1,log,deny,status:405,msg:TRACE method not allowed"',
-            'SecRule REQUEST_METHOD "@streq TRACK" "id:502,phase:1,log,deny,status:405,msg:TRACK method not allowed"',
-            'SecRule REQUEST_METHOD "@streq OPTIONS" "id:503,phase:1,log,pass,msg:OPTIONS method logged"',
-            'SecRule REQUEST_HEADERS:User-Agent "@rx (sqlmap|nikto|nmap|masscan|gobuster|dirb|dirbuster|wpscan)" "id:601,phase:1,log,deny,status:403,msg:Security scanner detected"',
-            'SecRule REQUEST_HEADERS:User-Agent "@rx (python-requests|curl|wget)" "id:602,phase:1,log,pass,msg:Automated tool detected"',
-            'SecRule ARGS "@rx (admin|administrator|root|test|guest|demo)" "id:701,phase:2,log,pass,msg:Common username detected"',
-            'SecRule REQUEST_URI "@rx /(login|signin|auth)" "id:702,phase:1,log,pass,msg:Authentication endpoint accessed"',
-            'SecRule REQUEST_HEADERS:Content-Type "@rx multipart/form-data" "id:801,phase:1,log,pass,msg:File upload detected"',
-            'SecRule ARGS "@rx (localhost|127\.0\.0\.1|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)" "id:1001,phase:2,log,deny,status:403,msg:SSRF attempt detected"',
-            'SecRule ARGS "@rx (file://|ftp://|gopher://|dict://)" "id:1002,phase:2,log,deny,status:403,msg:Dangerous protocol detected"',
-            # WordPress protection
-            'SecRule REQUEST_URI "@rx /wp-config\.php" "id:2001,phase:1,log,deny,status:403,msg:WordPress config file access blocked"',
-            'SecRule REQUEST_URI "@rx /wp-admin/install\.php" "id:2002,phase:1,log,deny,status:403,msg:WordPress install file access blocked"',
-            'SecRule REQUEST_URI "@rx /wp-content/debug\.log" "id:2003,phase:1,log,deny,status:403,msg:WordPress debug log access blocked"',
-            'SecRule REQUEST_URI "@rx /wp-includes/" "id:2004,phase:1,log,deny,status:403,msg:WordPress includes directory access blocked"',
-            'SecRule REQUEST_URI "@rx /wp-admin/" "id:2010,phase:1,log,pass,msg:WordPress admin access detected"',
-            'SecRule REQUEST_URI "@rx /wp-login\.php" "id:2011,phase:1,log,pass,msg:WordPress login attempt detected"',
-            'SecRule ARGS "@rx (/wp-content/uploads/.*\.php)" "id:2020,phase:2,log,deny,status:403,msg:PHP file upload to WordPress uploads blocked"',
-            'SecRule REQUEST_URI "@rx /xmlrpc\.php" "id:2021,phase:1,log,deny,status:403,msg:WordPress XML-RPC blocked"',
-            # Engine settings
-            "SecRuleEngine DetectionOnly",
-            "SecDebugLog /dev/stdout",
-            "SecDebugLogLevel 2"
-          ]
+              # OWASP TOP 10 PROTECTION
+              'SecRule REQUEST_URI "@streq /.env" "id:101,phase:1,log,deny,status:403,msg:Environment file access blocked"',
+              'SecRule REQUEST_URI "@streq /admin" "id:102,phase:1,log,deny,status:403,msg:Admin path access blocked"',
+              'SecRule REQUEST_URI "@contains .." "id:103,phase:1,log,deny,status:403,msg:Directory traversal attempt"',
+              'SecRule REQUEST_URI "@rx \.(htaccess|htpasswd|ini|log|conf|backup|bak|old|tmp)$" "id:104,phase:1,log,deny,status:403,msg:Sensitive file access attempt"',
+              'SecRule REQUEST_URI "@rx /\.(git|svn|hg)" "id:105,phase:1,log,deny,status:403,msg:Version control directory access blocked"',
+              'SecRule ARGS "@rx union.*select" "id:301,phase:2,log,deny,status:403,msg:SQL injection attempt detected"',
+              'SecRule ARGS "@rx (select|insert|update|delete|drop|create).*from" "id:302,phase:2,log,deny,status:403,msg:SQL injection detected"',
+              'SecRule ARGS "@rx \-\-|\#|\*\/|\*\*" "id:303,phase:2,log,deny,status:403,msg:SQL comment injection blocked"',
+              'SecRule ARGS "@rx <script.*?>" "id:304,phase:2,log,deny,status:403,msg:XSS script tag detected"',
+              'SecRule ARGS "@rx javascript:" "id:305,phase:2,log,deny,status:403,msg:XSS javascript protocol detected"',
+              'SecRule ARGS "@rx on(load|click|error|focus)" "id:306,phase:2,log,deny,status:403,msg:XSS event handler detected"',
+              'SecRule ARGS "@rx (;|\||&|`|\$\(|\$\{)" "id:401,phase:2,log,deny,status:403,msg:Command injection attempt detected"',
+              'SecRule ARGS "@rx (wget|curl|nc|netcat|telnet|ssh)" "id:402,phase:2,log,deny,status:403,msg:System command detected"',
+              'SecRule REQUEST_METHOD "@streq TRACE" "id:501,phase:1,log,deny,status:405,msg:TRACE method not allowed"',
+              'SecRule REQUEST_METHOD "@streq TRACK" "id:502,phase:1,log,deny,status:405,msg:TRACK method not allowed"',
+              'SecRule REQUEST_METHOD "@streq OPTIONS" "id:503,phase:1,log,pass,msg:OPTIONS method logged"',
+              'SecRule REQUEST_HEADERS:User-Agent "@rx (sqlmap|nikto|nmap|masscan|gobuster|dirb|dirbuster|wpscan)" "id:601,phase:1,log,deny,status:403,msg:Security scanner detected"',
+              'SecRule REQUEST_HEADERS:User-Agent "@rx (python-requests|curl|wget)" "id:602,phase:1,log,pass,msg:Automated tool detected"',
+              'SecRule ARGS "@rx (admin|administrator|root|test|guest|demo)" "id:701,phase:2,log,pass,msg:Common username detected"',
+              'SecRule REQUEST_URI "@rx /(login|signin|auth)" "id:702,phase:1,log,pass,msg:Authentication endpoint accessed"',
+              'SecRule REQUEST_HEADERS:Content-Type "@rx multipart/form-data" "id:801,phase:1,log,pass,msg:File upload detected"',
+              'SecRule ARGS "@rx (localhost|127\.0\.0\.1|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)" "id:1001,phase:2,log,deny,status:403,msg:SSRF attempt detected"',
+              'SecRule ARGS "@rx (file://|ftp://|gopher://|dict://)" "id:1002,phase:2,log,deny,status:403,msg:Dangerous protocol detected"',
+              # WordPress protection
+              'SecRule REQUEST_URI "@rx /wp-config\.php" "id:2001,phase:1,log,deny,status:403,msg:WordPress config file access blocked"',
+              'SecRule REQUEST_URI "@rx /wp-admin/install\.php" "id:2002,phase:1,log,deny,status:403,msg:WordPress install file access blocked"',
+              'SecRule REQUEST_URI "@rx /wp-content/debug\.log" "id:2003,phase:1,log,deny,status:403,msg:WordPress debug log access blocked"',
+              'SecRule REQUEST_URI "@rx /wp-includes/" "id:2004,phase:1,log,deny,status:403,msg:WordPress includes directory access blocked"',
+              'SecRule REQUEST_URI "@rx /wp-admin/" "id:2010,phase:1,log,pass,msg:WordPress admin access detected"',
+              'SecRule REQUEST_URI "@rx /wp-login\.php" "id:2011,phase:1,log,pass,msg:WordPress login attempt detected"',
+              'SecRule ARGS "@rx (/wp-content/uploads/.*\.php)" "id:2020,phase:2,log,deny,status:403,msg:PHP file upload to WordPress uploads blocked"',
+              'SecRule REQUEST_URI "@rx /xmlrpc\.php" "id:2021,phase:1,log,deny,status:403,msg:WordPress XML-RPC blocked"',
+
+              # # WordPress Security Rules for Coraza WAF
+              # # Based on OWASP CRS best practices and WordPress-specific threats
+              #             # WordPress Core File Protection
+              #             'SecRule REQUEST_URI "@rx /wp-config\.php" "id:2001,phase:1,log,deny,status:403,msg:WordPress config file access blocked"'
+              #             'SecRule REQUEST_URI "@rx /wp-config-sample\.php" "id:2002,phase:1,log,deny,status:403,msg:WordPress sample config access blocked"'
+              #             'SecRule REQUEST_URI "@rx /\.htaccess" "id:2003,phase:1,log,deny,status:403,msg:htaccess file access blocked"'
+              #             'SecRule REQUEST_URI "@rx /wp-content/debug\.log" "id:2004,phase:1,log,deny,status:403,msg:WordPress debug log access blocked"'
+              #             'SecRule REQUEST_URI "@rx /error_log" "id:2005,phase:1,log,deny,status:403,msg:Error log access blocked"'
+              #             'SecRule REQUEST_URI "@rx /readme\.html" "id:2006,phase:1,log,deny,status:403,msg:WordPress readme file access blocked"'
+              #             'SecRule REQUEST_URI "@rx /license\.txt" "id:2007,phase:1,log,deny,status:403,msg:WordPress license file access blocked"'
+
+              #             # WordPress Admin Protection
+              #             'SecRule REQUEST_URI "@rx /wp-admin/install\.php" "id:2010,phase:1,log,deny,status:403,msg:WordPress installation script access blocked"'
+              #             'SecRule REQUEST_URI "@rx /wp-admin/setup-config\.php" "id:2011,phase:1,log,deny,status:403,msg:WordPress setup config access blocked"'
+              #             'SecRule REQUEST_URI "@rx /wp-admin/admin-ajax\.php" "phase:1,id:2012,pass,setvar:\'tx.wordpress_ajax=1\'"'
+
+              #             # Brute Force Protection for wp-login.php
+              #             'SecRule REQUEST_URI "@rx /wp-login\.php" "id:2020,phase:1,pass,initcol:ip=%{REMOTE_ADDR},setvar:ip.login_attempts=+1,expirevar:ip.login_attempts=300"'
+              #             'SecRule IP:LOGIN_ATTEMPTS "@gt 5" "id:2021,phase:1,log,deny,status:429,msg:WordPress login brute force detected - IP blocked for 5 minutes"'
+              #             'SecRule REQUEST_URI "@rx /wp-login\.php" "id:2022,phase:2,pass,chain"'
+              #             'SecRule ARGS:log "@rx (?i)admin|administrator|test|demo|user|guest" "t:none,log,deny,status:403,msg:Common username login attempt blocked"'
+
+              #             # XML-RPC Protection
+              #             'SecRule REQUEST_URI "@rx /xmlrpc\.php" "id:2030,phase:1,log,deny,status:403,msg:WordPress XML-RPC access blocked"'
+
+              #             # Plugin/Theme Directory Traversal Protection
+              #             'SecRule REQUEST_URI "@rx /wp-content/.*\.\./" "id:2040,phase:1,log,deny,status:403,msg:Directory traversal attempt in wp-content"'
+              #             'SecRule REQUEST_URI "@rx /wp-includes/.*\.\./" "id:2041,phase:1,log,deny,status:403,msg:Directory traversal attempt in wp-includes"'
+
+              #             # File Upload Protection
+              #             'SecRule FILES_TMPNAMES "@detectSQLi" "id:2050,phase:2,log,deny,status:403,msg:SQL injection attempt in uploaded file"'
+              #             'SecRule FILES_TMPNAMES "@detectXSS" "id:2051,phase:2,log,deny,status:403,msg:XSS attempt in uploaded file"'
+              #             'SecRule FILES:file "@rx \.php$" "id:2052,phase:2,log,deny,status:403,msg:PHP file upload blocked"'
+              #             'SecRule FILES:file "@rx \.(exe|bat|cmd|com|scr|pif)$" "id:2053,phase:2,log,deny,status:403,msg:Executable file upload blocked"'
+
+              #             # WordPress Comment Protection
+              #             'SecRule REQUEST_URI "@rx /wp-comments-post\.php" "id:2060,phase:1,pass,chain"'
+              #             'SecRule ARGS:comment "@detectXSS" "t:none,log,deny,status:403,msg:XSS attempt in comment"'
+              #             'SecRule REQUEST_URI "@rx /wp-comments-post\.php" "id:2061,phase:1,pass,chain"'
+              #             'SecRule ARGS:comment "@rx <script" "t:none,log,deny,status:403,msg:Script tag in comment blocked"'
+
+              #             # WordPress Search Protection
+              #             'SecRule ARGS:s "@detectSQLi" "id:2070,phase:1,log,deny,status:403,msg:SQL injection attempt in search parameter"'
+              #             'SecRule ARGS:s "@detectXSS" "id:2071,phase:1,log,deny,status:403,msg:XSS attempt in search parameter"'
+
+              #             # WordPress Admin AJAX Protection
+              #             'SecRule REQUEST_URI "@rx /wp-admin/admin-ajax\.php" "id:2080,phase:1,pass,chain"'
+              #             'SecRule ARGS:action "@rx ^(wp_|heartbeat|query-)" "t:none,pass"'
+              #             'SecRule ARGS:action "!@rx ^(wp_|heartbeat|query-)" "t:none,log,deny,status:403,msg:Suspicious AJAX action blocked"'
+
+              #             # WordPress Theme File Protection
+              #             'SecRule REQUEST_URI "@rx /wp-content/themes/.*\.php$" "id:2090,phase:1,pass,chain"'
+              #             'SecRule REQUEST_METHOD "@rx ^(POST|PUT|PATCH)$" "t:none,log,deny,status:403,msg:Direct theme file execution blocked"'
+
+              #             # WordPress Plugin File Protection
+              #             'SecRule REQUEST_URI "@rx /wp-content/plugins/.*\.php$" "id:2091,phase:1,pass,chain"'
+              #             'SecRule REQUEST_METHOD "@rx ^(POST|PUT|PATCH)$" "t:none,log,deny,status:403,msg:Direct plugin file execution blocked"'
+
+              #             # WordPress User Enumeration Protection
+              #             'SecRule ARGS:author "@rx ^[0-9]+$" "id:2100,phase:1,log,deny,status:403,msg:User enumeration attempt blocked"'
+              #             'SecRule REQUEST_URI "@rx /\?author=[0-9]+" "id:2101,phase:1,log,deny,status:403,msg:User enumeration via author parameter blocked"'
+
+              #             # WordPress REST API Protection
+              #             'SecRule REQUEST_URI "@rx /wp-json/wp/v2/users" "id:2110,phase:1,log,deny,status:403,msg:WordPress users REST API access blocked"'
+              #             'SecRule REQUEST_URI "@rx /wp-json/" "id:2111,phase:1,pass,setvar:\'tx.wordpress_api=1\'"'
+
+              #             # WordPress Backup File Protection
+              #             'SecRule REQUEST_URI "@rx \.(sql|bak|backup|old|orig|tmp)$" "id:2120,phase:1,log,deny,status:403,msg:Backup file access blocked"'
+              #             'SecRule REQUEST_URI "@rx /wp-content/.*\.(sql|bak|backup)$" "id:2121,phase:1,log,deny,status:403,msg:WordPress backup file access blocked"'
+
+              #             # WordPress Version Disclosure Protection
+              #             'SecRule REQUEST_URI "@rx /wp-includes/version\.php" "id:2130,phase:1,log,deny,status:403,msg:WordPress version file access blocked"'
+              #             'SecRule RESPONSE_BODY "@rx generator.*wordpress.*[0-9]\.[0-9]" "id:2131,phase:4,pass,log,msg:WordPress version disclosure detected"'
+
+              #             # WordPress Multisite Protection
+              #             'SecRule REQUEST_URI "@rx /wp-admin/network/" "id:2140,phase:1,pass,chain"'
+              #             'SecRule REMOTE_ADDR "!@ipMatch 127.0.0.1,192.168.0.0/16,10.0.0.0/8" "t:none,log,deny,status:403,msg:Multisite admin access from external IP blocked"'
+
+              #             # WordPress Media Upload Protection
+              #             'SecRule REQUEST_URI "@rx /wp-admin/async-upload\.php" "id:2150,phase:1,pass,setvar:\'tx.wordpress_upload=1\'"'
+              #             'SecRule REQUEST_URI "@rx /wp-content/uploads/" "id:2151,phase:1,pass,chain"'
+              #             'SecRule REQUEST_METHOD "@rx ^POST$" "t:none,log,deny,status:403,msg:Direct POST to uploads directory blocked"'
+
+              #             # WordPress Include/Require Protection
+              #             'SecRule ARGS "@rx (include|require).*\.\./.*\.php" "id:2160,phase:1,log,deny,status:403,msg:PHP include/require traversal attempt"'
+              #             'SecRule ARGS "@rx wp-config" "id:2161,phase:1,log,deny,status:403,msg:wp-config access attempt in parameters"'
+
+              #             # Advanced WordPress SQL Injection Protection
+              #             'SecRule ARGS "@detectSQLi" "id:2170,phase:1,pass,chain"'
+              #             'SecRule REQUEST_URI "@rx /wp-" "t:none,log,deny,status:403,msg:SQL injection attempt in WordPress request"'
+
+              #             # WordPress Command Injection Protection
+              #             'SecRule ARGS "@rx (system|exec|shell_exec|passthru|eval)" "id:2180,phase:1,log,deny,status:403,msg:Command injection attempt in WordPress"'
+
+              #             # WordPress File Inclusion Protection
+              #             'SecRule ARGS "@rx (php://|file://|http://|https://|ftp://)" "id:2190,phase:1,log,deny,status:403,msg:Remote file inclusion attempt"'
+              #             'SecRule ARGS "@rx \.\./.*\.(php|inc|conf)" "id:2191,phase:1,log,deny,status:403,msg:Local file inclusion attempt"'
+
+              #           # WordPress-specific exclusions for legitimate functionality
+              #           exclusions:
+              #             # Allow legitimate WordPress AJAX requests
+              #             - 'SecRuleRemoveById 2080'
+              #             - 'SecRule REQUEST_URI "@rx /wp-admin/admin-ajax\.php" "id:2081,phase:1,pass,ctl:ruleRemoveById=920230"'
+
+              #             # Allow WordPress media uploads
+              #             - 'SecRule REQUEST_URI "@rx /wp-admin/async-upload\.php" "id:2152,phase:1,pass,ctl:ruleRemoveById=200003"'
+
+              #             # Allow WordPress theme customizer
+              #             - 'SecRule REQUEST_URI "@rx /wp-admin/customize\.php" "id:2200,phase:1,pass,ctl:ruleRemoveById=941100"'
+
+              #             # Allow WordPress post editing
+              #             - 'SecRule REQUEST_URI "@rx /wp-admin/post\.php" "id:2201,phase:1,pass,ctl:ruleRemoveById=941180"'
+
+              #           # Rate limiting configuration
+              #           rate_limiting:
+              #             # WordPress login rate limiting
+              #             - 'SecRule REQUEST_URI "@rx /wp-login\.php" "id:2300,phase:1,pass,setvar:ip.wp_login_burst=+1,deprecatevar:ip.wp_login_burst=10/60,setvar:ip.wp_login_count=+1,deprecatevar:ip.wp_login_count=50/3600"'
+              #             - 'SecRule IP:WP_LOGIN_BURST "@gt 10" "id:2301,phase:1,log,deny,status:429,msg:WordPress login burst limit exceeded"'
+              #             - 'SecRule IP:WP_LOGIN_COUNT "@gt 50" "id:2302,phase:1,log,deny,status:429,msg:WordPress login hourly limit exceeded"'
+
+              # Engine settings
+              "SecRuleEngine DetectionOnly",
+              "SecDebugLog /dev/stdout",
+              "SecDebugLogLevel 2",
+            ]
 
     # =============================================================================
     # SECURITY HEADERS MIDDLEWARES

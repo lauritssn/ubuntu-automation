@@ -59,9 +59,11 @@ cp traefik-test.yml "$DEPLOY_DIR/"
 chown podman:podman "$DEPLOY_DIR/traefik-test.yml"
 chmod 644 "$DEPLOY_DIR/traefik-test.yml"
 
-# Copy dynamic configuration folder
+# Copy dynamic configuration folder (test and shared only)
 echo "Copying dynamic configuration..."
-cp -r dynamic "$DEPLOY_DIR/"
+mkdir -p "$DEPLOY_DIR/dynamic"
+cp -r dynamic/test "$DEPLOY_DIR/dynamic/"
+cp -r dynamic/shared "$DEPLOY_DIR/dynamic/"
 chown -R podman:podman "$DEPLOY_DIR/dynamic"
 find "$DEPLOY_DIR/dynamic" -type d -exec chmod 755 {} \;
 find "$DEPLOY_DIR/dynamic" -type f -exec chmod 644 {} \;

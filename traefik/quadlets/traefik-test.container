@@ -23,7 +23,7 @@ Volume=%t/podman/podman.sock:/var/run/docker.sock:ro
 Network=traefik
 
 # Health check
-HealthCmd=traefik healthcheck --ping
+HealthCmd=traefik healthcheck --ping --entryPoint=internal
 HealthInterval=30s
 HealthTimeout=10s
 HealthRetries=3
