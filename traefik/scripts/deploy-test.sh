@@ -45,16 +45,42 @@ cp quadlets/traefik-test.container "$QUADLET_DIR/"
 cp quadlets/whoami-test.container "$QUADLET_DIR/"
 chown podman:podman "$QUADLET_DIR"/*.container
 
+# Create base deployment directory
+DEPLOY_DIR="/srv/apps/deploy/traefik"
+mkdir -p "$DEPLOY_DIR"
+
+# Copy Traefik configuration file
+echo "Copying Traefik test configuration..."
+cp traefik-test.yml "$DEPLOY_DIR/"
+chown podman:podman "$DEPLOY_DIR/traefik-test.yml"
+chmod 644 "$DEPLOY_DIR/traefik-test.yml"
+
+# Copy dynamic configuration folder
+echo "Copying dynamic configuration..."
+cp -r dynamic "$DEPLOY_DIR/"
+chown -R podman:podman "$DEPLOY_DIR/dynamic"
+find "$DEPLOY_DIR/dynamic" -type d -exec chmod 755 {} \;
+find "$DEPLOY_DIR/dynamic" -type f -exec chmod 644 {} \;
+
+# Create plugins-storage directory structure
+echo "Creating plugins storage directory..."
+mkdir -p "$DEPLOY_DIR/plugins-storage/archives"
+mkdir -p "$DEPLOY_DIR/plugins-storage/sources"
+chown -R podman:podman "$DEPLOY_DIR/plugins-storage"
+chmod -R 755 "$DEPLOY_DIR/plugins-storage"
+
 # Create logs directory
-mkdir -p /srv/apps/deploy/traefik/logs
-chmod 755 /srv/apps/deploy/traefik/logs
-chown podman:podman /srv/apps/deploy/traefik/logs
+echo "Creating logs directory..."
+mkdir -p "$DEPLOY_DIR/logs"
+chmod 755 "$DEPLOY_DIR/logs"
+chown podman:podman "$DEPLOY_DIR/logs"
 
 # Ensure data directory exists with correct permissions
-mkdir -p /srv/apps/deploy/traefik/data
-touch /srv/apps/deploy/traefik/data/acme.json
-chmod 600 /srv/apps/deploy/traefik/data/acme.json
-chown -R podman:podman /srv/apps/deploy/traefik/data
+echo "Setting up data directory..."
+mkdir -p "$DEPLOY_DIR/data"
+touch "$DEPLOY_DIR/data/acme.json"
+chmod 600 "$DEPLOY_DIR/data/acme.json"
+chown -R podman:podman "$DEPLOY_DIR/data"
 
 # Reload systemd to pick up new socket units and Quadlet files
 echo "Reloading systemd configuration..."
