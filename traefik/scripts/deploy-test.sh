@@ -86,20 +86,7 @@ touch "$DEPLOY_DIR/data/acme.json"
 chmod 600 "$DEPLOY_DIR/data/acme.json"
 chown -R podman:podman "$DEPLOY_DIR/data"
 
-# Reload systemd to pick up new socket units and Quadlet files
-echo "Reloading systemd configuration..."
-sudo -u podman -i bash -c "source ~/.bashrc && systemctl --user daemon-reload"
-
-# Enable and start all socket units as podman user
-echo "Enabling and starting Traefik socket units..."
-sudo -u podman -i bash -c "source ~/.bashrc && systemctl --user enable http-test.socket traefik-test.socket"
-sudo -u podman -i bash -c "source ~/.bashrc && systemctl --user start http-test.socket traefik-test.socket"
-
-# Start whoami service as podman user
-echo "Starting whoami service..."
-sudo -u podman -i bash -c "source ~/.bashrc && systemctl --user start whoami-test.service"
-
-echo "✅ Test environment deployed successfully with socket activation!"
+echo "✅ Files deployed successfully!"
 
 # Get the actual IP address
 LOCAL_IP=$(ip route get 1.1.1.1 | awk '{print $7; exit}' 2>/dev/null || echo "localhost")
@@ -107,11 +94,19 @@ echo "📊 Traefik dashboard should be available at: http://${LOCAL_IP}:8080"
 echo "🌍 Whoami service available at: http://whoami.localhost"
 echo "🔌 Socket activation: Traefik will start automatically on first request"
 
-# Show status
-echo "📋 Service status:"
-sudo -u podman -i bash -c "source ~/.bashrc && systemctl --user --no-pager status http-test.socket traefik-test.socket whoami-test.service"
-
 echo ""
-echo "Note: Traefik service will start automatically via socket activation when traffic arrives"
-echo "You can check if it's running with: sudo -u podman -i bash -c 'systemctl --user status traefik-test.service'"
-echo "Socket status: sudo -u podman -i bash -c 'systemctl --user status http-test.socket traefik-test.socket'"
+echo "⚠️  Manual steps required to complete deployment:"
+echo "❗ IMPORTANT: These commands must be run as the podman user, NOT as root!"
+echo ""
+echo "1. Switch to podman user and reload systemd:"
+echo "   systemctl --user daemon-reload"
+echo ""
+echo "2. Enable and start socket units:"
+echo "   systemctl --user enable http-test.socket traefik-test.socket"
+echo "   systemctl --user start http-test.socket traefik-test.socket"
+echo ""
+echo "3. Start whoami service:"
+echo "   systemctl --user start whoami-test.service"
+echo ""
+echo "4. Check status:"
+echo "   systemctl --user status http-test.socket traefik-test.socket whoami-test.service"
