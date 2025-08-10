@@ -1,8 +1,8 @@
 http:
   routers:
-    whoami-dev:
-      rule: "Host(`whoami.localdev`)"
-      service: "whoami-dev"
+    httpbin-dev:
+      rule: "Host(`httpbin.localdev`)"
+      service: "httpbin-dev"
       entryPoints:
         - "web"
       priority: 90
@@ -12,11 +12,11 @@ http:
         - "coraza-waf-dev@file"
 
   services:
-    whoami-dev:
+    httpbin-dev:
       loadBalancer:
         servers:
-          - url: "http://whoami-dev:80"
+          - url: "http://httpbin-dev:80"
         healthCheck:
-          path: "/health"
+          path: "/status/200"
           interval: "30s"
           timeout: "10s"

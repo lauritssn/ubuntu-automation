@@ -393,7 +393,7 @@ systemctl status clamav-scan.timer
 
 ---
 
-### 11. UFW Installation (`ufw_install.sh`)
+### 11. UFW Configuration (`ufw_configure.sh`)
 
 **Purpose:** Configures firewall with intelligent rules
 
@@ -402,7 +402,7 @@ systemctl status clamav-scan.timer
 
 ```bash
 # Test UFW installation (run last!)
-sudo ./run_subscript.sh ufw_install.sh
+sudo ./run_subscript.sh ufw_configure.sh
 
 # Verify
 sudo ufw status verbose

@@ -1,7 +1,7 @@
 http:
   routers:
     dashboard-test:
-      rule: "Host(`traefik.localhost`)"
+      rule: "Host(`traefik.localtest`)"
       service: "api@internal"
       entryPoints:
         - "traefik"

@@ -176,7 +176,7 @@ iptables -A INPUT -p tcp --tcp-flags SYN,ACK SYN -m limit --limit 5/min --limit-
 # Stealth scans - FIN scan
 iptables -A INPUT -p tcp --tcp-flags ALL FIN -m limit --limit 3/min --limit-burst 5 -j LOG --log-prefix "STEALTH_SCAN: " --log-level 4
 
-# Stealth scans - NULL scan  
+# Stealth scans - NULL scan
 iptables -A INPUT -p tcp --tcp-flags ALL NONE -m limit --limit 3/min --limit-burst 5 -j LOG --log-prefix "STEALTH_SCAN: " --log-level 4
 
 # Stealth scans - XMAS scan
@@ -199,17 +199,19 @@ show_yellow "Iptables logging rules for port scan detection configured."
 if command -v iptables-save >/dev/null 2>&1; then
     # Create directory for persistent rules if it doesn't exist
     mkdir -p /etc/iptables
-    
+
     # Save current rules
-    iptables-save > /etc/iptables/rules.v4 2>/dev/null || true
-    
+    iptables-save >/etc/iptables/rules.v4 2>/dev/null || true
+
     # Install iptables-persistent if not already installed
     if ! dpkg -l | grep -q iptables-persistent; then
         show_yellow "Installing iptables-persistent for rule persistence."
         export DEBIAN_FRONTEND=noninteractive
-        apt-get --yes install iptables-persistent >>$LOGDIR/$LOGFILE 2>&1 || show_warn "Failed to install iptables-persistent"
+        if ! apt_install_safe "iptables-persistent" "$LOGDIR/$LOGFILE"; then
+            show_warn "Failed to install iptables-persistent"
+        fi
     fi
-    
+
     show_yellow "Iptables rules made persistent."
 else
     show_warn "iptables-save not found, rules may not persist after reboot."

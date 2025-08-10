@@ -33,7 +33,8 @@ api:
   dashboard: true
   insecure: true # Allow HTTP dashboard access
 
-ping: {}
+ping:
+  entryPoint: "internal" 
 
 # EntryPoints - addresses ignored when socket activation provides file descriptors
 entryPoints:
@@ -45,6 +46,9 @@ entryPoints:
     address: ":8080"
     forwardedHeaders:
       trustedIPs: *trusted-ips
+  internal:
+    address: ":9000"   # new port bound inside container
+
 
 providers:
   # Dynamic configuration files

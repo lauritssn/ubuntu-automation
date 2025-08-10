@@ -54,21 +54,12 @@ show_info "$SUBSCRIPT is being executed. Logfile can be found at $LOGDIR/$LOGFIL
 
 show_yellow "Updating package lists for Ubuntu 24.04."
 
-# Update package lists with retry logic
-for i in {1..3}; do
-    if apt-get --yes update >>$LOGDIR/$LOGFILE 2>&1; then
-        show_yellow "Package lists updated successfully."
-        break
-    else
-        show_yellow "Package update attempt $i failed, retrying..."
-        apt-get clean >>$LOGDIR/$LOGFILE 2>&1
-        if [ $i -eq 3 ]; then
-            show_err "Failed to update package lists after 3 attempts. Please check logfile and fix error manually."
-            exit 100
-        fi
-        sleep 2
-    fi
-done
+# Update package lists with enhanced retry logic
+if ! apt_update_safe "$LOGDIR/$LOGFILE"; then
+    show_err "Failed to update package lists. Please check logfile and fix error manually."
+    exit 100
+fi
+show_yellow "Package lists updated successfully."
 
 ##########################################################################################
 ## Install essential system packages
@@ -98,7 +89,7 @@ TEXT_PACKAGES="dos2unix"
 ALL_PACKAGES="$ESSENTIAL_PACKAGES $BUILD_PACKAGES $MONITORING_PACKAGES $SECURITY_PACKAGES $PERL_PACKAGES $TEXT_PACKAGES"
 
 # Install packages
-if ! apt-get --yes install $ALL_PACKAGES >>$LOGDIR/$LOGFILE 2>&1; then
+if ! apt_install_safe "$ALL_PACKAGES" "$LOGDIR/$LOGFILE"; then
     show_err "Installation of essential packages failed. Please check logfile and fix error manually."
     exit 1
 fi
@@ -126,7 +117,7 @@ ANTIVIRUS_PACKAGES="clamav clamav-daemon clamav-freshclam"
 # Install security packages
 SECURITY_ALL="$SSH_PACKAGES $QR_PACKAGES $NETWORK_PACKAGES $ANTIVIRUS_PACKAGES"
 
-if ! apt-get --yes install $SECURITY_ALL >>$LOGDIR/$LOGFILE 2>&1; then
+if ! apt_install_safe "$SECURITY_ALL" "$LOGDIR/$LOGFILE"; then
     show_err "Installation of security packages failed. Please check logfile and fix error manually."
     exit 1
 fi
@@ -140,7 +131,7 @@ show_yellow "Security packages installed successfully."
 # WireGuard VPN (if selected)
 if [[ "$DO_WIREGUARD_INSTALL" =~ [Yy]$ ]]; then
     show_yellow "Installing WireGuard packages."
-    if ! apt-get --yes install wireguard wireguard-tools >>$LOGDIR/$LOGFILE 2>&1; then
+    if ! apt_install_safe "wireguard wireguard-tools" "$LOGDIR/$LOGFILE"; then
         show_err "Installation of WireGuard failed. Please check logfile and fix error manually."
         exit 1
     fi
@@ -150,7 +141,7 @@ fi
 # Netdata monitoring (if selected)
 if [[ "$DO_NETDATA_INSTALL" =~ [Yy]$ ]]; then
     show_yellow "Installing Netdata packages."
-    if ! apt-get --yes install netdata >>$LOGDIR/$LOGFILE 2>&1; then
+    if ! apt_install_safe "netdata" "$LOGDIR/$LOGFILE"; then
         show_err "Installation of Netdata failed. Please check logfile and fix error manually."
         exit 1
     fi
@@ -165,7 +156,7 @@ if [[ "$DO_GENERAL_SERVER_SETTINGS" =~ [Yy]$ ]]; then
     echo "postfix postfix/mailname string $(hostname -f)" | debconf-set-selections
     echo "postfix postfix/main_mailer_type string 'Internet Site'" | debconf-set-selections
 
-    if ! apt-get --yes install postfix mailutils >>$LOGDIR/$LOGFILE 2>&1; then
+    if ! apt_install_safe "postfix mailutils" "$LOGDIR/$LOGFILE"; then
         show_err "Installation of mail packages failed. Please check logfile and fix error manually."
         exit 1
     fi
@@ -223,8 +214,8 @@ fi
 
 show_yellow "Cleaning up package cache."
 
-apt-get autoremove --yes >>$LOGDIR/$LOGFILE 2>&1
-apt-get autoclean >>$LOGDIR/$LOGFILE 2>&1
+apt_with_lock_retry 3 2 "apt-get autoremove --yes >>$LOGDIR/$LOGFILE 2>&1"
+apt_with_lock_retry 3 2 "apt-get autoclean >>$LOGDIR/$LOGFILE 2>&1"
 
 show_yellow "Package cache cleaned up."
 

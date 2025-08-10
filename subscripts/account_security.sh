@@ -58,7 +58,7 @@ show_yellow "Configuring password policies for Ubuntu 24.04."
 apt-get update >>$LOGDIR/$LOGFILE 2>&1
 
 # Install password quality checking package
-if ! apt-get --yes install libpam-pwquality >>$LOGDIR/$LOGFILE 2>&1; then
+if ! apt_install_safe "libpam-pwquality" "$LOGDIR/$LOGFILE"; then
     show_warn "Failed to install libpam-pwquality, continuing without it."
 fi
 

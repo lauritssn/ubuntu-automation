@@ -28,6 +28,12 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+  httpbin:
+    image: docker.io/kennethreitz/httpbin:${HTTPBIN_VERSION:-latest}
+    container_name: httpbin-dev
+    restart: unless-stopped
+    networks:
+      - traefik
 
   whoami:
     image: docker.io/traefik/whoami:${WHOAMI_VERSION:-latest}

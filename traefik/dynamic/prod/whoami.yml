@@ -1,27 +1,52 @@
+# =============================================================================
+# WHOAMI PRODUCTION SERVICE CONFIGURATION
+# =============================================================================
+
 http:
   routers:
+    # Redirect HTTP to HTTPS
+    whoami-prod-redirect:
+      rule: "Host(`${WHOAMI_DOMAIN:-whoami.${APP_DOMAIN}}`)"
+      entryPoints:
+        - "web"
+      middlewares:
+        - "redirect-to-https"
+      service: "whoami-prod"
+      priority: 90
+
+    # HTTPS service with enhanced security
     whoami-prod:
       rule: "Host(`${WHOAMI_DOMAIN:-whoami.${APP_DOMAIN}}`)"
       service: "whoami-prod"
       entryPoints:
-        - "web"
         - "websecure"
       priority: 90
       middlewares:
-        - "security-headers@file"
-        - "rate-limit@file"
-        - "compress@file"
+        - "coraza-waf@file" # WAF protection
+        - "security-headers@file" # Security headers
+        - "rate-limit@file" # Rate limiting
+        - "compress@file" # Compression
       tls:
         certResolver: "letsencrypt"
+        options: "modern@file" # Use modern TLS configuration
+
+  middlewares:
+    redirect-to-https:
+      redirectScheme:
+        scheme: https
+        permanent: true
 
   services:
     whoami-prod:
       loadBalancer:
         servers:
           - url: "http://whoami-prod:80"
+        # SECURITY: Enhanced health check configuration
         healthCheck:
           path: "/"
           interval: "30s"
           timeout: "5s"
+          scheme: "http"
+          mode: "http"
           headers:
-            Host: "${WHOAMI_DOMAIN:-whoami.${APP_DOMAIN}}" 
+            Host: "${WHOAMI_DOMAIN:-whoami.${APP_DOMAIN}}"

@@ -60,7 +60,7 @@ show_yellow "Please install Netdata using Netdata script from your account inste
 # cd /tmp
 # bash <(curl -Ss https://my-netdata.io/kickstart.sh) >>$LOGDIR/$LOGFILE 2>&1 || (show_err "Installation of Netdata package failed. Please check logfile and fix error manually.")
 
-if ! apt-get --yes install netdata >>$LOGDIR/$LOGFILE 2>&1; then
+if ! apt_install_safe "netdata" "$LOGDIR/$LOGFILE"; then
     show_err "Installation of netdata failed. Please check logfile and fix error manually."
     exit 1
 fi

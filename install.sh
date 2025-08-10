@@ -67,7 +67,7 @@ export DO_LIGHTWEIGHT_MONITORING=M  # MANDATORY
 export DO_NETDATA_INSTALL=N
 export DO_SYSTEMD_TIMERS=M # MANDATORY
 export DO_PODMAN_INSTALL=N
-export DO_UFW_INSTALL=M  # MANDATORY
+export DO_UFW_CONFIGURE=M  # MANDATORY
 export DO_SWAP_INSTALL=M # MANDATORY
 export DO_WIREGUARD_INSTALL=N
 
@@ -241,7 +241,7 @@ if is_resuming && load_user_choices; then
     echo "• DO_NETDATA_INSTALL: $DO_NETDATA_INSTALL"
     echo "• DO_SYSTEMD_TIMERS: $DO_SYSTEMD_TIMERS (Mandatory)"
     echo "• DO_PODMAN_INSTALL: $DO_PODMAN_INSTALL"
-    echo "• DO_UFW_INSTALL: $DO_UFW_INSTALL (Mandatory)"
+    echo "• DO_UFW_CONFIGURE: $DO_UFW_CONFIGURE (Mandatory)"
     echo "• DO_WIREGUARD_INSTALL: $DO_WIREGUARD_INSTALL"
     if [[ $DO_WIREGUARD_INSTALL =~ [Yy]$ ]]; then
         echo "• WIREGUARD_SUBNET: $WIREGUARD_SUBNET"
@@ -257,7 +257,7 @@ else
     echo "• DO_SWAP_INSTALL: $DO_SWAP_INSTALL (Mandatory)"
     echo "• DO_LIGHTWEIGHT_MONITORING: $DO_LIGHTWEIGHT_MONITORING (Mandatory)"
     echo "• DO_SYSTEMD_TIMERS: $DO_SYSTEMD_TIMERS (Mandatory)"
-    echo "• DO_UFW_INSTALL: $DO_UFW_INSTALL (Mandatory)"
+    echo "• DO_UFW_CONFIGURE: $DO_UFW_CONFIGURE (Mandatory)"
     echo ""
 
     # System update and NTP installation are MANDATORY (M) - no user prompts needed
@@ -384,29 +384,12 @@ else
         echo "WIREGUARD_SUBNET: "$WIREGUARD_SUBNET
     fi
 
-    echo "DO_UFW_INSTALL: "$DO_UFW_INSTALL
+    echo "DO_UFW_CONFIGURE: "$DO_UFW_CONFIGURE
     echo "DO_WIREGUARD_INSTALL: "$DO_WIREGUARD_INSTALL
 
     # Save user choices for potential resume scenarios
     save_user_choices
 fi
-
-## Ask for UFW port openings
-#if [[ $DO_UFW_INSTALL =~ [Yy]$ ]]
-#   then
-#      read -p "Do You want to allow port 80 (http) to World (Y/N)?" -n 1 UFW_ALLOW_PUBLIC_HTTP; echo
-#      read -p "Do You want to allow port 443 (https) to World (Y/N)?" -n 1 UFW_ALLOW_PUBLIC_HTTPS; echo
-#      read -p "Do You want to allow port 8081 (Monitorix) to World (Y/N)?" -n 1 UFW_ALLOW_MONITORIX; echo
-#      read -p "Do You want to allow port 19999 (Netdata) to World (Y/N)?" -n 1 UFW_ALLOW_NETDATA; echo
-#fi
-
-##########################################################################################
-## UFW configuration now handled by ufw_install.sh script
-##########################################################################################
-
-# UFW rules are now generated dynamically by the ufw_install.sh script
-# based on the services being installed (WireGuard, Netdata, etc.)
-# This provides better organization and security-focused rule generation
 
 ##########################################################################################
 ## Execute subscripts
@@ -468,6 +451,11 @@ printf "\n--------------------\n"
 
 # Common packages installation (foundational - needed by all other modules)
 execute_module "Packages_Installation" "$BASEDIR/subscripts/packages_install.sh" "Y"
+
+printf "\n--------------------\n"
+
+# Configure systemd journal retention (must be early to apply to all subsequent logging)
+execute_module "Journald_Configuration" "$BASEDIR/subscripts/journald_config.sh" "Y"
 
 printf "\n--------------------\n"
 
@@ -561,13 +549,13 @@ execute_module "Systemd_Timers" "$BASEDIR/subscripts/systemd_timers_install.sh" 
 printf "\n--------------------\n"
 
 # UFW script install / MUST BE DONE LAST DUE TO UFW BEING ALTERED ACCORDING TO INSTALLATION
-if [[ $DO_UFW_INSTALL =~ [YyMm]$ ]]; then
+if [[ $DO_UFW_CONFIGURE =~ [YyMm]$ ]]; then
     # UFW needs special handling to backup existing configuration
     if ! is_module_installed "UFW_Firewall"; then
         ufw status numbered >>$BACKUPDIR/ufw 2>/dev/null || true
     fi
 fi
-execute_module "UFW_Firewall" "$BASEDIR/subscripts/ufw_install.sh" "$DO_UFW_INSTALL"
+execute_module "UFW_Firewall" "$BASEDIR/subscripts/ufw_configure.sh" "$DO_UFW_CONFIGURE"
 
 printf "\n--------------------\n"
 

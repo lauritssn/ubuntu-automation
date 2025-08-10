@@ -15,6 +15,9 @@ Image=docker.io/traefik/whoami:latest
 # SecurityLabelDisable=true
 User=podman:podman
 
+LogDriver=journald
+LogOpt=tag=whoami-prod
+
 # Add security hardening
 ReadOnly=true
 NoNewPrivileges=true

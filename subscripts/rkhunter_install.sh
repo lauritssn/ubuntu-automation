@@ -77,7 +77,10 @@ fi
 ## Install RKHunter
 ##########################################################################################
 
-apt-get --yes install rkhunter mailutils >>$LOGDIR/$LOGFILE 2>&1 || (show_err "rkhunter installation failed. Please check logfile and fix error manually.")
+if ! apt_install_safe "rkhunter mailutils" "$LOGDIR/$LOGFILE"; then
+   show_err "rkhunter installation failed. Please check logfile and fix error manually."
+   exit 1
+fi
 show_yellow "rkhunter installation done."
 
 ##########################################################################################
