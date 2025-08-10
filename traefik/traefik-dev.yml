@@ -83,7 +83,7 @@ accessLog:
         Content-Type: keep
 
 global:
-  checkNewVersion: false
+  checkNewVersion: true
   sendAnonymousUsage: false
 
 # Experimental features - WASM plugin support

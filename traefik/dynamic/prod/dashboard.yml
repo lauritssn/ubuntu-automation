@@ -1,3 +1,9 @@
+# =============================================================================
+# TRAEFIK DASHBOARD CONFIGURATION (PRODUCTION)
+# =============================================================================
+# WARNING: Dashboard is disabled in main traefik.yml for security.
+# Only enable if absolutely necessary and with proper authentication.
+
 http:
   routers:
     # Redirect HTTP dashboard to HTTPS
@@ -10,17 +16,20 @@ http:
       service: "api@internal"
       priority: 100
 
-    # HTTPS dashboard
+    # HTTPS dashboard with enhanced security
     dashboard-secure:
       rule: "Host(`${TRAEFIK_DASHBOARD_DOMAIN}`)"
       entryPoints:
         - "websecure"
       middlewares:
-        - "basic-auth@file"
+        - "dashboard-auth@file"
         - "security-headers@file"
+        - "rate-limit-strict@file"
+        - "coraza-waf@file"  # Add WAF protection
       service: "api@internal"
       tls:
         certResolver: "letsencrypt"
+        options: "modern@file"  # Use modern TLS configuration
       priority: 100
 
   middlewares:

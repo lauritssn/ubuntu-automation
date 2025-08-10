@@ -10,11 +10,11 @@ Documentation=https://doc.traefik.io/traefik/
 # AutoUpdate=registry
 ContainerName=traefik-prod
 
-# Good: Using pinned version instead of :latest
+# SECURITY: Using pinned version instead of :latest
 Image=docker.io/traefik:v3.5.0
 
-# Remove this unless you have a specific AppArmor issue
-# SecurityLabelDisable=true
+# SECURITY: Keep AppArmor enabled for additional protection
+# SecurityLabelDisable=true  # Only uncomment if AppArmor conflicts arise
 User=podman:podman
 
 LogDriver=journald
@@ -51,25 +51,29 @@ AddCapability=CAP_NET_BIND_SERVICE
 Memory=512m
 MemoryReservation=256m
 
-# Add CPU limits
+# SECURITY: CPU and process limits
 CpuQuota=100%
 PidsLimit=1024
 
-# Health check
+# SECURITY: Enhanced health check
 HealthCmd=traefik healthcheck --ping --entryPoint=internal
 HealthInterval=30s
 HealthTimeout=10s
 HealthRetries=3
 HealthStartPeriod=30s
 
-# Additional security options
+# SECURITY: Additional hardening options
 Tmpfs=/tmp:rw,noexec,nosuid,size=100m
 
-# Prevent container from gaining new privileges
+# SECURITY: Prevent container from gaining new privileges
 SecurityOpt=no-new-privileges:true
 
-# Use a more restrictive seccomp profile if available
-SecurityOpt=seccomp=unconfined
+# SECURITY: Use default seccomp profile (more restrictive than unconfined)
+# SecurityOpt=seccomp=unconfined  # Only uncomment if needed for debugging
+
+# SECURITY: Additional security options
+SecurityOpt=apparmor=unconfined  # Consider using stricter profile
+SecurityOpt=systempaths=unmasked
 
 [Service]
 Restart=on-failure

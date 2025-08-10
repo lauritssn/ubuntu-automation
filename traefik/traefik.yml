@@ -5,7 +5,7 @@ x-trusted-ips: &trusted-ips
   - "172.20.0.0/16"
   - "127.0.0.1/32"
   - "::1/128"
-  # Cloudflare IPs for production
+  # Cloudflare IPs for production (keep updated regularly)
   - "173.245.48.0/20"
   - "103.21.244.0/22"
   - "103.22.200.0/22"
@@ -29,29 +29,54 @@ x-trusted-ips: &trusted-ips
   - "2a06:98c0::/29"
   - "2c0f:f248::/32"
 
+# SECURITY: Disable dashboard in production or secure it properly
 api:
-  dashboard: true
-  insecure: false # Secure dashboard for production
+  dashboard: false # Changed from true - disable in production
+  # If you need dashboard, secure it with proper authentication:
+  # dashboard: true
+  insecure: false
 
 ping:
-  entryPoint: "internal" 
+  entryPoint: "internal"
 
 # EntryPoints - socket activation provides file descriptors, no address needed
 entryPoints:
   web:
     address: ":80"
+    # SECURITY: Add automatic HTTPS redirect
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
     forwardedHeaders:
       trustedIPs: *trusted-ips
+      insecure: false # SECURITY: Only trust specified IPs
   websecure:
     address: ":443"
     forwardedHeaders:
       trustedIPs: *trusted-ips
+      insecure: false # SECURITY: Only trust specified IPs
+    http:
+      # SECURITY: Add security headers middleware
+      middlewares:
+        - security-headers@file
+        - rate-limit@file
+      # SECURITY: TLS configuration
+      tls:
+        options: modern@file
   traefik:
     address: ":8080"
     forwardedHeaders:
       trustedIPs: *trusted-ips
+      insecure: false
+    # SECURITY: Secure dashboard access if enabled
+    http:
+      middlewares:
+        - dashboard-auth@file
   internal:
-    address: ":9000"   # new port bound inside container
+    address: ":9000" # new port bound inside container
 
 providers:
   # Dynamic configuration files
@@ -64,40 +89,74 @@ certificatesResolvers:
     acme:
       email: "${LETSENCRYPT_EMAIL}"
       storage: /data/acme.json
+      # SECURITY: Use DNS challenge instead of HTTP for better security
+      # Uncomment and configure if using DNS provider
+      # dnsChallenge:
+      #   provider: cloudflare
+      #   delayBeforeCheck: 60
       httpChallenge:
         entryPoint: web
+      # SECURITY: Use ECDSA keys (smaller, faster, more secure)
+      keyType: EC256
 
+# SECURITY: Rate limiting and monitoring
 metrics:
   prometheus:
+    addEntryPointsLabels: true
+    addServicesLabels: true
+    addRoutersLabels: true
     buckets:
       - 0.1
       - 0.3
       - 1.2
       - 5.0
 
-# Logging configuration
+# SECURITY: Structured logging with appropriate level
 log:
-  level: INFO
+  level: WARN # Changed from INFO to reduce log noise
   filePath: "/var/log/traefik/traefik.log"
-  # filePath: "/dev/stdout"
   format: json
 
-# Access logs
+# SECURITY: Enhanced access logging with privacy considerations
 accessLog:
   # filePath: "/var/log/traefik/access.log"
   filePath: "/dev/stdout"
   format: json
+  # # SECURITY: Filter sensitive information
+  # filters:
+  #   statusCodes:
+  #     - "400-499"  # Log client errors
+  #     - "500-599"  # Log server errors
+  #   retryAttempts: true
+  #   minDuration: "100ms"
   fields:
+    defaultMode: keep
+    names:
+      # SECURITY: Drop sensitive headers
+      Authorization: drop
+      Cookie: drop
+      Set-Cookie: drop
+      # Keep useful headers for debugging
+      User-Agent: keep
+      Content-Type: keep
+      X-Forwarded-For: keep
+      X-Real-IP: keep
     headers:
-      defaultMode: keep
+      defaultMode: drop # Changed to drop by default
       names:
         User-Agent: keep
-        Authorization: drop
         Content-Type: keep
+        X-Forwarded-For: keep
+        X-Real-IP: keep
 
+# SECURITY: Disable telemetry
 global:
   checkNewVersion: false
   sendAnonymousUsage: false
+
+# SECURITY: Add retry configuration to handle transient failures
+retry:
+  attempts: 3
 
 # Experimental features - WASM plugin support
 experimental:

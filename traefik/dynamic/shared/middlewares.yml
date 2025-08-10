@@ -378,6 +378,13 @@ http:
         users:
           - "${TRAEFIK_DASHBOARD_USERS:-admin:$2y$10$2b2cu8Sw4kADVOskOnCpYOBz.qtgHPVBpALBjNpjfw/OaEbWtl4nu}" # admin:changeme
 
+    # Enhanced dashboard authentication
+    dashboard-auth:
+      basicAuth:
+        users:
+          - "${TRAEFIK_DASHBOARD_USERS:-admin:$2y$10$2b2cu8Sw4kADVOskOnCpYOBz.qtgHPVBpALBjNpjfw/OaEbWtl4nu}" # admin:changeme
+        removeHeader: true
+
     # Cache headers for static content
     cache-headers:
       headers:
@@ -391,3 +398,26 @@ http:
           Cache-Control: "no-cache, no-store, must-revalidate"
           Pragma: "no-cache"
           Expires: "0"
+
+# =============================================================================
+# TLS CONFIGURATION
+# =============================================================================
+
+# SECURITY: Modern TLS configuration with strong ciphers
+tls:
+  options:
+    modern:
+      minVersion: "VersionTLS12"
+      maxVersion: "VersionTLS13"
+      cipherSuites:
+        - "TLS_AES_256_GCM_SHA384"
+        - "TLS_CHACHA20_POLY1305_SHA256"
+        - "TLS_AES_128_GCM_SHA256"
+        - "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+        - "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305"
+        - "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+      curvePreferences:
+        - "CurveP521"
+        - "CurveP384"
+        - "CurveP256"
+      sniStrict: true
