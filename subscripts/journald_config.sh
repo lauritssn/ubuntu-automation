@@ -18,6 +18,19 @@ else
     exit 1
 fi
 
+# Fallback function definitions if shared functions aren't available
+if ! command -v show_green &>/dev/null; then
+    show_green() { echo "SUCCESS: $1"; }
+    show_yellow() { echo "STATUS: $1"; }
+    show_error_and_exit() { echo "ERROR: $1"; exit 1; }
+    log_info() { echo "INFO: $1"; }
+    log_success() { echo "SUCCESS: $1"; }
+    log_warning() { echo "WARNING: $1"; }
+    log_error() { echo "ERROR: $1"; }
+    log_start() { echo "STARTING: $1"; }
+    init_logging() { echo "LOGGING: $1"; }
+fi
+
 show_green "Starting systemd journald configuration..."
 
 ##########################################################################################
