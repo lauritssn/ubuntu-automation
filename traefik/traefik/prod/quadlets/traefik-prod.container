@@ -13,10 +13,6 @@ ContainerName=traefik-prod
 # SECURITY: Using pinned version instead of :latest
 Image=docker.io/traefik:v3.5.0
 
-# SECURITY: Keep AppArmor enabled for additional protection
-# SecurityLabelDisable=true  # Only uncomment if AppArmor conflicts arise
-User=podman:podman
-
 LogDriver=journald
 
 # Cloudflare DNS challenge environment variables
@@ -27,6 +23,7 @@ Volume=/srv/apps/deploy/traefik/traefik.yml:/etc/traefik/traefik.yml:ro,Z
 Volume=/srv/apps/deploy/traefik/dynamic/prod:/etc/traefik/sites/config:ro,Z
 Volume=/srv/apps/deploy/traefik/data:/data:Z
 Volume=/srv/apps/deploy/traefik/logs:/var/log/traefik:Z
+Volume=/srv/apps/deploy/traefik/plugins-storage:/plugins-storage:Z
 Volume=%t/podman/podman.sock:/var/run/docker.sock:ro
 
 # Network

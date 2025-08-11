@@ -39,6 +39,11 @@ x-rate-limit-production: &rate-limit-production
   average: 100
   burst: 200
 
+# Strict rate limiting for sensitive endpoints
+x-rate-limit-strict: &rate-limit-strict
+  average: 10
+  burst: 20
+
 # =============================================================================
 # MIDDLEWARE DEFINITIONS
 # =============================================================================

@@ -76,11 +76,11 @@ entryPoints:
       trustedIPs: *trusted-ips
       insecure: false
     # SECURITY: Secure dashboard access if enabled
-    http:
-      middlewares:
-        - dashboard-auth@file
+    # http:
+    #   middlewares:
+    #     - dashboard-auth@file
   internal:
-    address: ":9000" # new port bound inside container
+    address: "127.0.0.1:9000" # Internal healthcheck port - localhost only
 
 providers:
   # Dynamic configuration files
@@ -94,19 +94,41 @@ certificatesResolvers:
       email: "tools@werktoej.dk"
       storage: /data/acme.json
 
+      # SECURITY: HTTP challenge disabled in favor of DNS challenge
+      # HTTP challenge requires port 80 to be accessible from the internet
+      # and cannot generate wildcard certificates
       # httpChallenge:
       #   entryPoint: web
 
       # SECURITY: Use DNS challenge with Cloudflare for better security and wildcard support
+      # Benefits:
+      # - Works behind firewalls/NAT (no need for port 80 exposure)
+      # - Supports wildcard certificates (*.domain.com)
+      # - Higher rate limits from Let's Encrypt
+      # - More secure as no HTTP endpoint needed
       dnsChallenge:
         provider: cloudflare
-        delayBeforeCheck: "60s"
+        propagation:
+          # Wait before checking DNS propagation (Traefik 3.1+ syntax)
+          # Increase if you experience DNS propagation delays
+          delayBeforeChecks: "60s"
         resolvers:
-          - "1.1.1.1:53"
-          - "8.8.8.8:53"
+          # DNS servers used to verify TXT record propagation
+          # Using Cloudflare and Google for redundancy
+          - "1.1.1.1:53" # Cloudflare primary
+          # - "8.8.8.8:53" # Google primary
+          # Alternative options:
+          # - "1.0.0.1:53"  # Cloudflare secondary
+          # - "8.8.4.4:53"  # Google secondary
+          # - "9.9.9.9:53"  # Quad9
 
-      # SECURITY: Use ECDSA keys (smaller, faster, more secure)
+      # SECURITY: Use ECDSA keys (smaller, faster, more secure than RSA)
+      # EC256 provides equivalent security to RSA-3072 but with smaller certificates
       keyType: EC256
+
+      # Optional: Use Let's Encrypt staging for testing to avoid rate limits
+      # Uncomment the line below for testing, comment out for production
+      # caServer: https://acme-staging-v02.api.letsencrypt.org/directory
 
 # SECURITY: Rate limiting and monitoring
 metrics:
