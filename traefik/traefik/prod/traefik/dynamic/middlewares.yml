@@ -2,6 +2,11 @@
 # SHARED CONFIGURATION FOR TRAEFIK MIDDLEWARES
 # =============================================================================
 
+# Define authentication configuration - UPDATE THIS VALUE FOR YOUR SETUP
+# Generate with: htpasswd -nbB admin yourpassword
+# Example: docker run --rm httpd:2.4-alpine htpasswd -nbB admin yourpassword
+x-dashboard-auth: &dashboard-auth-users "admin:$2y$10$2b2cu8Sw4kADVOskOnCpYOBz.qtgHPVBpALBjNpjfw/OaEbWtl4nu" # admin:changeme
+
 # =============================================================================
 # SHARED SECURITY HEADERS CONFIGURATION
 # =============================================================================
@@ -372,17 +377,17 @@ http:
         accessControlAllowOriginList:
           - "*"
 
-    # Basic auth for production dashboard (override users in environment)
+    # Basic auth for production dashboard
     basic-auth:
       basicAuth:
         users:
-          - "${TRAEFIK_DASHBOARD_USERS:-admin:$2y$10$2b2cu8Sw4kADVOskOnCpYOBz.qtgHPVBpALBjNpjfw/OaEbWtl4nu}" # admin:changeme
+          - *dashboard-auth-users
 
     # Enhanced dashboard authentication
     dashboard-auth:
       basicAuth:
         users:
-          - "${TRAEFIK_DASHBOARD_USERS:-admin:$2y$10$2b2cu8Sw4kADVOskOnCpYOBz.qtgHPVBpALBjNpjfw/OaEbWtl4nu}" # admin:changeme
+          - *dashboard-auth-users
         removeHeader: true
 
     # Cache headers for static content

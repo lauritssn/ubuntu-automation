@@ -37,33 +37,33 @@ echo "Copying systemd socket units for Traefik..."
 # Remove existing files and copy new ones
 rm -f "$SYSTEMD_USER_DIR/http-test.socket"
 rm -f "$SYSTEMD_USER_DIR/traefik-test.socket"
-cp systemd/http-test.socket "$SYSTEMD_USER_DIR/"
-cp systemd/traefik-test.socket "$SYSTEMD_USER_DIR/"
+cp traefik/test/systemd/http-test.socket "$SYSTEMD_USER_DIR/"
+cp traefik/test/systemd/traefik-test.socket "$SYSTEMD_USER_DIR/"
 chown podman:podman "$SYSTEMD_USER_DIR"/*.socket
 
 echo "Copying Quadlet container files..."
 # Remove existing files and copy new ones
 rm -f "$QUADLET_DIR/traefik-test.container"
 rm -f "$QUADLET_DIR/whoami-test.container"
-cp quadlets/traefik-test.container "$QUADLET_DIR/"
-cp quadlets/whoami-test.container "$QUADLET_DIR/"
+cp traefik/test/quadlets/traefik-test.container "$QUADLET_DIR/"
+cp traefik/test/quadlets/whoami-test.container "$QUADLET_DIR/"
 chown podman:podman "$QUADLET_DIR"/*.container
 
 # Create base deployment directory
 DEPLOY_DIR="/srv/apps/deploy/traefik"
 mkdir -p "$DEPLOY_DIR"
+chmod 755 "/srv/apps/deploy"
 
 # Copy Traefik configuration file
 echo "Copying Traefik test configuration..."
-cp traefik-test.yml "$DEPLOY_DIR/"
-chown podman:podman "$DEPLOY_DIR/traefik-test.yml"
-chmod 644 "$DEPLOY_DIR/traefik-test.yml"
+cp traefik/test/traefik/traefik.yml "$DEPLOY_DIR/traefik.yml"
+chown podman:podman "$DEPLOY_DIR/traefik.yml"
+chmod 644 "$DEPLOY_DIR/traefik.yml"
 
-# Copy dynamic configuration folder (test and shared only)
+# Copy dynamic configuration folder
 echo "Copying dynamic configuration..."
-mkdir -p "$DEPLOY_DIR/dynamic"
-cp -r dynamic/test "$DEPLOY_DIR/dynamic/"
-cp -r dynamic/shared "$DEPLOY_DIR/dynamic/"
+mkdir -p "$DEPLOY_DIR/dynamic/test"
+cp -r traefik/test/traefik/dynamic/* "$DEPLOY_DIR/dynamic/test/"
 chown -R podman:podman "$DEPLOY_DIR/dynamic"
 find "$DEPLOY_DIR/dynamic" -type d -exec chmod 755 {} \;
 find "$DEPLOY_DIR/dynamic" -type f -exec chmod 644 {} \;
@@ -93,7 +93,7 @@ echo "✅ Files deployed successfully!"
 # Get the actual IP address
 LOCAL_IP=$(ip route get 1.1.1.1 | awk '{print $7; exit}' 2>/dev/null || echo "localhost")
 echo "📊 Traefik dashboard should be available at: http://${LOCAL_IP}:8080"
-echo "🌍 Whoami service available at: http://whoami.localhost"
+echo "🌍 Whoami service available at: http://whoami.localtest"
 echo "🔌 Socket activation: Traefik will start automatically on first request"
 
 echo ""

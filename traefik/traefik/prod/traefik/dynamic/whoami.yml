@@ -2,11 +2,14 @@
 # WHOAMI PRODUCTION SERVICE CONFIGURATION
 # =============================================================================
 
+# Define domain configuration - UPDATE THIS VALUE FOR YOUR SETUP
+x-whoami-domain: &whoami-domain "whoami.yourdomain.com"
+
 http:
   routers:
     # Redirect HTTP to HTTPS
     whoami-prod-redirect:
-      rule: "Host(`${WHOAMI_DOMAIN:-whoami.${APP_DOMAIN}}`)"
+      rule: &whoami-rule-http "Host(`whoami.yourdomain.com`)"
       entryPoints:
         - "web"
       middlewares:
@@ -16,7 +19,7 @@ http:
 
     # HTTPS service with enhanced security
     whoami-prod:
-      rule: "Host(`${WHOAMI_DOMAIN:-whoami.${APP_DOMAIN}}`)"
+      rule: &whoami-rule-https "Host(`whoami.yourdomain.com`)"
       service: "whoami-prod"
       entryPoints:
         - "websecure"
@@ -49,4 +52,4 @@ http:
           scheme: "http"
           mode: "http"
           headers:
-            Host: "${WHOAMI_DOMAIN:-whoami.${APP_DOMAIN}}"
+            Host: *whoami-domain

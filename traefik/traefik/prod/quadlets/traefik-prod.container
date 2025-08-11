@@ -18,24 +18,16 @@ Image=docker.io/traefik:v3.5.0
 User=podman:podman
 
 LogDriver=journald
-LogOpt=tag=traefik-prod
 
 # Volumes
-Volume=/srv/apps/deploy/traefik/traefik-prod.yml:/etc/traefik/traefik.yml:ro,Z
+Volume=/srv/apps/deploy/traefik/traefik.yml:/etc/traefik/traefik.yml:ro,Z
 Volume=/srv/apps/deploy/traefik/dynamic/prod:/etc/traefik/sites/config:ro,Z
-Volume=/srv/apps/deploy/traefik/dynamic/shared:/etc/traefik/sites/shared:ro,Z
 Volume=/srv/apps/deploy/traefik/data:/data:Z
 Volume=/srv/apps/deploy/traefik/logs:/var/log/traefik:Z
 Volume=%t/podman/podman.sock:/var/run/docker.sock:ro
 
 # Network
 Network=traefik
-
-# Environment variables
-Environment=LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL}
-Environment=APP_DOMAIN=${APP_DOMAIN}
-Environment=TRAEFIK_DASHBOARD_DOMAIN=${TRAEFIK_DASHBOARD_DOMAIN:-traefik.${APP_DOMAIN}}
-Environment=WHOAMI_DOMAIN=${WHOAMI_DOMAIN:-whoami.${APP_DOMAIN}}
 
 # Security hardening
 NoNewPrivileges=true
@@ -47,12 +39,7 @@ DropCapability=ALL
 # Traefik needs these for binding to privileged ports and network operations
 AddCapability=CAP_NET_BIND_SERVICE
 
-# Resource limits
-Memory=512m
-MemoryReservation=256m
-
 # SECURITY: CPU and process limits
-CpuQuota=100%
 PidsLimit=1024
 
 # SECURITY: Enhanced health check
@@ -64,16 +51,6 @@ HealthStartPeriod=30s
 
 # SECURITY: Additional hardening options
 Tmpfs=/tmp:rw,noexec,nosuid,size=100m
-
-# SECURITY: Prevent container from gaining new privileges
-SecurityOpt=no-new-privileges:true
-
-# SECURITY: Use default seccomp profile (more restrictive than unconfined)
-# SecurityOpt=seccomp=unconfined  # Only uncomment if needed for debugging
-
-# SECURITY: Additional security options
-SecurityOpt=apparmor=unconfined  # Consider using stricter profile
-SecurityOpt=systempaths=unmasked
 
 [Service]
 Restart=on-failure
