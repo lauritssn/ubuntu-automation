@@ -55,7 +55,7 @@ fi
 # Create the journald configuration with specified settings
 log_info "Writing new journald configuration to /etc/systemd/journald.conf"
 
-cat >/etc/systemd/journald.conf <<'EOF'
+cat > /etc/systemd/journald.conf << 'EOF'
 [Journal]
 #Storage=auto
 #Compress=yes
