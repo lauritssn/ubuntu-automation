@@ -19,6 +19,9 @@ User=podman:podman
 
 LogDriver=journald
 
+# Cloudflare DNS challenge environment variables
+EnvironmentFile=/srv/apps/deploy/traefik/cloudflare.env
+
 # Volumes
 Volume=/srv/apps/deploy/traefik/traefik.yml:/etc/traefik/traefik.yml:ro,Z
 Volume=/srv/apps/deploy/traefik/dynamic/prod:/etc/traefik/sites/config:ro,Z

@@ -33,13 +33,6 @@ x-trusted-ips: &trusted-ips
   - "2a06:98c0::/29"
   - "2c0f:f248::/32"
 
-# Define domain configuration - UPDATE THESE VALUES FOR YOUR SETUP
-x-domains: &domains
-  app_domain: &app-domain "werktoej.dk"
-  letsencrypt_email: &letsencrypt-email "tools@werktoej.dk"
-  traefik_domain: &traefik-domain "traefik.werktoej.dk"
-  whoami_domain: &whoami-domain "whoami.werktoej.dk"
-
 # SECURITY: Disable dashboard in production or secure it properly
 api:
   dashboard: false # Changed from true - disable in production
@@ -98,15 +91,20 @@ providers:
 certificatesResolvers:
   letsencrypt:
     acme:
-      email: *letsencrypt-email
+      email: "tools@werktoej.dk"
       storage: /data/acme.json
-      # SECURITY: Use DNS challenge instead of HTTP for better security
-      # Uncomment and configure if using DNS provider
-      # dnsChallenge:
-      #   provider: cloudflare
-      #   delayBeforeCheck: 60
-      httpChallenge:
-        entryPoint: web
+
+      # httpChallenge:
+      #   entryPoint: web
+
+      # SECURITY: Use DNS challenge with Cloudflare for better security and wildcard support
+      dnsChallenge:
+        provider: cloudflare
+        delayBeforeCheck: "60s"
+        resolvers:
+          - "1.1.1.1:53"
+          - "8.8.8.8:53"
+
       # SECURITY: Use ECDSA keys (smaller, faster, more secure)
       keyType: EC256
 
