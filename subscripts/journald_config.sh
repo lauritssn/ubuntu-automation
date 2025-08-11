@@ -6,8 +6,30 @@
 # This script configures systemd journald with enhanced retention settings for
 # better log management and compliance with monitoring requirements.
 
-# Source shared helper functions
-source "$(dirname "$0")/../utils/shared_functions.sh"
+# Set BASEDIR early for shared functions to use
+export BASEDIR="${BASEDIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+
+# Source the shared helper functions
+if [ -f "$BASEDIR/utils/shared_functions.sh" ]; then
+    source "$BASEDIR/utils/shared_functions.sh"
+else
+    echo "❌ ERROR: Shared functions script not found at $BASEDIR/utils/shared_functions.sh"
+    echo "Please run this script from the ubuntu-automation directory or set BASEDIR environment variable"
+    exit 1
+fi
+
+# Fallback function definitions if shared functions aren't available
+if ! command -v show_green &>/dev/null; then
+    show_green() { echo "SUCCESS: $1"; }
+    show_yellow() { echo "STATUS: $1"; }
+    show_error_and_exit() { echo "ERROR: $1"; exit 1; }
+    log_info() { echo "INFO: $1"; }
+    log_success() { echo "SUCCESS: $1"; }
+    log_warning() { echo "WARNING: $1"; }
+    log_error() { echo "ERROR: $1"; }
+    log_start() { echo "STARTING: $1"; }
+    init_logging() { echo "LOGGING: $1"; }
+fi
 
 show_green "Starting systemd journald configuration..."
 
@@ -128,7 +150,7 @@ if command -v journalctl >/dev/null 2>&1; then
     journalctl --disk-usage 2>/dev/null || echo "Unable to determine journal disk usage"
 else
     echo "journalctl command not available"
-fiƒ
+fi
 
 echo ""
 show_green "📝 To view journal logs, use: journalctl"
