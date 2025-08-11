@@ -280,6 +280,12 @@ http:
           Pragma: "no-cache"
           Expires: "0"
 
+    # Centralized HTTPS redirect middleware
+    redirect-to-https:
+      redirectScheme:
+        scheme: https
+        permanent: true
+
 # =============================================================================
 # TLS CONFIGURATION
 # =============================================================================

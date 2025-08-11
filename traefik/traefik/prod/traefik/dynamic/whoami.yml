@@ -10,7 +10,7 @@ http:
       entryPoints:
         - "web"
       middlewares:
-        - "redirect-to-https"
+        - "redirect-to-https@file"
       service: "whoami-prod"
       priority: 90
 
@@ -29,12 +29,6 @@ http:
       tls:
         certResolver: "letsencrypt"
         options: "modern@file" # Use modern TLS configuration
-
-  middlewares:
-    redirect-to-https:
-      redirectScheme:
-        scheme: https
-        permanent: true
 
   services:
     whoami-prod:

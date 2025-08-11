@@ -12,7 +12,7 @@ http:
       entryPoints:
         - "web"
       middlewares:
-        - "redirect-to-https"
+        - "redirect-to-https@file"
       service: "api@internal"
       priority: 100
 
@@ -31,9 +31,3 @@ http:
         certResolver: "letsencrypt"
         options: "modern@file" # Use modern TLS configuration
       priority: 100
-
-  middlewares:
-    redirect-to-https:
-      redirectScheme:
-        scheme: https
-        permanent: true
