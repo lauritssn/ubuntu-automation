@@ -6,17 +6,17 @@ http:
   routers:
     # Redirect HTTP to HTTPS
     whoami-prod-redirect:
-      rule: "Host(`${WHOAMI_DOMAIN:-whoami.${APP_DOMAIN}}`)"
+      rule: "Host(`whoami.werktoej.dk`)"
       entryPoints:
         - "web"
       middlewares:
-        - "redirect-to-https"
+        - "redirect-to-https@file"
       service: "whoami-prod"
       priority: 90
 
     # HTTPS service with enhanced security
     whoami-prod:
-      rule: "Host(`${WHOAMI_DOMAIN:-whoami.${APP_DOMAIN}}`)"
+      rule: "Host(`whoami.werktoej.dk`)"
       service: "whoami-prod"
       entryPoints:
         - "websecure"
@@ -29,12 +29,6 @@ http:
       tls:
         certResolver: "letsencrypt"
         options: "modern@file" # Use modern TLS configuration
-
-  middlewares:
-    redirect-to-https:
-      redirectScheme:
-        scheme: https
-        permanent: true
 
   services:
     whoami-prod:
@@ -49,4 +43,4 @@ http:
           scheme: "http"
           mode: "http"
           headers:
-            Host: "${WHOAMI_DOMAIN:-whoami.${APP_DOMAIN}}"
+            Host: "whoami.werktoej.dk"

@@ -11,7 +11,6 @@ Image=docker.io/traefik/whoami:latest
 SecurityLabelDisable=true
 
 LogDriver=journald
-LogOpt=tag=whoami-test
 
 # Network
 Network=traefik

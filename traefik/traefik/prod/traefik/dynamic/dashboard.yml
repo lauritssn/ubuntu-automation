@@ -8,32 +8,26 @@ http:
   routers:
     # Redirect HTTP dashboard to HTTPS
     dashboard-redirect:
-      rule: "Host(`${TRAEFIK_DASHBOARD_DOMAIN}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+      rule: "Host(`traefik.werktoej.dk`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
       entryPoints:
         - "web"
       middlewares:
-        - "redirect-to-https"
+        - "redirect-to-https@file"
       service: "api@internal"
       priority: 100
 
     # HTTPS dashboard with enhanced security
     dashboard-secure:
-      rule: "Host(`${TRAEFIK_DASHBOARD_DOMAIN}`)"
+      rule: "Host(`traefik.werktoej.dk`)"
       entryPoints:
         - "websecure"
       middlewares:
         - "dashboard-auth@file"
         - "security-headers@file"
         - "rate-limit-strict@file"
-        - "coraza-waf@file"  # Add WAF protection
+        - "coraza-waf@file" # Add WAF protection
       service: "api@internal"
       tls:
         certResolver: "letsencrypt"
-        options: "modern@file"  # Use modern TLS configuration
+        options: "modern@file" # Use modern TLS configuration
       priority: 100
-
-  middlewares:
-    redirect-to-https:
-      redirectScheme:
-        scheme: https
-        permanent: true 

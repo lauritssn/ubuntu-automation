@@ -12,12 +12,10 @@ Image=docker.io/traefik:v3.5.0
 SecurityLabelDisable=true
 
 LogDriver=journald
-LogOpt=tag=traefik-test
 
 # Volumes
-Volume=/srv/apps/deploy/traefik/traefik-test.yml:/etc/traefik/traefik.yml:ro,Z
+Volume=/srv/apps/deploy/traefik/traefik.yml:/etc/traefik/traefik.yml:ro,Z
 Volume=/srv/apps/deploy/traefik/dynamic/test:/etc/traefik/sites/config:ro,Z
-Volume=/srv/apps/deploy/traefik/dynamic/shared:/etc/traefik/sites/shared:ro,Z
 Volume=/srv/apps/deploy/traefik/data:/data:Z
 Volume=/srv/apps/deploy/traefik/logs:/var/log/traefik:Z
 Volume=%t/podman/podman.sock:/var/run/docker.sock:ro

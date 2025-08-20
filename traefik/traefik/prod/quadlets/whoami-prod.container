@@ -11,12 +11,7 @@ ContainerName=whoami-prod
 # Pin to specific version instead of :latest
 Image=docker.io/traefik/whoami:latest
 
-# Only disable if you have a specific need and understand the risk
-# SecurityLabelDisable=true
-User=podman:podman
-
 LogDriver=journald
-LogOpt=tag=whoami-prod
 
 # Add security hardening
 ReadOnly=true
@@ -24,9 +19,7 @@ NoNewPrivileges=true
 
 # Drop all capabilities and add only what's needed
 DropCapability=ALL
-
-# Limit resources
-Memory=128M
+AddCapability=NET_BIND_SERVICE
 
 # Network
 Network=traefik

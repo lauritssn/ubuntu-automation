@@ -1,0 +1,94 @@
+# =============================================================================
+# SHARED CONFIGURATION FOR TRAEFIK MIDDLEWARES - TEST ENVIRONMENT
+# =============================================================================
+
+# =============================================================================
+# SHARED SECURITY HEADERS CONFIGURATION
+# =============================================================================
+
+# Test security headers configuration (similar to development)
+x-security-headers-test: &security-headers-test
+  frameDeny: false
+  browserXssFilter: true
+  contentTypeNosniff: true
+  customRequestHeaders:
+    X-Forwarded-Proto: "http"
+
+# =============================================================================
+# SHARED RATE LIMITING CONFIGURATION
+# =============================================================================
+
+# Test rate limiting settings (relaxed for testing)
+x-rate-limit-test: &rate-limit-test
+  average: 1000
+  burst: 2000
+
+# =============================================================================
+# MIDDLEWARE DEFINITIONS
+# =============================================================================
+
+http:
+  middlewares:
+    # =============================================================================
+    # CORAZA WAF MIDDLEWARES
+    # =============================================================================
+
+    # Test Coraza WAF with verbose logging (renamed from dev for consistency)
+    coraza-waf-test:
+      plugin:
+        coraza:
+          directives: [
+              # OWASP TOP 10 PROTECTION
+              'SecRule REQUEST_URI "@streq /.env" "id:101,phase:1,log,deny,status:403,msg:Environment file access blocked"',
+              'SecRule REQUEST_URI "@streq /admin" "id:102,phase:1,log,deny,status:403,msg:Admin path access blocked"',
+              'SecRule REQUEST_URI "@contains .." "id:103,phase:1,log,deny,status:403,msg:Directory traversal attempt"',
+              'SecRule REQUEST_URI "@rx \.(htaccess|htpasswd|ini|log|conf|backup|bak|old|tmp)$" "id:104,phase:1,log,deny,status:403,msg:Sensitive file access attempt"',
+              'SecRule REQUEST_URI "@rx /\.(git|svn|hg)" "id:105,phase:1,log,deny,status:403,msg:Version control directory access blocked"',
+              'SecRule ARGS "@rx union.*select" "id:301,phase:2,log,deny,status:403,msg:SQL injection attempt detected"',
+              'SecRule ARGS "@rx (select|insert|update|delete|drop|create).*from" "id:302,phase:2,log,deny,status:403,msg:SQL injection detected"',
+              'SecRule ARGS "@rx \-\-|\#|\*\/|\*\*" "id:303,phase:2,log,deny,status:403,msg:SQL comment injection blocked"',
+              'SecRule ARGS "@rx <script.*?>" "id:304,phase:2,log,deny,status:403,msg:XSS script tag detected"',
+              'SecRule ARGS "@rx javascript:" "id:305,phase:2,log,deny,status:403,msg:XSS javascript protocol detected"',
+              'SecRule ARGS "@rx on(load|click|error|focus)" "id:306,phase:2,log,deny,status:403,msg:XSS event handler detected"',
+              'SecRule ARGS "@rx (;|\||&|`|\$\(|\$\{)" "id:401,phase:2,log,deny,status:403,msg:Command injection attempt detected"',
+              'SecRule ARGS "@rx (wget|curl|nc|netcat|telnet|ssh)" "id:402,phase:2,log,deny,status:403,msg:System command detected"',
+              'SecRule REQUEST_METHOD "@streq TRACE" "id:501,phase:1,log,deny,status:405,msg:TRACE method not allowed"',
+              'SecRule REQUEST_METHOD "@streq TRACK" "id:502,phase:1,log,deny,status:405,msg:TRACK method not allowed"',
+              'SecRule REQUEST_METHOD "@streq OPTIONS" "id:503,phase:1,log,pass,msg:OPTIONS method logged"',
+              'SecRule REQUEST_HEADERS:User-Agent "@rx (sqlmap|nikto|nmap|masscan|gobuster|dirb|dirbuster|wpscan)" "id:601,phase:1,log,deny,status:403,msg:Security scanner detected"',
+              'SecRule REQUEST_HEADERS:User-Agent "@rx (python-requests|curl|wget)" "id:602,phase:1,log,pass,msg:Automated tool detected"',
+              'SecRule ARGS "@rx (admin|administrator|root|test|guest|demo)" "id:701,phase:2,log,pass,msg:Common username detected"',
+              'SecRule REQUEST_URI "@rx /(login|signin|auth)" "id:702,phase:1,log,pass,msg:Authentication endpoint accessed"',
+              'SecRule REQUEST_HEADERS:Content-Type "@rx multipart/form-data" "id:801,phase:1,log,pass,msg:File upload detected"',
+              'SecRule ARGS "@rx (localhost|127\.0\.0\.1|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)" "id:1001,phase:2,log,deny,status:403,msg:SSRF attempt detected"',
+              'SecRule ARGS "@rx (file://|ftp://|gopher://|dict://)" "id:1002,phase:2,log,deny,status:403,msg:Dangerous protocol detected"',
+              # WordPress protection
+              'SecRule REQUEST_URI "@rx /wp-config\.php" "id:2001,phase:1,log,deny,status:403,msg:WordPress config file access blocked"',
+              'SecRule REQUEST_URI "@rx /wp-admin/install\.php" "id:2002,phase:1,log,deny,status:403,msg:WordPress install file access blocked"',
+              'SecRule REQUEST_URI "@rx /wp-content/debug\.log" "id:2003,phase:1,log,deny,status:403,msg:WordPress debug log access blocked"',
+              'SecRule REQUEST_URI "@rx /wp-includes/" "id:2004,phase:1,log,deny,status:403,msg:WordPress includes directory access blocked"',
+              'SecRule REQUEST_URI "@rx /wp-admin/" "id:2010,phase:1,log,pass,msg:WordPress admin access detected"',
+              'SecRule REQUEST_URI "@rx /wp-login\.php" "id:2011,phase:1,log,pass,msg:WordPress login attempt detected"',
+              'SecRule ARGS "@rx (/wp-content/uploads/.*\.php)" "id:2020,phase:2,log,deny,status:403,msg:PHP file upload to WordPress uploads blocked"',
+              'SecRule REQUEST_URI "@rx /xmlrpc\.php" "id:2021,phase:1,log,deny,status:403,msg:WordPress XML-RPC blocked"',
+              # Engine settings
+              "SecRuleEngine On",
+              "SecDebugLog /dev/stdout",
+              "SecDebugLogLevel 3",
+            ]
+
+    # =============================================================================
+    # SECURITY HEADERS MIDDLEWARES
+    # =============================================================================
+
+    # Test security headers (relaxed for testing)
+    test-headers:
+      headers: *security-headers-test
+
+    # =============================================================================
+    # RATE LIMITING MIDDLEWARES
+    # =============================================================================
+
+    # Test rate limiting (relaxed for testing)
+    test-rate-limit:
+      rateLimit: *rate-limit-test
