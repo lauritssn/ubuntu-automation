@@ -204,7 +204,7 @@ EOF"
 ## Configure networking for real IP forwarding
 ##########################################################################################
 
-show_yellow "Configuring networking for real IP forwarding (Traefik compatibility)."
+show_yellow "Configuring networking for real IP forwarding."
 
 # Enable IP forwarding in sysctl (required for container networking)
 if ! grep -q "^net.ipv4.ip_forward" /etc/sysctl.conf; then
@@ -344,7 +344,7 @@ cat >/usr/local/bin/podman-user <<'EOF'
 if [ "$#" -eq 0 ]; then
     echo "Usage: podman-user <podman-command>"
     echo "Example: podman-user ps -a"
-    echo "Example: podman-user run -d --name traefik ..."
+    echo "Example: podman-user run -d --name mycontainer ..."
     exit 1
 fi
 
@@ -432,9 +432,9 @@ show_usage() {
     echo ""
     echo "Examples:"
     echo "  podman-socket list"
-    echo "  podman-socket status traefik-http"
-    echo "  podman-socket start traefik-http"
-    echo "  podman-socket logs traefik"
+    echo "  podman-socket status my-service"
+    echo "  podman-socket start my-service"
+    echo "  podman-socket logs my-service"
 }
 
 if [ "$#" -lt 1 ]; then
@@ -703,11 +703,6 @@ show_info "• Socket setup script: /home/podman/.local/bin/socket-setup.sh"
 show_info "• Documentation: /home/podman/.config/containers/README-socket-activation.md"
 show_info "• Systemd user units: /home/podman/.config/systemd/user/"
 show_info "• Container units: /home/podman/.config/containers/systemd/"
-show_info ""
-show_info "📖 TRAEFIK SETUP GUIDE:"
-show_info "• For complete Traefik setup with socket activation, see:"
-show_info "  SETUP_TRAEFIK.md in the project root"
-show_info "• Covers real IP forwarding, dual-stack networking, and security"
 show_info ""
 
 ##########################################################################################

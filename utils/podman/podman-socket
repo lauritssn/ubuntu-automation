@@ -15,9 +15,9 @@ show_usage() {
     echo ""
     echo "Examples:"
     echo "  podman-socket list"
-    echo "  podman-socket status traefik-http"
-    echo "  podman-socket start traefik-http"
-    echo "  podman-socket logs traefik"
+    echo "  podman-socket status my-service"
+    echo "  podman-socket start my-service"
+    echo "  podman-socket logs my-service"
 }
 
 # Function to run systemctl commands as podman user or directly

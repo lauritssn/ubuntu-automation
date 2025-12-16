@@ -348,7 +348,7 @@ podman-status                        # Comprehensive status check
 # Socket management (for systemd integration)
 podman-socket list                   # List socket services
 podman-socket status                 # Check socket status
-podman-socket start traefik-http     # Start socket service
+podman-socket start my-service       # Start socket service
 ```
 
 #### Wireguard VPN Configuration

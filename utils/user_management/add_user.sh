@@ -1,7 +1,8 @@
 #!/bin/bash
 
 ##########################################################################################
-## Add New User with Sudo, 2FA, and WireGuard Configuration
+## Add New User with Optional Sudo, 2FA, and WireGuard Configuration
+## Supports: Full users (with/without sudo), VPN-only users
 ##########################################################################################
 
 ##########################################################################################
@@ -129,8 +130,7 @@ EOF
 create_user() {
     local username="$1"
     local password="$2"
-    local setup_2fa="$3"
-    local setup_wireguard="$4"
+    local enable_sudo="$3"
 
     show_yellow "Creating user: $username"
 
@@ -152,14 +152,17 @@ create_user() {
 
     show_yellow "Password set for user $username."
 
-    # Add user to sudo group
-    usermod -aG sudo "$username" >>$LOGDIR/$LOGFILE 2>&1
-    if [ $? -ne 0 ]; then
-        show_err "Failed to add user $username to sudo group."
-        return 1
+    # Add user to sudo group if requested
+    if [ "$enable_sudo" = "Y" ]; then
+        usermod -aG sudo "$username" >>$LOGDIR/$LOGFILE 2>&1
+        if [ $? -ne 0 ]; then
+            show_err "Failed to add user $username to sudo group."
+            return 1
+        fi
+        show_yellow "User $username added to sudo group."
+    else
+        show_yellow "User $username created WITHOUT sudo access (standard user)."
     fi
-
-    show_yellow "User $username added to sudo group."
 
     # Create .ssh directory and set proper permissions
     USER_HOME="/home/$username"
@@ -177,6 +180,58 @@ create_user() {
     show_yellow "SSH directory created for user $username."
 
     return 0
+}
+
+##########################################################################################
+## VPN-only user creation function (no system account)
+##########################################################################################
+
+create_vpn_only_user() {
+    local client_name="$1"
+
+    show_yellow "Creating VPN-only client: $client_name"
+
+    # Check if WireGuard is available
+    if ! check_wireguard_available; then
+        show_err "WireGuard is not available. Cannot create VPN-only user."
+        return 1
+    fi
+
+    # Check if client already exists
+    if [ -f "/etc/wireguard/clients/${client_name}.conf" ]; then
+        show_err "VPN client '$client_name' already exists."
+        return 1
+    fi
+
+    # Create global WireGuard scripts if they don't exist
+    create_global_wg_scripts
+
+    # Add WireGuard client
+    if [ -f /etc/wireguard/add_client.sh ]; then
+        /etc/wireguard/add_client.sh "$client_name" >>$LOGDIR/$LOGFILE 2>&1
+        if [ $? -eq 0 ]; then
+            show_yellow "VPN-only client '$client_name' created successfully."
+            show_info "VPN config file: /etc/wireguard/clients/${client_name}.conf"
+
+            # Display QR code for easy mobile setup
+            echo ""
+            show_info "=== VPN Configuration QR Code ==="
+            if command -v qrencode >/dev/null 2>&1; then
+                qrencode -t ansiutf8 </etc/wireguard/clients/${client_name}.conf
+                echo ""
+            else
+                show_warn "Install qrencode to display QR codes: apt install qrencode"
+            fi
+
+            return 0
+        else
+            show_err "Failed to create VPN client: $client_name"
+            return 1
+        fi
+    else
+        show_err "WireGuard add_client.sh script not found."
+        return 1
+    fi
 }
 
 ##########################################################################################
@@ -241,19 +296,29 @@ setup_user_wireguard() {
 show_usage() {
     echo "Usage: $0 [OPTIONS]"
     echo ""
+    echo "User Types:"
+    echo "  Full User (default)    - System account with SSH access, optional sudo/2FA/VPN"
+    echo "  VPN-Only User          - WireGuard VPN access only, no system account"
+    echo ""
     echo "Options:"
     echo "  -u, --username <name>     Username for the new user (required)"
     echo "  -p, --password <pass>     Password for the user (optional, will generate if not provided)"
+    echo "  --sudo                    Enable sudo access (default for full users)"
+    echo "  --no-sudo                 Create user WITHOUT sudo access (standard user)"
     echo "  --no-2fa                  Skip 2FA setup"
-    echo "  --no-wireguard           Skip WireGuard VPN setup"
-    echo "  --interactive            Interactive mode (prompt for all options)"
-    echo "  -h, --help               Show this help message"
+    echo "  --no-wireguard            Skip WireGuard VPN setup"
+    echo "  --vpn-only                Create VPN-only client (no system account)"
+    echo "  --interactive             Interactive mode (prompt for all options)"
+    echo "  -h, --help                Show this help message"
     echo ""
     echo "Examples:"
-    echo "  $0 --interactive                    # Interactive mode"
-    echo "  $0 -u john                         # Create user 'john' with auto-generated password"
-    echo "  $0 -u jane -p mypassword           # Create user 'jane' with specific password"
-    echo "  $0 -u bob --no-2fa --no-wireguard  # Create user 'bob' without 2FA or VPN"
+    echo "  $0 --interactive                     # Interactive mode"
+    echo "  $0 -u john                           # Create sudo user 'john' with auto-generated password"
+    echo "  $0 -u jane -p mypassword             # Create sudo user 'jane' with specific password"
+    echo "  $0 -u bob --no-sudo                  # Create standard user 'bob' (no sudo)"
+    echo "  $0 -u developer --no-sudo --no-2fa  # Standard user without 2FA"
+    echo "  $0 -u client1 --vpn-only             # Create VPN-only client (no system account)"
+    echo "  $0 -u guest --no-2fa --no-wireguard  # Create basic user without extras"
     echo ""
 }
 
@@ -265,97 +330,164 @@ interactive_mode() {
     show_info "=== Interactive User Creation ==="
     echo ""
 
-    # Get username
-    while true; do
-        read -p "Enter username for the new user: " NEW_USERNAME
-        if validate_username "$NEW_USERNAME"; then
-            break
-        fi
-        echo "Please try again."
-    done
+    # Choose user type
+    echo "Select user type:"
+    echo "  1) Full user with sudo access (administrator)"
+    echo "  2) Standard user without sudo (regular user)"
+    echo "  3) VPN-only client (no system account)"
+    echo ""
 
-    # Get password option
     while true; do
-        read -p "Do you want to set a custom password? (Y/N) [N]: " yn
-        case ${yn:-N} in
-        [Yy]*)
-            while true; do
-                read -s -p "Enter password for $NEW_USERNAME: " NEW_PASSWORD
-                echo
-                read -s -p "Confirm password for $NEW_USERNAME: " NEW_PASSWORD_CONFIRM
-                echo
-                if [ "$NEW_PASSWORD" = "$NEW_PASSWORD_CONFIRM" ]; then
-                    break
-                else
-                    echo "Passwords do not match. Please try again."
-                fi
-            done
+        read -p "Enter choice [1-3]: " user_type_choice
+        case $user_type_choice in
+        1)
+            VPN_ONLY=false
+            ENABLE_SUDO="Y"
+            show_info "Creating full user with sudo access"
             break
             ;;
-        [Nn]* | "")
-            NEW_PASSWORD=$(generate_password)
-            show_info "Auto-generated password: $NEW_PASSWORD"
+        2)
+            VPN_ONLY=false
+            ENABLE_SUDO="N"
+            show_info "Creating standard user without sudo"
             break
             ;;
-        *) echo "Please answer yes or no." ;;
+        3)
+            VPN_ONLY=true
+            ENABLE_SUDO="N"
+            show_info "Creating VPN-only client"
+            break
+            ;;
+        *) echo "Please enter 1, 2, or 3." ;;
         esac
     done
 
-    # Check 2FA availability and ask
-    SETUP_2FA="N"
-    if check_2fa_available; then
-        while true; do
-            read -p "Do you want to setup 2FA for this user? (Y/N) [Y]: " yn
-            case ${yn:-Y} in
-            [Yy]* | "")
-                SETUP_2FA="Y"
-                break
-                ;;
-            [Nn]*)
-                SETUP_2FA="N"
-                break
-                ;;
-            *) echo "Please answer yes or no." ;;
-            esac
-        done
-    fi
+    echo ""
 
-    # Check WireGuard availability and ask
-    SETUP_WIREGUARD="N"
-    if check_wireguard_available; then
+    # Get username/client name
+    while true; do
+        if [ "$VPN_ONLY" = true ]; then
+            read -p "Enter client name for VPN: " NEW_USERNAME
+        else
+            read -p "Enter username for the new user: " NEW_USERNAME
+        fi
+
+        # For VPN-only, check if client already exists
+        if [ "$VPN_ONLY" = true ]; then
+            if [ -f "/etc/wireguard/clients/${NEW_USERNAME}.conf" ]; then
+                echo "VPN client '$NEW_USERNAME' already exists. Please try a different name."
+                continue
+            fi
+            # Basic validation for VPN client name
+            if [[ ! "$NEW_USERNAME" =~ ^[a-zA-Z0-9_-]{3,32}$ ]]; then
+                echo "Client name must be 3-32 characters and contain only letters, numbers, dashes, and underscores."
+                continue
+            fi
+            break
+        else
+            if validate_username "$NEW_USERNAME"; then
+                break
+            fi
+            echo "Please try again."
+        fi
+    done
+
+    # For VPN-only, skip password and system user options
+    if [ "$VPN_ONLY" = true ]; then
+        SETUP_2FA="N"
+        SETUP_WIREGUARD="Y"
+        NEW_PASSWORD=""
+    else
+        # Get password option
         while true; do
-            read -p "Do you want to setup WireGuard VPN for this user? (Y/N) [Y]: " yn
-            case ${yn:-Y} in
-            [Yy]* | "")
-                SETUP_WIREGUARD="Y"
+            read -p "Do you want to set a custom password? (Y/N) [N]: " yn
+            case ${yn:-N} in
+            [Yy]*)
+                while true; do
+                    read -s -p "Enter password for $NEW_USERNAME: " NEW_PASSWORD
+                    echo
+                    read -s -p "Confirm password for $NEW_USERNAME: " NEW_PASSWORD_CONFIRM
+                    echo
+                    if [ "$NEW_PASSWORD" = "$NEW_PASSWORD_CONFIRM" ]; then
+                        break
+                    else
+                        echo "Passwords do not match. Please try again."
+                    fi
+                done
                 break
                 ;;
-            [Nn]*)
-                SETUP_WIREGUARD="N"
+            [Nn]* | "")
+                NEW_PASSWORD=$(generate_password)
+                show_info "Auto-generated password: $NEW_PASSWORD"
                 break
                 ;;
             *) echo "Please answer yes or no." ;;
             esac
         done
+
+        # Check 2FA availability and ask
+        SETUP_2FA="N"
+        if check_2fa_available; then
+            while true; do
+                read -p "Do you want to setup 2FA for this user? (Y/N) [Y]: " yn
+                case ${yn:-Y} in
+                [Yy]* | "")
+                    SETUP_2FA="Y"
+                    break
+                    ;;
+                [Nn]*)
+                    SETUP_2FA="N"
+                    break
+                    ;;
+                *) echo "Please answer yes or no." ;;
+                esac
+            done
+        fi
+
+        # Check WireGuard availability and ask
+        SETUP_WIREGUARD="N"
+        if check_wireguard_available; then
+            while true; do
+                read -p "Do you want to setup WireGuard VPN for this user? (Y/N) [Y]: " yn
+                case ${yn:-Y} in
+                [Yy]* | "")
+                    SETUP_WIREGUARD="Y"
+                    break
+                    ;;
+                [Nn]*)
+                    SETUP_WIREGUARD="N"
+                    break
+                    ;;
+                *) echo "Please answer yes or no." ;;
+                esac
+            done
+        fi
     fi
 
     # Summary
     echo ""
     show_info "=== Summary ==="
-    echo "Username: $NEW_USERNAME"
-    echo "Password: $([ ${#NEW_PASSWORD} -gt 0 ] && echo '[SET]' || echo '[AUTO-GENERATED]')"
-    echo "2FA Setup: $SETUP_2FA"
-    echo "WireGuard VPN: $SETUP_WIREGUARD"
+    if [ "$VPN_ONLY" = true ]; then
+        echo "Type: VPN-only client"
+        echo "Client Name: $NEW_USERNAME"
+    else
+        echo "Type: $([ "$ENABLE_SUDO" = "Y" ] && echo 'Full user with sudo' || echo 'Standard user (no sudo)')"
+        echo "Username: $NEW_USERNAME"
+        echo "Password: $([ ${#NEW_PASSWORD} -gt 0 ] && echo '[SET]' || echo '[AUTO-GENERATED]')"
+        echo "Sudo Access: $ENABLE_SUDO"
+        echo "2FA Setup: $SETUP_2FA"
+        echo "WireGuard VPN: $SETUP_WIREGUARD"
+    fi
     echo ""
 
     while true; do
-        read -p "Continue with user creation? (Y/N): " yn
+        read -p "Continue with creation? (Y/N): " yn
         case $yn in
         [Yy]*)
             break
             ;;
         [Nn]*)
-            show_warn "User creation cancelled."
+            show_warn "Creation cancelled."
             exit 0
             ;;
         *) echo "Please answer yes or no." ;;
@@ -374,6 +506,8 @@ NEW_USERNAME=""
 NEW_PASSWORD=""
 SETUP_2FA="Y"
 SETUP_WIREGUARD="Y"
+ENABLE_SUDO="Y"
+VPN_ONLY=false
 INTERACTIVE=false
 
 # Parse command line arguments
@@ -387,12 +521,27 @@ while [[ $# -gt 0 ]]; do
         NEW_PASSWORD="$2"
         shift 2
         ;;
+    --sudo)
+        ENABLE_SUDO="Y"
+        shift
+        ;;
+    --no-sudo)
+        ENABLE_SUDO="N"
+        shift
+        ;;
     --no-2fa)
         SETUP_2FA="N"
         shift
         ;;
     --no-wireguard)
         SETUP_WIREGUARD="N"
+        shift
+        ;;
+    --vpn-only)
+        VPN_ONLY=true
+        ENABLE_SUDO="N"
+        SETUP_2FA="N"
+        SETUP_WIREGUARD="Y"
         shift
         ;;
     --interactive)
@@ -415,6 +564,49 @@ done
 if [ "$INTERACTIVE" = true ] || [ -z "$NEW_USERNAME" ]; then
     interactive_mode
 fi
+
+##########################################################################################
+## Handle VPN-only client creation
+##########################################################################################
+
+if [ "$VPN_ONLY" = true ]; then
+    show_info "=== Creating VPN-Only Client ==="
+
+    # Validate client name
+    if [[ ! "$NEW_USERNAME" =~ ^[a-zA-Z0-9_-]{3,32}$ ]]; then
+        show_err "Client name must be 3-32 characters and contain only letters, numbers, dashes, and underscores."
+        exit 1
+    fi
+
+    # Check if client already exists
+    if [ -f "/etc/wireguard/clients/${NEW_USERNAME}.conf" ]; then
+        show_err "VPN client '$NEW_USERNAME' already exists."
+        exit 1
+    fi
+
+    # Create VPN-only client
+    if create_vpn_only_user "$NEW_USERNAME"; then
+        show_info "=== VPN-Only Client Creation Complete ==="
+        show_warn "VPN client '$NEW_USERNAME' has been created successfully!"
+        echo ""
+        show_info "VPN Configuration:"
+        echo "  Client Name: $NEW_USERNAME"
+        echo "  Config File: /etc/wireguard/clients/${NEW_USERNAME}.conf"
+        echo ""
+        show_info "To display QR code again:"
+        echo "  qrencode -t ansiutf8 < /etc/wireguard/clients/${NEW_USERNAME}.conf"
+        echo ""
+        show_info "$SUBSCRIPT completed successfully."
+        exit 0
+    else
+        show_err "VPN-only client creation failed."
+        exit 1
+    fi
+fi
+
+##########################################################################################
+## Handle full user creation
+##########################################################################################
 
 # Validate username
 if ! validate_username "$NEW_USERNAME"; then
@@ -443,7 +635,7 @@ fi
 show_info "=== Starting User Creation Process ==="
 
 # Step 1: Create the user
-if ! create_user "$NEW_USERNAME" "$NEW_PASSWORD" "$SETUP_2FA" "$SETUP_WIREGUARD"; then
+if ! create_user "$NEW_USERNAME" "$NEW_PASSWORD" "$ENABLE_SUDO"; then
     show_err "User creation failed. Exiting."
     exit 1
 fi
@@ -472,7 +664,11 @@ echo ""
 show_info "Login Information:"
 echo "  Username: $NEW_USERNAME"
 echo "  Password: $NEW_PASSWORD"
-echo "  Sudo Access: YES (use 'sudo su -' for root access)"
+if [ "$ENABLE_SUDO" = "Y" ]; then
+    echo "  Sudo Access: YES (use 'sudo su -' for root access)"
+else
+    echo "  Sudo Access: NO (standard user)"
+fi
 echo ""
 
 if [ "$SETUP_2FA" = "Y" ]; then

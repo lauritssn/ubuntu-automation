@@ -483,8 +483,8 @@ podman-status  # Show complete Podman system status
 ```bash
 podman-socket list                   # List socket services
 podman-socket status [service]       # Check service status
-podman-socket start traefik-http     # Start socket service
-podman-socket logs traefik           # View service logs
+podman-socket start my-service       # Start socket service
+podman-socket logs my-service       # View service logs
 ```
 
 ### `socket-setup.sh`
@@ -514,8 +514,8 @@ sudo su - podman
 # Create socket for single port service
 socket-setup.sh nginx 80
 
-# Create socket for multi-port service (like Traefik)
-socket-setup.sh traefik 80 443 8080
+# Create socket for multi-port service
+socket-setup.sh webserver 80 443 8080
 
 # Get help and examples
 socket-setup.sh --help

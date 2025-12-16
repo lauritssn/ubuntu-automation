@@ -182,11 +182,11 @@ sudo systemctl start container-webserver.service
 
 ```bash
 # Create socket-activated service
-podman-user run -d --name traefik -p 80:80 -p 443:443 traefik
-podman-user generate systemd --new --files --name traefik
+podman-user run -d --name myapp -p 80:80 -p 443:443 nginx
+podman-user generate systemd --new --files --name myapp
 
 # Enable socket activation
-sudo systemctl enable container-traefik.service
+sudo systemctl enable container-myapp.service
 ```
 
 ## Troubleshooting

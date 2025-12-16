@@ -4,7 +4,7 @@
 if [ "$#" -eq 0 ]; then
     echo "Usage: podman-user <podman-command>"
     echo "Example: podman-user ps -a"
-    echo "Example: podman-user run -d --name traefik ..."
+    echo "Example: podman-user run -d --name mycontainer ..."
     exit 1
 fi
 
